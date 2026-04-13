@@ -1,0 +1,89 @@
+/* We can reuse a lot of classes from tax-benefit-category.css but we map them to .tb-sub prefix for the sub-categories page */
+.tb-sub-layout {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: calc(100vh - 60px);
+}
+
+.tb-sub-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tb-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.tb-header p {
+    color: #64748b;
+    margin: 0;
+    font-size: 14px;
+}
+
+.tbs-table-wrapper {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.tbs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tbs-table th {
+    background: #f8fafc;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tbs-table td {
+    padding: 16px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.parent-badge {
+    display: inline-flex;
+    padding: 4px 8px;
+    background: #e0e7ff;
+    color: #4338ca;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.proof-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: #fef2f2;
+    color: #ef4444;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.proof-badge.checked {
+    background: #dcfce7;
+    color: #16a34a;
+}

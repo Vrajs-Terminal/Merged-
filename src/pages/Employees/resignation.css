@@ -1,0 +1,12 @@
+/* Standardized Resignation — Premium Separation UI */
+
+.resignation-container {
+  /* Layout handled via index.css */
+}
+
+/* Modal styles are usually global, but making sure they look good */
+.modal-content {
+    max-width: 550px;
+    border-radius: var(--radius-xl);
+    padding: 32px;
+}

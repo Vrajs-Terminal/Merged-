@@ -1,0 +1,392 @@
+/* Holiday Exchange Requests Module Styling */
+
+/* ===================== Header Section ===================== */
+.exchange-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+  padding: 0;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-8);
+}
+
+.exchange-header-content h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.exchange-header-content h2 svg {
+  color: var(--color-success-600);
+}
+
+.exchange-header-content p {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.exchange-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-fast);
+}
+
+/* ===================== Alert Messages ===================== */
+.exchange-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.exchange-alert-success {
+  background: var(--color-success-50);
+  color: var(--color-success-600);
+  border: 1px solid var(--color-success-200);
+}
+
+.exchange-alert-error {
+  background: var(--color-danger-50);
+  color: var(--color-danger-600);
+  border: 1px solid var(--color-danger-200);
+}
+
+/* ===================== Table Styling ===================== */
+.exchange-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.exchange-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.exchange-table thead {
+  background: var(--color-bg-secondary);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.exchange-table th {
+  padding: var(--space-4);
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.exchange-table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition-fast);
+}
+
+.exchange-table tbody tr:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.exchange-table td {
+  padding: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--text-main);
+}
+
+/* ===================== Table Cell Content ===================== */
+.exchange-employee-name {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+.exchange-employee-id {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+
+.exchange-cell-flex {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.exchange-cell-danger {
+  color: var(--color-danger-600);
+}
+
+.exchange-cell-success {
+  color: var(--color-success-600);
+}
+
+.exchange-cell-muted {
+  color: var(--text-muted);
+}
+
+/* ===================== Status Badge ===================== */
+.exchange-status-badge {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.exchange-status-approved {
+  background: var(--color-success-50);
+  color: var(--color-success-600);
+}
+
+.exchange-status-rejected {
+  background: var(--color-danger-50);
+  color: var(--color-danger-600);
+}
+
+.exchange-status-pending {
+  background: var(--color-warning-50);
+  color: var(--color-warning-600);
+}
+
+/* ===================== Action Buttons ===================== */
+.exchange-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-start;
+}
+
+.exchange-action-btn {
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.exchange-action-approve {
+  background: var(--color-success-50);
+  border-color: var(--color-success-200);
+  color: var(--color-success-600);
+}
+
+.exchange-action-approve:hover {
+  background: var(--color-success-100);
+  border-color: var(--color-success-300);
+}
+
+.exchange-action-reject {
+  background: var(--color-danger-50);
+  border-color: var(--color-danger-200);
+  color: var(--color-danger-600);
+}
+
+.exchange-action-reject:hover {
+  background: var(--color-danger-100);
+  border-color: var(--color-danger-300);
+}
+
+/* ===================== Modal Styling ===================== */
+.exchange-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: var(--space-4);
+}
+
+.exchange-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  padding: var(--space-8);
+  animation: slideUp 0.3s ease-out;
+}
+
+.exchange-modal h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0 0 var(--space-6) 0;
+}
+
+.exchange-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ===================== Form Fields ===================== */
+.exchange-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.exchange-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.exchange-form-input,
+.exchange-form-select {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  background: white;
+  transition: all var(--transition-fast);
+}
+
+.exchange-form-input:focus,
+.exchange-form-select:focus {
+  outline: none;
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+.exchange-form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.exchange-form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.exchange-form-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.exchange-form-actions button {
+  flex: 1;
+  padding: var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.exchange-form-submit {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+.exchange-form-submit:hover {
+  background: var(--color-primary-700);
+}
+
+.exchange-form-cancel {
+  background: var(--color-bg-secondary);
+  color: var(--text-main);
+  border: 1px solid var(--color-border);
+}
+
+.exchange-form-cancel:hover {
+  background: var(--color-bg-tertiary);
+}
+
+/* ===================== Empty State ===================== */
+.exchange-empty {
+  text-align: center;
+  padding: var(--space-12);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+}
+
+.exchange-empty-text {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ===================== Animations ===================== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================== Responsive Design ===================== */
+@media (max-width: 768px) {
+  .exchange-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .exchange-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .exchange-table th,
+  .exchange-table td {
+    padding: var(--space-3);
+    font-size: var(--font-size-xs);
+  }
+
+  .exchange-modal {
+    padding: var(--space-6);
+  }
+}
+
+@media (max-width: 640px) {
+  .exchange-table {
+    font-size: var(--font-size-xs);
+  }
+
+  .exchange-table th {
+    font-size: var(--font-size-xs);
+    padding: var(--space-2);
+  }
+
+  .exchange-table td {
+    padding: var(--space-2);
+  }
+
+  .exchange-actions {
+    flex-direction: column;
+  }
+
+  .exchange-action-btn {
+    width: 28px;
+    height: 28px;
+  }
+}

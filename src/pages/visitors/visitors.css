@@ -1,0 +1,191 @@
+/* ======================================= */
+/* Visitors Module Premium Styles          */
+/* ======================================= */
+
+.visitors-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Header Bar */
+.v-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.v-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.v-header-left h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+/* Stats Cards */
+.v-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.v-stat-card {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.v-stat-icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.v-stat-info h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0;
+}
+
+.v-stat-info p {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 4px 0 0 0;
+}
+
+/* Check-In Form Styles */
+.v-form-container {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.v-form-header {
+    padding: 20px 24px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.v-form-body {
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+
+.v-photo-upload {
+    grid-column: span 2;
+    padding: 30px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    text-align: center;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.v-photo-upload:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+/* Status Badges */
+.v-status-badge {
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.v-status-badge.inside { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.v-status-badge.checked-out { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.v-status-badge.rejected { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+/* Filter Bar */
+.v-filter-row {
+    padding: 20px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Settings Toggle */
+.v-setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.v-setting-info h4 {
+    margin: 0;
+    font-size: 15px;
+    color: #1e293b;
+}
+
+.v-setting-info p {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Transitions */
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+    .v-form-body {
+        grid-template-columns: 1fr;
+    }
+}

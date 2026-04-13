@@ -1,0 +1,450 @@
+/*
+  SOS Management Module - Emergency Response Design System
+  Prefix: .sos- (Save Our Souls)
+*/
+
+:root {
+  --sos-danger: #ef4444;
+  --sos-danger-light: #fee2e2;
+  --sos-danger-dark: #b91c1c;
+  --sos-warning: #f59e0b;
+  --sos-success: #10b981;
+  --sos-info: #3b82f6;
+  
+  --sos-bg: #fdfcfc;
+  --sos-card-bg: #ffffff;
+  --sos-text-main: #0f172a;
+  --sos-text-sub: #64748b;
+  --sos-border: #e2e8f0;
+  
+  --sos-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.sos-layout {
+  padding: 24px;
+  background: var(--sos-bg);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.sos-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.sos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.sos-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sos-header-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--sos-danger), #dc2626);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+  position: relative;
+}
+
+/* Pulse Animation for Header Icon */
+.sos-header-icon::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background: var(--sos-danger);
+  opacity: 0.4;
+  animation: sos-pulse 2s infinite;
+  z-index: -1;
+}
+
+@keyframes sos-pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  70% { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.sos-header-left h2 {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--sos-text-main);
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.sos-header-left p {
+  color: var(--sos-text-sub);
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+/* Stats Grid */
+.sos-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.sos-stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid var(--sos-border);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sos-stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--sos-shadow);
+  border-color: var(--sos-danger-light);
+}
+
+.sos-stat-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.sos-stat-icon-box.red { background: #fef2f2; color: #ef4444; }
+.sos-stat-icon-box.orange { background: #fffbeb; color: #f59e0b; }
+.sos-stat-icon-box.green { background: #f0fdf4; color: #10b981; }
+.sos-stat-icon-box.blue { background: #eff6ff; color: #3b82f6; }
+
+.sos-stat-info h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sos-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.sos-stat-info .value {
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--sos-text-main);
+  margin-top: 4px;
+}
+
+/* Tab Navigation */
+.sos-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 18px;
+  width: fit-content;
+}
+
+.sos-tab {
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--sos-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+}
+
+.sos-tab:hover {
+  color: var(--sos-text-main);
+}
+
+.sos-tab-active {
+  background: white;
+  color: var(--sos-danger);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* SOS Type Cards (Management) */
+.sos-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.sos-type-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--sos-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.sos-type-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+  border-color: var(--sos-danger);
+}
+
+.sos-type-icon-circle {
+  width: 80px;
+  height: 80px;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border: 2px solid #f1f5f9;
+  color: var(--sos-danger);
+}
+
+.sos-type-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sos-text-main);
+  margin-bottom: 8px;
+}
+
+.sos-type-duration {
+  font-size: 13px;
+  color: var(--sos-text-sub);
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.sos-type-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.sos-type-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.sos-btn-edit { background: #f1f5f9; color: #475569; }
+.sos-btn-delete { background: #fef2f2; color: #ef4444; }
+
+.sos-status-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+/* Reports Table & Map Section */
+.sos-report-container {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+}
+
+.sos-table-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--sos-border);
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.sos-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sos-table th {
+  background: #f8fafc;
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sos-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--sos-border);
+}
+
+.sos-table td {
+  padding: 16px 20px;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* SOS Status Badges */
+.sos-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sos-badge-active { background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; }
+.sos-badge-resolved { background: #ecfdf5; color: #10b981; border: 1px solid #d1fae5; }
+.sos-badge-closed { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* Map View Card */
+.sos-map-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--sos-border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+}
+
+.sos-map-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f1f5f9;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  border: 2px dashed #e2e8f0;
+}
+
+.sos-map-info {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 20px;
+}
+
+.sos-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.sos-info-label { color: var(--sos-text-sub); font-weight: 600; }
+.sos-info-value { color: var(--sos-text-main); font-weight: 700; }
+
+/* Action Buttons */
+.sos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.sos-btn-primary { background: var(--sos-danger); color: white; }
+.sos-btn-primary:hover { background: var(--sos-danger-dark); transform: scale(1.02); }
+
+.sos-btn-outline { background: white; color: var(--sos-danger); border: 2px solid var(--sos-danger); }
+.sos-btn-outline:hover { background: var(--sos-danger-light); }
+
+/* Common SOS Selection Modal */
+.sos-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.sos-selection-item {
+  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid #f1f5f9;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sos-selection-item.selected {
+  border-color: var(--sos-danger);
+  background: var(--sos-danger-light);
+}
+
+.sos-selection-item i {
+  font-size: 24px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.sos-selection-name {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Forms */
+.sos-form-group { margin-bottom: 20px; }
+.sos-label { display: block; font-size: 13px; font-weight: 700; color: var(--sos-text-sub); margin-bottom: 8px; }
+.sos-input, .sos-select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--sos-border);
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f8fafc;
+}
+.sos-input:focus { outline: none; border-color: var(--sos-danger); background: white; }
+
+/* Image proof slot */
+.sos-proof-box {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.sos-proof-img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Animations */
+@keyframes sos-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sos-fade-in { animation: sos-fade-in 0.4s ease-out forwards; }

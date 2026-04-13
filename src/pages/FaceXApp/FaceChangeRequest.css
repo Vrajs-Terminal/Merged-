@@ -1,0 +1,12 @@
+/* FaceX Change Requests - component-scoped styles */
+
+.fx-change-page .fx-page-header {
+  margin-bottom: 24px;
+}
+
+.fx-change-page .main-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}

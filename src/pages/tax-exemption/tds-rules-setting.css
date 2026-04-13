@@ -1,0 +1,186 @@
+.tds-layout {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: calc(100vh - 60px);
+}
+
+.tds-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tds-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tds-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px 0;
+}
+
+.tds-header p {
+    color: #64748b;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Global Rule Setup Panel */
+.global-rules-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.global-rules-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.global-rules-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rules-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.rule-input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.rule-input-group .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.rule-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+
+.rule-input:focus {
+    background: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.rule-input.has-prefix { padding-left: 36px; }
+
+.input-prefix {
+    position: absolute;
+    left: 12px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.auto-apply-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background-color: #cbd5e1;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.auto-apply-toggle input:checked + .toggle-switch { background-color: #10b981; }
+.auto-apply-toggle input:checked + .toggle-switch::after { transform: translateX(20px); }
+.auto-apply-toggle input { display: none; }
+
+/* CTC Sliders */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 250px;
+}
+.slider {
+    flex: 1;
+    accent-color: #3b82f6;
+}
+
+/* Custom chips for frequencies */
+.freq-chip {
+    display: inline-flex;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.freq-chip.active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
+.save-btn {
+    padding: 8px 16px;
+    background: #0f172a;
+    color: white;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.save-btn:hover { background: #1e293b; }
+
+/* Table Columns Specific */
+.td-freq { margin-bottom: 4px; display: inline-block; font-weight: 600; font-size: 13px; color: #1e293b; }
+.td-sub-freq { font-size: 11px; color: #64748b; }

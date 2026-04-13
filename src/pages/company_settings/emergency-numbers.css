@@ -1,0 +1,50 @@
+.emergency-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.type-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.type-medical {
+    background: #eff6ff;
+    color: #3b82f6;
+    border: 1px solid #bfdbfe;
+}
+
+.type-security {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+
+.type-fire {
+    background: #fff7ed;
+    color: #f97316;
+    border: 1px solid #fed7aa;
+}
+
+.type-other {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.number-display {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+}

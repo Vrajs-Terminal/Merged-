@@ -1,0 +1,174 @@
+.designations-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 24px;
+    align-items: start;
+}
+
+.list-area {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Branch Level */
+.hier-branch-block {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.hier-branch-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+/* Department Level */
+.hier-dept-block {
+    margin-left: 12px;
+    padding-left: 20px;
+    border-left: 2px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.hier-dept-block:last-child {
+    margin-bottom: 0;
+}
+
+.hier-dept-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* Sub-Department Level Grid */
+.hier-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-left: 12px;
+}
+
+.hier-subdept-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px;
+}
+
+.hier-subdept-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.hier-subdept-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* Designations List */
+.designations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.desig-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    padding: 10px 12px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.desig-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.desig-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.desig-icon {
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 4px;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+}
+
+.desig-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.item-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0.2;
+    transition: opacity 0.2s;
+}
+
+.desig-item:hover .item-actions {
+    opacity: 1;
+}
+
+.reorder-actions-small {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reorder-actions-small button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 8px;
+    padding: 1px 2px;
+}
+
+.reorder-actions-small button:disabled {
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+
+.reorder-actions-small button:not(:disabled):hover {
+    color: #3b82f6;
+}
+
+.p-0 {
+    padding: 4px !important;
+}
+
+@media (max-width: 1024px) {
+    .designations-layout {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,340 @@
+.bulk-salary-layout {
+    padding: 24px;
+    background: radial-gradient(circle at top right, #f1f5f9, #e2e8f0);
+    min-height: calc(100vh - 64px);
+    font-family: 'Inter', sans-serif;
+}
+
+.bulk-salary-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.bulk-salary-header {
+    margin-bottom: 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 20px;
+}
+
+.header-info .title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.page-title-icon {
+    filter: drop-shadow(0 4px 12px rgba(79, 70, 229, 0.2));
+}
+
+.header-info h2 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.header-info p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* Selection Panel */
+/* Selection Panel & Other Cards */
+.selection-panel-card, .employee-list-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.selection-panel-card:hover, .employee-list-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.btn-fetch {
+    width: 100%;
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-fetch:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgb(37 99 235 / 0.2);
+}
+
+/* Warning Panel */
+/* Premium Warning Panel */
+.warning-panel {
+    background: rgba(254, 251, 235, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(253, 230, 138, 0.5);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.05);
+}
+
+.warning-icon {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    padding: 12px;
+    border-radius: 14px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+}
+
+.warning-content {
+    flex: 1;
+}
+
+.warning-content h4 {
+    color: #92400e;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.warning-content p {
+    color: #b45309;
+    font-size: 13px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.warning-stats {
+    display: flex;
+    gap: 32px;
+}
+
+.warning-stats span {
+    font-size: 14px;
+    color: #92400e;
+    font-weight: 500;
+}
+
+.warning-stats strong {
+    font-size: 16px;
+    color: #78350f;
+    margin-left: 4px;
+}
+
+.btn-review {
+    padding: 10px 24px;
+    background: #1e293b;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-review:hover {
+    background: #0f172a;
+    transform: scale(1.02);
+}
+
+/* Employee List Card */
+.employee-list-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.card-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 24px;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f8fafc;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-bulk-gen, .btn-bulk-publish, .btn-export {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 13px;
+}
+
+.btn-bulk-gen {
+    background: #1e293b;
+    color: white;
+}
+
+.btn-bulk-gen:hover {
+    background: #0f172a;
+    transform: translateY(-1px);
+}
+
+.btn-bulk-publish {
+    background: #059669;
+    color: white;
+}
+
+.btn-bulk-publish:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
+
+.btn-export {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.btn-export:hover {
+    background: #e2e8f0;
+}
+
+/* Table Styles */
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.bulk-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.bulk-table th {
+    background: #f8fafc;
+    padding: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bulk-table td {
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+}
+
+.bulk-table tr:hover {
+    background: #fbfcfe;
+}
+
+.emp-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.emp-avatar {
+    width: 32px;
+    height: 32px;
+    background: #e2e8f0;
+    color: #64748b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px !important;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+@media (max-width: 1024px) {
+    .card-controls { flex-direction: column; align-items: stretch; }
+    .bulk-actions { flex-wrap: wrap; }
+    .btn-bulk-gen, .btn-bulk-publish { flex: 1; }
+}

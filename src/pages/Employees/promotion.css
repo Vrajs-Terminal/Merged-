@@ -1,0 +1,22 @@
+/* Standardized Promotion — Premium Transition Layouts */
+
+.promotion-container {
+  /* Layout handled via index.css */
+}
+
+/* Modal sizing for forms */
+.modal-content {
+  max-width: 600px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Table transitions */
+.change-arrow {
+  color: var(--color-primary-400);
+  margin: 0 8px;
+}

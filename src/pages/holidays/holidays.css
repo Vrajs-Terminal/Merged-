@@ -1,0 +1,243 @@
+/* ============================================
+   Holiday Management — Design System
+   Matches app-wide premium light theme
+   ============================================ */
+
+:root {
+    --hd-primary: #14b8a6; /* Teal 500 */
+    --hd-primary-dark: #0d9488; /* Teal 600 */
+    --hd-secondary: #6366f1; /* Indigo 500 */
+    --hd-bg: #f8fafc;
+    --hd-card-bg: #ffffff;
+    --hd-text-main: #1e293b;
+    --hd-text-muted: #64748b;
+    --hd-border: #e2e8f0;
+    --hd-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ---- Page Layout ---- */
+.hd-page {
+    padding: 24px;
+    background-color: var(--hd-bg);
+    min-height: calc(100vh - 64px);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.hd-fade-in {
+    animation: hdFadeIn 0.5s ease-out;
+}
+
+@keyframes hdFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Header Section ---- */
+.hd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.hd-header-info h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--hd-text-main);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.hd-header-subtitle {
+    color: var(--hd-text-muted);
+    margin-top: 4px;
+    font-size: 14px;
+    display: block;
+}
+
+.hd-header-icon-premium {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, var(--hd-primary), var(--hd-secondary));
+    color: white;
+}
+
+/* ---- Cards ---- */
+.hd-card {
+    background: var(--hd-card-bg);
+    border-radius: 16px;
+    border: 1px solid var(--hd-border);
+    padding: 24px;
+    box-shadow: var(--hd-shadow);
+}
+
+.hd-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Premium Info Card (Gradient) */
+.hd-info-banner {
+    background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    color: white;
+    padding: 32px;
+    border-radius: 24px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(20, 184, 166, 0.2);
+}
+
+/* ---- Forms ---- */
+.hd-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.hd-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hd-field--full {
+    grid-column: 1 / -1;
+}
+
+.hd-field label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--hd-text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hd-input, .hd-select, .hd-textarea {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--hd-border);
+    background: #f1f5f9;
+    font-size: 14px;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.hd-input:focus, .hd-select:focus, .hd-textarea:focus {
+    background: white;
+    border-color: var(--hd-primary);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
+}
+
+/* ---- Buttons ---- */
+.hd-btn {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.hd-btn-primary {
+    background: var(--hd-text-main);
+    color: white;
+}
+
+.hd-btn-primary:hover {
+    background: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hd-btn-teal {
+    background: var(--hd-primary);
+    color: white;
+}
+
+.hd-btn-teal:hover {
+    background: var(--hd-primary-dark);
+}
+
+.hd-btn-secondary {
+    background: white;
+    border: 1.5px solid var(--hd-border);
+    color: var(--hd-text-muted);
+}
+
+.hd-btn-secondary:hover {
+    background: var(--hd-bg);
+    color: var(--hd-text-main);
+    border-color: #cbd5e1;
+}
+
+/* ---- Tables ---- */
+.hd-table-wrapper {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid var(--hd-border);
+    overflow: hidden;
+    box-shadow: var(--hd-shadow);
+}
+
+.hd-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hd-table th {
+    background: #f8fafc;
+    padding: 16px 20px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--hd-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--hd-border);
+}
+
+.hd-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--hd-border);
+    vertical-align: middle;
+}
+
+.hd-table tr:hover {
+    background: #f8fafc;
+}
+
+/* ---- Badges & Pills ---- */
+.hd-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hd-badge-active { background: #dcfce7; color: #166534; }
+.hd-badge-inactive { background: #fee2e2; color: #991b1b; }
+.hd-badge-pending { background: #fef3c7; color: #92400e; }
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .hd-form-grid { grid-template-columns: 1fr; }
+    .hd-header { flex-direction: column; gap: 16px; }
+    .hd-btn { width: 100%; }
+}

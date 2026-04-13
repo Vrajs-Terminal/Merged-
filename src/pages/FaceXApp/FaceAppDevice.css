@@ -1,0 +1,12 @@
+/* FaceX Registered Devices - component-scoped styles */
+
+.fx-device-page .fx-page-header {
+  margin-bottom: 24px;
+}
+
+.fx-device-page .main-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}

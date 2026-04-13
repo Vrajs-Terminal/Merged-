@@ -1,0 +1,130 @@
+/* ======================================= */
+/* Complaints Module Premium Styles         */
+/* ======================================= */
+
+.complaints-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Status Chips/Badges */
+.c-status-badge {
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.c-status-badge.open { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.c-status-badge.in-progress { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+.c-status-badge.closed { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+.c-status-badge.re-open { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
+
+/* Priority Indicators */
+.c-priority-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.c-priority-tag.high { background: #fee2e2; color: #dc2626; }
+.c-priority-tag.medium { background: #fef9c3; color: #854d0e; }
+.c-priority-tag.low { background: #f1f5f9; color: #475569; }
+
+/* Dashboard Cards */
+.c-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.c-stat-card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.c-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.c-stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.c-stat-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Discussion Thread */
+.c-discussion-wrap {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.c-comment-bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    position: relative;
+}
+
+.c-comment-bubble.admin {
+    align-self: flex-start;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.c-comment-bubble.internal {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+}
+
+.c-comment-meta {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+/* Table Enhancements */
+.c-sla-status {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.c-sla-status.breached { color: #dc2626; font-weight: 700; }
+.c-sla-status.ok { color: #16a34a; }
+
+/* Transitions */
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

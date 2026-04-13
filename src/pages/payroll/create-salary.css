@@ -1,0 +1,390 @@
+.salary-calc-layout {
+    padding: 24px;
+    background: radial-gradient(circle at top right, #f1f5f9, #e2e8f0);
+    min-height: calc(100vh - 64px);
+    font-family: 'Inter', sans-serif;
+}
+
+.salary-calc-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.salary-calc-header {
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 20px;
+}
+
+.header_info h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.header_info p {
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* Filter Card */
+/* Glassmorphism Cards */
+.filter-card, .calculation-form, .salary-info-card, .days-card, .summary-card, .action-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+}
+
+.filter-card:hover, .salary-info-card:hover, .days-card:hover, .summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+.card_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #334155;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.filter_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.btn_get_data {
+    width: 100%;
+    padding: 10px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn_get_data:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn_get_data:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Calculation Form */
+.calculation_form {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    border: 1px solid #e2e8f0;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form_section_header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #1e293b;
+    margin-bottom: 24px;
+}
+
+.form_section_header h3 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.main_form_grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.salary_info_card, .days_card, .summary_card, .action_card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #f1f5f9;
+}
+
+.card_sub_header {
+    font-size: 14px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.card_sub_header.green { color: #059669; }
+.card_sub_header.red { color: #dc2626; }
+
+.details_grid, .input_grid, .summary_grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.detail_item label, .form_group label, .summary_item span {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.detail_item p {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.badge_type {
+    background: #dcfce7;
+    color: #166534;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.summary_item p {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.summary_item.highlight p {
+    color: #2563eb;
+}
+
+.mini_input {
+    width: 60px;
+    padding: 4px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Earnings/Deductions */
+.split_grid {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.component_list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.component_row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.component_row span { color: #64748b; font-size: 14px; }
+.component_row p { font-weight: 600; color: #1e293b; }
+
+.total_row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-top: 8px;
+    font-weight: 700;
+    border-top: 2px solid #e2e8f0;
+}
+
+.red_text p { color: #dc2626; }
+
+.dynamic_deduction {
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #fee2e2;
+    margin-top: 8px;
+}
+
+.deduction_info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle_group {
+    display: flex;
+    background: #f1f5f9;
+    padding: 2px;
+    border-radius: 6px;
+}
+
+.toggle_group button {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #64748b;
+}
+
+.toggle_group button.active {
+    background: white;
+    color: #2563eb;
+    box-shadow: 0 2px 4px rgb(0 0 0 / 0.05);
+}
+
+/* Net Banner - Ultra Premium */
+.net-salary-banner {
+    grid-column: span 2;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 24px;
+    padding: 24px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.net-salary-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+}
+
+.net-label {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 1;
+}
+
+.net-label span {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+}
+
+.net-amount {
+    font-size: 42px;
+    font-weight: 800;
+    color: #4ade80;
+    text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    z-index: 1;
+}
+
+/* Footer Actions */
+.action_card {
+    grid-column: span 2;
+}
+
+.action_grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.full_width { grid-column: span 2; }
+
+.action_grid textarea {
+    height: 80px;
+    resize: none;
+}
+
+.button_group {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn_generate, .btn_save, .btn_cancel {
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.btn_generate { background: #2563eb; color: white; }
+.btn_generate:hover { background: #1d4ed8; transform: translateY(-1px); }
+
+.btn_save.dark { background: #1e293b; color: white; }
+.btn_save.dark:hover { background: #0f172a; }
+
+.btn_cancel { background: #f1f5f9; color: #475569; }
+.btn_cancel:hover { background: #e2e8f0; }
+
+/* Global Premium Controls */
+.premium_control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e293b;
+    background: white;
+    transition: all 0.2s;
+}
+
+.premium_control:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+}
+
+.no_icon_input { padding-left: 12px !important; }
+
+@media (max-width: 1024px) {
+    .main-form-grid { grid-template-columns: 1fr; }
+    .split-grid { grid-template-columns: 1fr; grid-column: span 1; }
+    .net-salary-banner, .action-card { grid-column: span 1; }
+}

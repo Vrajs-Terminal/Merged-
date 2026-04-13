@@ -1,0 +1,173 @@
+.menu-reorder-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.reorder-container {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.reorder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fdfdfd;
+}
+
+.reorder-header-info h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.reorder-header-info p {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.menu-list {
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.menu-item-row:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.menu-item-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.menu-icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+}
+
+.menu-item-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.menu-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-badge {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    min-width: 40px;
+    text-align: center;
+}
+
+.move-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.move-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.move-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #3b82f6;
+}
+
+.move-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Dragging Styles */
+.menu-item-row.dragging {
+    border-color: #3b82f6;
+    background-color: #f0f9ff;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+    transform: scale(1.02);
+    z-index: 50;
+    pointer-events: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    color: #3b82f6;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}

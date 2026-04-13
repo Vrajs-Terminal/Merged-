@@ -1,0 +1,2555 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/lib/generated/prisma-client"
+}
+
+generator backend {
+  provider = "prisma-client-js"
+  output   = "../backend/src/lib/generated/prisma-client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     Int         @id @default(autoincrement())
+  name                   String
+  email                  String      @unique
+  password_hash          String
+  resetPasswordOtp       String?
+  resetPasswordOtpExpiry DateTime?
+  role                   String      @default("Admin")
+  permissions            Json?       @default("{}")
+  branch_id              Int?
+  department_id          Int?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  branch                 Branch?     @relation(fields: [branch_id], references: [id])
+  department             Department? @relation(fields: [department_id], references: [id])
+
+  employee_level_id Int?
+  employee_grade_id Int?
+  employeeLevel     EmployeeLevel? @relation(fields: [employee_level_id], references: [id])
+  employeeGrade     EmployeeGrade? @relation(fields: [employee_grade_id], references: [id])
+
+  shift_id Int?
+  shift    Shift? @relation(fields: [shift_id], references: [id])
+
+  adminBranchRestrictions     AdminBranchRestriction[]
+  adminDepartmentRestrictions AdminDepartmentRestriction[]
+  activityLogs                ActivityLog[]
+  employeeGradeHistory        EmployeeGradeHistory[]
+  parkingSlot                 ParkingSlot?
+  attendanceRecords           AttendanceRecord[]
+  attendanceRequests          AttendanceRequest[]          @relation("RequestUser")
+  approvedRequests            AttendanceRequest[]          @relation("RequestApprover")
+
+  // Visit Management
+  visits          Visit[] @relation("VisitUser")
+  approved_visits Visit[] @relation("VisitApprover")
+
+  // New Silos for Dynamic Dashboard
+  expenses         ExpenseRequest[]
+  breakLogs        BreakLog[]
+  documentRequests DocumentRequest[] @relation("DocumentRequestUser")
+  approvedDocs     DocumentRequest[] @relation("DocumentApprover")
+  payrolls         Payroll[]
+
+  // Employee Tracking Module
+  trackingConfig     TrackingConfig?
+  trackingLogs       TrackingLog[]
+  trackingExceptions TrackingException[]
+  dailyWorks         DailyWork[]
+  employeeCTCs       EmployeeCTC[]
+
+  holdRequestsAsEmployee SalaryHoldRequest[]   @relation("EmployeeHoldRequests")
+  holdRequestsAsReporter SalaryHoldRequest[]   @relation("ReportingUserHoldRequests")
+  salarySlips            SalarySlip[]
+  salaryGenerationLogs   SalaryGenerationLog[]
+
+  designation_id Int?
+  designation    Designation? @relation(fields: [designation_id], references: [id])
+
+  // Advanced Payroll Modules (8-12)
+  otherEarningsDeductions OtherEarningDeduction[]
+  incentiveDetails        EmployeeIncentiveDetail[] @relation("EmployeeIncentive")
+  approvedIncentives      EmployeeIncentiveDetail[] @relation("ApproverIncentive")
+  ffSettlements           FFSettlement[]
+  bankDetails             EmployeeBankDetail[]
+  salaryGroupLogs         SalaryGroupChangeLog[]    @relation("UserGroupLogs")
+  changedGroupLogs        SalaryGroupChangeLog[]    @relation("AdminGroupLogs")
+  EmployeeTaxRegime       EmployeeTaxRegime[]
+  EmployeeTdsRule         EmployeeTdsRule[]
+  taxBenefitDocuments     TaxBenefitDocument[]
+  otherIncomeLosses       OtherIncomeLoss[]
+  tdsPaidSummaries        TdsPaidSummary[]
+  form12BDetails          Form12BDetail[]
+  form16Documents         Form16Document[]
+
+  // Work Allocation System
+  workCategoryCreated     WorkCategory[]
+  workAllocationsAssigned WorkAllocation[]       @relation("AssignedBy")
+  workAllocations         WorkAllocation[]       @relation("AssignedTo")
+  workAllocationApprovals WorkAllocation[]       @relation("HodReference")
+  workAccessGiven         WorkAllocationAccess[] @relation("AccessGivenBy")
+  workAccessReceived      WorkAllocationAccess[] @relation("AccessGivenTo")
+
+  // Site Management System
+  siteManager   Site[]         @relation("SiteReportingManager")
+  siteEmployees SiteEmployee[]
+
+  // PMS – Performance Matrix
+  pmsDimensionsCreated   PmsDimension[]      @relation("PmsDimensionCreatedBy")
+  pmsAssignedEmployees   PmsAssignEmployee[] @relation("PmsAssignEmployees")
+  pmsEvaluationsReceived PmsEvaluation[]     @relation("PmsEvaluatedUser")
+  pmsEvaluationsGiven    PmsEvaluation[]     @relation("PmsEvaluatedBy")
+
+  // Employee Vehicles
+  vehicleCategoriesCreated VehicleCategory[] @relation("VehicleCategoryCreatedBy")
+  employeeVehicles         EmployeeVehicle[]
+
+  // Idea Box Module
+  ideaCategoriesCreated IdeaCategory[] @relation("IdeaCategoryCreatedBy")
+  ideasSubmitted        Idea[]         @relation("IdeaSubmittedBy")
+  ideaVotes             IdeaVote[]
+  ideaComments          IdeaComment[]
+  ideaRewardsReceived   IdeaReward[]   @relation("IdeaRewardReceivedBy")
+
+  // SOS Management Module
+  sosAlerts SosAlert[]
+
+  // Holiday Management Module
+  holidayGroupAssignments HolidayGroupAssignment[]
+  optionalHolidayRequests OptionalHolidayRequest[]
+
+  // Mobile Device Bind Module
+  mobileDevice           MobileDevice?
+  deviceChangeRequests   DeviceChangeRequest[]
+  approvedDeviceRequests DeviceChangeRequest[] @relation("DeviceRequestApprover")
+  // Manage Chat Group Module
+  chatGroups             ChatGroupMember[]
+  chatMessagesSent       ChatMessage[]
+
+  // Background Verification Module
+  verificationsAsEmployee BackgroundVerification[] @relation("VerificationEmployee")
+  verificationsAsVerifier BackgroundVerification[] @relation("VerificationVerifier")
+
+  // Visitors Module
+  visitorLogToMeet VisitorLog[] @relation("EmployeeToMeet")
+
+  // Complaints Module
+  complaints         Complaint[]        @relation("ComplaintEmployee")
+  assignedComplaints Complaint[]        @relation("ComplaintAssignee")
+  complaintComments  ComplaintComment[]
+
+  // Discussion Forum Module
+  discussionsCreated  Discussion[]           @relation("DiscussionCreatedBy")
+  discussionsTargeted DiscussionTargetUser[] @relation("DiscussionTargetUsers")
+  discussionComments  DiscussionComment[]
+  discussionReactions DiscussionReaction[]
+
+  // Escalations Module
+  escalationsSent     Escalation[]      @relation("EscalationSender")
+  escalationsReceived Escalation[]      @relation("EscalationReceiver")
+  escalationReplies   EscalationReply[] @relation("EscalationReplyUser")
+
+  // Meeting Module
+  meetingsOrganized  Meeting[]            @relation("MeetingOrganizer")
+  meetingsAttending  MeetingParticipant[] @relation("MeetingParticipantUser")
+  meetingActionItems MeetingActionItem[]  @relation("MeetingActionAssignee")
+
+  @@index([branch_id], map: "User_branch_id_fkey")
+  @@index([department_id], map: "User_department_id_fkey")
+  @@index([employee_level_id])
+  @@index([employee_grade_id])
+  @@index([shift_id])
+  @@index([designation_id])
+}
+
+// ... existing models ...
+
+model ExpenseRequest {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  amount      Float
+  category    String // Travel, Meal, Office, etc.
+  description String?  @db.Text
+  date        DateTime @db.Date
+  status      String   @default("Pending") // Pending, Approved, Rejected
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model BreakLog {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  attendance_id    Int?
+  start_time       DateTime  @default(now())
+  end_time         DateTime?
+  duration_minutes Int       @default(0)
+  break_type       String    @default("Standard") // Lunch, Tea, etc.
+  status           String    @default("Completed") // Ongoing, Completed
+
+  user       User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  attendance AttendanceRecord? @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model DocumentRequest {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  // Types: BankChange, DeviceChange, FaceChange, ProfileChange, WFH, ShortLeave, TaxDocument, ShiftChange
+  request_type   String
+  requested_data Json
+  reason         String?  @db.Text
+  status         String   @default("Pending")
+  approver_id    Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user     User  @relation("DocumentRequestUser", fields: [user_id], references: [id], onDelete: Cascade)
+  approver User? @relation("DocumentApprover", fields: [approver_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String?  @unique
+  website     String?
+  logo_url    String?
+  tax_info    String?
+  status      String   @default("Active")
+  order_index Int      @default(0)
+  branches    Branch[]
+}
+
+model Zone {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  order_index Int      @default(0)
+  branches    Branch[]
+}
+
+model Branch {
+  id          Int          @id @default(autoincrement())
+  name        String
+  code        String       @unique
+  type        String       @default("Metro")
+  order_index Int          @default(0)
+  company_id  Int?
+  zone_id     Int?
+  company     Company?     @relation(fields: [company_id], references: [id])
+  zone        Zone?        @relation(fields: [zone_id], references: [id])
+  departments Department[]
+  users       User[]
+
+  adminBranchRestrictions AdminBranchRestriction[]
+  idCardTemplates         IdCardTemplate[]
+  workAllocations         WorkAllocation[]
+  sites                   Site[]
+  pmsAssigns              PmsAssign[]              @relation("PmsAssignBranch")
+  employeeVehicles        EmployeeVehicle[]        @relation("VehicleBranch")
+  bgvVerifications        BackgroundVerification[]
+  visitorLogs             VisitorLog[]
+  complaints              Complaint[]
+  discussionTargets       DiscussionTargetBranch[]
+  escalations             Escalation[]             @relation("EscalationBranch")
+
+  @@index([zone_id], map: "Branch_zone_id_fkey")
+  @@index([company_id])
+}
+
+model Department {
+  id                          Int                          @id @default(autoincrement())
+  name                        String
+  branch_id                   Int
+  order_index                 Int                          @default(0)
+  branch                      Branch                       @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  subDepartments              SubDepartment[]
+  users                       User[]
+  adminDepartmentRestrictions AdminDepartmentRestriction[]
+  idCardTemplates             IdCardTemplate[]
+  workAllocations             WorkAllocation[]
+  sites                       Site[]
+  pmsAssigns                  PmsAssign[]                  @relation("PmsAssignDepartment")
+  employeeVehicles            EmployeeVehicle[]            @relation("VehicleDepartment")
+  holidayGroupAssignments     HolidayGroupAssignment[]
+  bgvVerifications            BackgroundVerification[]
+  visitorLogs                 VisitorLog[]
+  complaints                  Complaint[]
+  discussionTargets           DiscussionTargetDept[]
+
+  @@index([branch_id], map: "Department_branch_id_fkey")
+}
+
+model SubDepartment {
+  id            Int           @id @default(autoincrement())
+  name          String
+  department_id Int
+  order_index   Int           @default(0)
+  designations  Designation[]
+  department    Department    @relation(fields: [department_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, department_id])
+  @@index([department_id], map: "SubDepartment_department_id_fkey")
+}
+
+model Designation {
+  id                Int           @id @default(autoincrement())
+  name              String
+  sub_department_id Int
+  order_index       Int           @default(0)
+  subDepartment     SubDepartment @relation(fields: [sub_department_id], references: [id], onDelete: Cascade)
+  users             User[]
+
+  @@unique([name, sub_department_id])
+  @@index([sub_department_id], map: "Designation_sub_department_id_fkey")
+}
+
+model EmployeeLevel {
+  id          Int             @id @default(autoincrement())
+  name        String
+  parent_id   Int?
+  order_index Int             @default(0)
+  parent      EmployeeLevel?  @relation("EmployeeLevelHierarchy", fields: [parent_id], references: [id], onDelete: SetNull)
+  children    EmployeeLevel[] @relation("EmployeeLevelHierarchy")
+  users       User[]
+
+  @@index([parent_id])
+}
+
+model EmployeeGrade {
+  id      Int                    @id @default(autoincrement())
+  name    String
+  code    String?                @unique
+  status  String                 @default("Active")
+  users   User[]
+  history EmployeeGradeHistory[]
+}
+
+model AdminBranchRestriction {
+  id        Int    @id @default(autoincrement())
+  user_id   Int
+  branch_id Int
+  user      User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  branch    Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, branch_id])
+  @@index([user_id])
+  @@index([branch_id])
+}
+
+model AdminDepartmentRestriction {
+  id            Int        @id @default(autoincrement())
+  user_id       Int
+  department_id Int
+  user          User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  department    Department @relation(fields: [department_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, department_id])
+  @@index([user_id])
+  @@index([department_id])
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entity_type String
+  entity_name String
+  details     String?  @db.Text
+  user_id     Int?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([createdAt])
+  @@index([entity_type])
+}
+
+// ==========================================
+// Phase 3 & 4 New Models
+// ==========================================
+
+model EmployeeGradeHistory {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  grade_id       Int
+  effective_from DateTime
+  effective_to   DateTime?
+  remarks        String?   @db.Text
+  assigned_by    Int? // User ID who assigned it
+  status         String    @default("Active") // Active or Closed
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user  User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  grade EmployeeGrade @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([grade_id])
+}
+
+model ParkingSlot {
+  id             Int      @id @default(autoincrement())
+  slot_number    String   @unique
+  user_id        Int?     @unique // One slot per user
+  vehicle_number String?
+  access_type    String   @default("QR") // "QR" or "Sticker"
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+}
+
+model EmergencyNumber {
+  id           Int      @id @default(autoincrement())
+  contact_name String
+  number       String
+  type         String   @default("Medical") // "Medical", "Security", "Fire", "Other"
+  status       String   @default("Active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WhatsAppAlert {
+  id               Int      @id @default(autoincrement())
+  alert_name       String
+  trigger_event    String
+  recipient_type   String   @default("Individual")
+  message_template String   @db.Text
+  status           String   @default("Active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model IdCardTemplate {
+  id            Int      @id @default(autoincrement())
+  template_name String
+  template_type String   @default("Employee") // Employee, Contractor, Visitor
+  branch_id     Int?
+  department_id Int?
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  branch     Branch?     @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  department Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+
+  @@index([branch_id])
+  @@index([department_id])
+}
+
+model DailyAttendanceEmail {
+  id             Int      @id @default(autoincrement())
+  report_name    String
+  recipient_type String   @default("Manager")
+  filter_value   String?
+  schedule_time  String
+  email_template String?  @db.Text
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CompanySetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// Phase 5: Attendance Models
+// ==========================================
+
+model Shift {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  start_time          String // HH:mm format
+  end_time            String // HH:mm format
+  grace_time_minutes  Int      @default(0)
+  half_day_min_hours  Float    @default(4.0)
+  full_day_min_hours  Float    @default(8.0)
+  break_duration_mins Int      @default(60) // Standard break duration
+  is_active           Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  users         User[]
+  siteEmployees SiteEmployee[]
+}
+
+model AttendanceRecord {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  date                DateTime  @db.Date // Only stores the YYYY-MM-DD
+  in_time             DateTime? // Full timestamp of punch in
+  out_time            DateTime? // Full timestamp of punch out
+  break_minutes       Int       @default(0) // Track literal break minutes taken
+  total_working_hours Float     @default(0.0)
+  late_by_minutes     Int       @default(0)
+  early_leaving_mins  Int       @default(0)
+  overtime_hours      Float     @default(0.0)
+
+  // Status: Present, Absent, Late, Half Day, Leave, WeekOff, Holiday, MissingPunch
+  status String @default("Absent")
+
+  // Source: Biometric, App, Web, Manual, Bulk
+  source  String  @default("Web")
+  remarks String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  breakLogs BreakLog[]
+
+  @@unique([user_id, date]) // One primary record per user per day
+  @@index([user_id])
+  @@index([date])
+  @@index([status])
+}
+
+model AttendanceRequest {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  // Types: MissingPunchOut, Overtime, BreakCorrection, WeekOffExchange, AttendanceModification
+  request_type String
+  // Optional linkage to a specific date/record
+  date         DateTime @db.Date
+
+  // Old/Requested Values Stored as JSON or simple fields for flexibility
+  requested_data Json // e.g. { "out_time": "18:00", ... }
+  reason         String @db.Text
+
+  // Tracking
+  status           String  @default("Pending") // Pending, Approved, Rejected
+  approver_id      Int?
+  approver_remarks String? @db.Text
+
+  createdAt  DateTime @default(now())
+  modifiedAt DateTime @updatedAt
+
+  user     User  @relation("RequestUser", fields: [user_id], references: [id], onDelete: Cascade)
+  approver User? @relation("RequestApprover", fields: [approver_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([approver_id])
+  @@index([status])
+}
+
+model Payroll {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  month        Int // 1-12
+  year         Int
+  basic_salary Float
+  allowances   Float     @default(0.0)
+  deductions   Float     @default(0.0)
+  net_salary   Float
+  status       String    @default("Pending") // Pending, Processed, Released
+  paid_at      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, month, year])
+  @@index([user_id])
+}
+
+// ==========================================
+// Phase 6: Employee Tracking Module
+// ==========================================
+
+model Geofence {
+  id            Int      @id @default(autoincrement())
+  name          String
+  latitude      String
+  longitude     String
+  radius        Int      @default(200) // meters
+  status        String   @default("Active") // Active, Inactive
+  punchRule     String   @default("inside_only") // inside_only, outside_with_reason
+  employeeCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TrackingConfig {
+  id               Int      @id @default(autoincrement())
+  user_id          Int      @unique
+  enabled          Boolean  @default(true)
+  frequency        Int      @default(15) // minutes
+  workingHoursOnly Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model TrackingLog {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  latitude     String
+  longitude    String
+  location     String? // Readable location name
+  status       String   @default("Working") // Working, Break, Field Visit, Offline
+  batteryLevel Int?
+  timestamp    DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([timestamp])
+  @@index([status])
+}
+
+model TrackingException {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  type        String // Late Punch, Geofence Violation, GPS Off, Internet Off, Unauthorized Movement
+  severity    String    @default("Medium") // Low, Medium, High, Critical
+  description String?   @db.Text
+  status      String    @default("Pending") // Pending, Approved, Rejected, Asked Reason
+  reason      String?   @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model DailyWork {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  work_date        DateTime  @db.Date
+  check_in_time    DateTime?
+  check_out_time   DateTime?
+  total_work_hours Float     @default(0.0)
+  total_distance   Float     @default(0.0)
+  tasks_completed  Int       @default(0)
+  break_time_mins  Int       @default(0)
+  work_type        String    @default("Field") // Office, Field
+  status           String    @default("Pending") // Pending, Approved, Rejected, Correction Requested
+  admin_remark     String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user       User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  activities WorkActivity[]
+
+  @@unique([user_id, work_date])
+  @@index([user_id])
+  @@index([work_date])
+  @@index([status])
+}
+
+model WorkActivity {
+  id            Int      @id @default(autoincrement())
+  daily_work_id Int
+  activity_time DateTime @default(now())
+  latitude      String?
+  longitude     String?
+  activity_type String // Check In, Client Visit, Lunch Break, Field Visit, Check Out, etc.
+  location      String?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  dailyWork DailyWork @relation(fields: [daily_work_id], references: [id], onDelete: Cascade)
+
+  @@index([daily_work_id])
+}
+
+// ==========================================
+// Phase 7: Visit Management Module
+// ==========================================
+
+model Visit {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  date           DateTime @db.Date
+  client_name    String
+  client_contact String?
+  company_name   String?
+  country        String?
+  state          String?
+  city           String?
+  area           String?
+  address        String?  @db.Text
+  purpose        String?  @db.Text
+  priority_level String   @default("Medium") // High, Medium, Low
+  remarks        String?  @db.Text
+
+  // Status: Draft, Planned, Checked-In, Completed, Cancelled, Pending Approval
+  status String @default("Draft")
+
+  // Check-In Data
+  check_in_time      DateTime?
+  check_in_latitude  String?
+  check_in_longitude String?
+  check_in_photo_url String?
+
+  // Check-Out Data
+  check_out_time         DateTime?
+  check_out_latitude     String?
+  check_out_longitude    String?
+  work_summary           String?   @db.Text
+  next_follow_up_date    DateTime? @db.Date
+  document_url           String?
+  customer_signature_url String?
+
+  // Approval Data
+  approver_id       Int?
+  approval_status   String? // Approved, Rejected, Reson Requested
+  approval_comments String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User  @relation("VisitUser", fields: [user_id], references: [id], onDelete: Cascade)
+  approver User? @relation("VisitApprover", fields: [approver_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([date])
+  @@index([status])
+}
+
+// ==========================================
+// Phase 8: Payroll Module
+// ==========================================
+
+model EarningDeductionType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  type        String // "Earning" or "Deduction"
+  taxable     Boolean  @default(false)
+  description String?  @db.Text
+  status      String   @default("Active") // Active / Inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  salaryGroupComponents SalaryGroupComponent[]
+}
+
+model SalaryGroup {
+  id                Int    @id @default(autoincrement())
+  name              String @unique
+  payroll_frequency String @default("Monthly") // Monthly, Weekly, Bi-Weekly
+  working_days_type String @default("Calendar Days") // Calendar Days, Working Days
+  salary_calc_type  String @default("Per Day") // Per Day, Per Hour, Fixed
+
+  // Extra Day / Hours Payout Formulas (stored as JSON)
+  payout_formulas Json? // { weekDays: 1, weekOff: 0.5, holidays: 2 }
+
+  // Salary Slip Display Settings (stored as JSON — ~30 toggles)
+  slip_display_settings Json?
+
+  // Common Settings (stored as JSON)
+  common_settings Json?
+
+  // Salary Calculation Rules (stored as JSON per calc type)
+  calculation_rules Json?
+
+  // Incentive Settings
+  incentive_settings Json?
+
+  employee_count Int      @default(0)
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  components   SalaryGroupComponent[]
+  employeeCTCs EmployeeCTC[]
+  oldGroupLogs SalaryGroupChangeLog[] @relation("OldGroup")
+  newGroupLogs SalaryGroupChangeLog[] @relation("NewGroup")
+}
+
+model SalaryGroupComponent {
+  id                        Int   @id @default(autoincrement())
+  salary_group_id           Int
+  earning_deduction_type_id Int
+  amount                    Float @default(0)
+
+  salaryGroup          SalaryGroup          @relation(fields: [salary_group_id], references: [id], onDelete: Cascade)
+  earningDeductionType EarningDeductionType @relation(fields: [earning_deduction_type_id], references: [id], onDelete: Cascade)
+
+  @@unique([salary_group_id, earning_deduction_type_id])
+  @@index([salary_group_id])
+  @@index([earning_deduction_type_id])
+}
+
+model IncentiveType {
+  id                 Int      @id @default(autoincrement())
+  name               String   @unique
+  incentive_type     String // Sales Based, Attendance Based, Performance Based, Target Based, Manual
+  calculation_method String // Fixed Amount, Percentage of Salary, Percentage of Sales, Per Order / Per Task
+  applicable_on      String // Individual Employee, Department, Sales Team, Entire Company
+  description        String?  @db.Text
+  status             String   @default("Active") // Active, Inactive
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  employeeIncentives EmployeeIncentiveDetail[]
+}
+
+model GratuitySetting {
+  id                        Int      @id @default(autoincrement())
+  enabled                   Boolean  @default(false)
+  min_service_years         Int      @default(5)
+  formula                   String   @default("(Last Drawn Salary * 15 * Number of Completed Years) / 26")
+  included_components       Json? // Array of strings/IDs: ["Basic", "DA"]
+  max_limit                 Float    @default(2000000)
+  round_off                 Boolean  @default(true)
+  applicable_on_resignation Boolean  @default(true)
+  auto_calculate_fnf        Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model EmployeeCTC {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  salary_group_id     Int
+  salary_type         String // Fixed Per Month, Fixed Per Day, etc.
+  gross_salary        Float
+  increment_remark    String?   @db.Text
+  start_date          DateTime  @db.Date
+  next_increment_date DateTime? @db.Date
+  status              String    @default("Current") // Current, Previous
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user        User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  salaryGroup SalaryGroup @relation(fields: [salary_group_id], references: [id], onDelete: Cascade)
+
+  salarySlips SalarySlip[]
+
+  @@index([user_id])
+  @@index([salary_group_id])
+}
+
+model SalarySlip {
+  id              Int    @id @default(autoincrement())
+  user_id         Int
+  employee_ctc_id Int
+  branch_id       Int?
+  department_id   Int?
+  month           Int // 1-12
+  year            Int
+  salary_type     String // Fixed, Per Day
+
+  month_working_days    Int
+  employee_working_days Float
+  paid_leaves           Float @default(0)
+  unpaid_leaves         Float @default(0)
+  total_leaves          Float @default(0)
+  paid_holidays         Int   @default(0)
+  paid_week_offs        Int   @default(0)
+  extra_days            Float @default(0)
+
+  joining_net_salary   Float
+  joining_gross_salary Float
+  this_month_gross     Float
+  per_day_salary       Float
+  per_day_extra        Float @default(0)
+
+  total_earnings   Float
+  total_deductions Float
+  net_salary       Float
+
+  salary_mode String // Bank Transfer, Cheque, Cash
+  status      String  @default("Generated") // Generated, Published, Draft
+  is_shared   Boolean @default(false)
+  description String? @db.Text
+
+  generated_by Int?
+  updated_by   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  employeeCtc EmployeeCTC      @relation(fields: [employee_ctc_id], references: [id], onDelete: Cascade)
+  items       SalarySlipItem[]
+
+  @@unique([user_id, month, year])
+  @@index([user_id])
+  @@index([employee_ctc_id])
+  @@index([month, year])
+  @@index([status])
+}
+
+model SalarySlipItem {
+  id             Int    @id @default(autoincrement())
+  salary_slip_id Int
+  name           String
+  amount         Float
+  type           String // Earning, Deduction
+  category       String @default("CTC") // CTC, Advance, Loan, Penalty, Manual
+
+  salarySlip SalarySlip @relation(fields: [salary_slip_id], references: [id], onDelete: Cascade)
+
+  @@index([salary_slip_id])
+}
+
+model SalaryGenerationLog {
+  id           Int      @id @default(autoincrement())
+  action_type  String // Individual, Bulk
+  status       String // Success, Partial, Failed
+  month        Int
+  year         Int
+  details      Json? // Summary of counts, errors
+  processed_by Int?
+  createdAt    DateTime @default(now())
+
+  user User? @relation(fields: [processed_by], references: [id], onDelete: SetNull)
+
+  @@index([processed_by])
+  @@index([createdAt])
+}
+
+// ==========================================
+// Advanced Payroll Modules (8-12)
+// ==========================================
+
+model OtherEarningDeduction {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  name         String
+  type         String // Earning, Deduction
+  amount       Float
+  percentage   Float? // Optional: percentage of CTC/Basic
+  description  String?  @db.Text
+  month        Int
+  year         Int
+  is_recurring Boolean  @default(false)
+  status       String   @default("Active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([month, year])
+}
+
+model EmployeeIncentiveDetail {
+  id                Int       @id @default(autoincrement())
+  user_id           Int
+  incentive_type_id Int
+  amount            Float
+  description       String?   @db.Text
+  month             Int
+  year              Int
+  status            String    @default("Pending") // Pending, Approved, Paid, Rejected
+  added_by          Int?
+  approved_by       Int?
+  approved_at       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user          User          @relation("EmployeeIncentive", fields: [user_id], references: [id], onDelete: Cascade)
+  incentiveType IncentiveType @relation(fields: [incentive_type_id], references: [id], onDelete: Cascade)
+  addedBy       User?         @relation("ApproverIncentive", fields: [added_by], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([month, year])
+}
+
+model FFSettlement {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  resignation_date DateTime  @db.Date
+  last_working_day DateTime  @db.Date
+  status           String    @default("Pending") // Pending, Settled, Cancelled
+  total_earnings   Float     @default(0)
+  total_deductions Float     @default(0)
+  net_settlement   Float     @default(0)
+  payment_mode     String? // Bank Transfer, Cheque, Cash
+  remarks          String?   @db.Text
+  processed_by     Int?
+  settled_at       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user  User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items FFSettlementItem[]
+
+  @@index([user_id])
+}
+
+model FFSettlementItem {
+  id               Int    @id @default(autoincrement())
+  ff_settlement_id Int
+  name             String
+  amount           Float
+  type             String // Earning, Deduction
+
+  ffSettlement FFSettlement @relation(fields: [ff_settlement_id], references: [id], onDelete: Cascade)
+
+  @@index([ff_settlement_id])
+}
+
+model EmployeeBankDetail {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  bank_name           String
+  bank_branch         String
+  account_number      String
+  account_type        String   @default("Saving")
+  ifsc_code           String
+  account_holder_name String
+  pan_no              String?
+  crn_no              String?
+  esic_no             String?
+  pf_no               String?
+  uan_no              String?
+  micr_code           String?
+  insurance_no        String?
+  is_primary          Boolean  @default(false)
+  status              String   @default("Active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model SalaryGroupChangeLog {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  old_group_id   Int
+  new_group_id   Int
+  reason         String?  @db.Text
+  effective_date DateTime @default(now())
+  changed_by     Int?
+  createdAt      DateTime @default(now())
+
+  user     User        @relation("UserGroupLogs", fields: [user_id], references: [id], onDelete: Cascade)
+  admin    User?       @relation("AdminGroupLogs", fields: [changed_by], references: [id], onDelete: SetNull)
+  oldGroup SalaryGroup @relation("OldGroup", fields: [old_group_id], references: [id], onDelete: Cascade)
+  newGroup SalaryGroup @relation("NewGroup", fields: [new_group_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+// ==========================================
+// Phase 9: Tax Exemption Module
+// ==========================================
+
+// -- Tax Regimes --
+model EmployeeTaxRegime {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  financial_year     String // e.g., "2025-26"
+  tax_regime         String   @default("Not Assigned") // Old, New, Not Assigned
+  metro_type         String   @default("Non-Metro") // Metro, Non-Metro
+  declaration_status String   @default("Not Submitted") // Submitted, Pending, Not Submitted
+  lock_status        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, financial_year])
+  @@index([user_id])
+}
+
+// -- TDS Rules --
+model TdsGlobalRule {
+  id                   Int      @id @default(autoincrement())
+  financial_year       String   @unique
+  min_ctc_new_regime   Float
+  min_ctc_old_regime   Float
+  default_cycle        String // Monthly, Quarterly, Year-End
+  auto_apply_ctc_rules Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model EmployeeTdsRule {
+  id                   Int      @id @default(autoincrement())
+  user_id              Int
+  financial_year       String
+  deduction_rule       String // Monthly, Quarterly, Year-End
+  estimated_yearly_tds Float    @default(0)
+  status               String   @default("Active") // Active, Not Configured, Locked
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, financial_year])
+  @@index([user_id])
+}
+
+// -- Tax Benefits (Categories & SubCategories) --
+model TaxBenefitCategory {
+  id                Int      @id @default(autoincrement())
+  category_name     String
+  section_code      String   @unique
+  max_limit         Float    @default(0)
+  applicable_regime String // Old, New, Both
+  financial_year    String // e.g "2025-26"
+  description       String?  @db.Text
+  status            String   @default("Active") // Active, Inactive
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subCategories TaxBenefitSubCategory[]
+  taxDocuments  TaxBenefitDocument[]
+}
+
+model TaxBenefitSubCategory {
+  id                Int      @id @default(autoincrement())
+  category_id       Int
+  sub_category_name String
+  code              String   @unique
+  max_limit         Float    @default(0)
+  proof_required    Boolean  @default(false)
+  declaration_type  String // Monthly, Yearly
+  applicable_regime String // Old, New, Both
+  description       String?  @db.Text
+  status            String   @default("Active") // Active, Inactive
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  category     TaxBenefitCategory   @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  taxDocuments TaxBenefitDocument[]
+
+  @@index([category_id])
+}
+
+// 1. Income Tax Slabs
+model IncomeTaxSlab {
+  id             Int      @id @default(autoincrement())
+  financial_year String
+  tax_regime     String // Old, New
+  slab_type      String // Individual, Senior Citizen, Company
+  from_amount    Float
+  to_amount      Float? // null implies "Above"
+  tax_percentage Float
+  status         String   @default("Active")
+  is_locked      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// 2. Tax Benefit Documents (Workflow for Active/Pending/Rejected)
+model TaxBenefitDocument {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  category_id      Int
+  sub_category_id  Int
+  financial_year   String
+  declared_amount  Float
+  proof_url        String?   @db.Text
+  status           String    @default("Pending") // Pending, Under Review, Approved, Rejected
+  rejection_reason String?   @db.Text
+  submitted_date   DateTime  @default(now())
+  action_date      DateTime?
+  action_by_id     Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user        User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category    TaxBenefitCategory    @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  subCategory TaxBenefitSubCategory @relation(fields: [sub_category_id], references: [id], onDelete: Cascade)
+}
+
+// 3. Other Income / Losses
+model OtherIncomeLoss {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  financial_year String
+  type           String // Income, Loss
+  source         String // e.g., Freelance, Rent Income
+  amount         Float
+  description    String?  @db.Text
+  proof_url      String?  @db.Text
+  status         String   @default("Pending") // Pending, Approved, Rejected
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+// 4. TDS Challan & Paid Summary
+model TdsChallan {
+  id             Int      @id @default(autoincrement())
+  financial_year String
+  month          Int
+  tds_type       String   @default("TDS")
+  payment_mode   String // Online, Offline
+  bank_name      String?
+  challan_date   DateTime
+  total_amount   Float
+  bsr_code       String?
+  cin_no         String?
+  status         String   @default("Generated") // Generated, Paid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  summaries TdsPaidSummary[]
+}
+
+model TdsPaidSummary {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  challan_id     Int
+  financial_year String
+  tds_amount     Float
+  deposit_date   DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user    User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  challan TdsChallan @relation(fields: [challan_id], references: [id], onDelete: Cascade)
+}
+
+// 5. Form 12B (Previous Employer)
+model Form12BDetail {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  financial_year     String
+  previous_company   String
+  tan_no             String?
+  period_from        DateTime
+  period_to          DateTime
+  gross_salary       Float    @default(0)
+  exemptions         Float    @default(0)
+  professional_tax   Float    @default(0)
+  standard_deduction Float    @default(0)
+  other_deductions   Float    @default(0)
+  tds_deducted       Float    @default(0)
+  other_income       Float    @default(0)
+  status             String   @default("Draft")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+// 6. Form 16 Tracking
+model Form16Document {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  financial_year String
+  status         String    @default("Pending") // Pending, Generated, Sent
+  pdf_url        String?
+  generated_date DateTime?
+  sent_date      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+// 7. Salary Hold Requests
+model SalaryHoldRequest {
+  id                Int      @id @default(autoincrement())
+  employee_id       Int
+  reporting_user_id Int
+  month             Int
+  year              Int
+  start_date        DateTime
+  end_date          DateTime
+  reason            String?  @db.Text
+  status            String   @default("Pending") // Pending, Approved, Rejected, Processed
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  employee      User @relation("EmployeeHoldRequests", fields: [employee_id], references: [id], onDelete: Cascade)
+  reportingUser User @relation("ReportingUserHoldRequests", fields: [reporting_user_id], references: [id], onDelete: Cascade)
+}
+
+// ==========================================
+// Phase 9: Work Allocation System
+// ==========================================
+
+model WorkCategory {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  code          String   @unique
+  priority      String   @default("Medium") // High, Medium, Low
+  status        String   @default("Active") // Active, Inactive
+  sla_hours     Int      @default(24) // Allow flexible duration
+  description   String?  @db.Text
+  created_by_id Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy User? @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+
+  allocations WorkAllocation[]
+
+  @@index([created_by_id])
+}
+
+model WorkAllocationAccess {
+  id                    Int      @id @default(autoincrement())
+  assign_by_id          Int
+  assign_to_id          Int
+  category_ids          Json // Array of WorkCategory IDs allowed
+  access_type           String   @default("Full") // Full, Limited, Restricted
+  max_task_per_day      Int      @default(0) // 0 means no limit
+  max_task_per_employee Int      @default(0) // 0 means no limit
+  allow_reassign        Boolean  @default(false)
+  approval_required     Boolean  @default(false)
+  status                String   @default("Active") // Active, Inactive
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  assignBy User @relation("AccessGivenBy", fields: [assign_by_id], references: [id], onDelete: Cascade)
+  assignTo User @relation("AccessGivenTo", fields: [assign_to_id], references: [id], onDelete: Cascade)
+
+  @@index([assign_by_id])
+  @@index([assign_to_id])
+}
+
+model WorkAllocation {
+  id              Int       @id @default(autoincrement())
+  task_id         String    @unique
+  category_id     Int
+  title           String
+  description     String?   @db.Text
+  assigned_by_id  Int
+  assigned_to_id  Int
+  priority        String    @default("Medium") // High, Medium, Low
+  status          String    @default("Pending") // Pending, In Progress, Completed, Rejected
+  start_date      DateTime  @db.Date
+  due_date        DateTime  @db.Date
+  completion_date DateTime? @db.Date
+  progress        Int       @default(0)
+  delay_flag      Boolean   @default(false)
+  attachments     Json? // Array of URLs
+  comments        Json? // Arrays of comment objects
+
+  // Report Requirements
+  project_sr_no          String?
+  site                   String?
+  location               String?
+  branch_id              Int?
+  department_id          Int?
+  hod_id                 Int?
+  hod_remark             String?   @db.Text
+  engineer_status        String?
+  engineer_remark        String?   @db.Text
+  completion_remark      String?   @db.Text
+  authorized_date_by_hod DateTime? @db.Date
+  authorized_remark      String?   @db.Text
+  remark_from_hod        String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category     WorkCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  assignedBy   User         @relation("AssignedBy", fields: [assigned_by_id], references: [id], onDelete: Cascade)
+  assignedTo   User         @relation("AssignedTo", fields: [assigned_to_id], references: [id], onDelete: Cascade)
+  hodReference User?        @relation("HodReference", fields: [hod_id], references: [id], onDelete: SetNull)
+
+  branch     Branch?     @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  department Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+
+  @@index([category_id])
+  @@index([assigned_by_id])
+  @@index([assigned_to_id])
+  @@index([status])
+  @@index([due_date])
+  @@index([branch_id])
+  @@index([department_id])
+}
+
+// ==========================================
+// Phase 10: Site Management
+// ==========================================
+
+model Site {
+  id                   Int       @id @default(autoincrement())
+  name                 String
+  contact_name         String
+  mobile_no            String
+  email                String?
+  area                 String
+  address              String?   @db.Text
+  city_state           String?
+  revenue_share_pct    Float     @default(0.0)
+  commission_bearer    String    @default("Company") // Company, Client, Both
+  status               String    @default("Active") // Active, Inactive
+  agreement_start      DateTime? @db.Date
+  agreement_end        DateTime? @db.Date
+  document_url         String?
+  branch_id            Int
+  department_id        Int?
+  reporting_manager_id Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branch           Branch      @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  department       Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+  reportingManager User?       @relation("SiteReportingManager", fields: [reporting_manager_id], references: [id], onDelete: SetNull)
+
+  siteEmployees SiteEmployee[]
+  sitePurchases SitePurchase[]
+
+  @@unique([name, mobile_no])
+  @@index([branch_id])
+  @@index([department_id])
+  @@index([reporting_manager_id])
+  @@index([status])
+}
+
+model SiteEmployee {
+  id        Int       @id @default(autoincrement())
+  site_id   Int
+  user_id   Int
+  role      String    @default("Worker")
+  shift_id  Int?
+  join_date DateTime  @db.Date
+  exit_date DateTime? @db.Date
+  status    String    @default("Active") // Active, Reassigned, Terminated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site  Site   @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  user  User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  shift Shift? @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+
+  siteAttendances SiteAttendance[]
+
+  @@unique([site_id, user_id])
+  @@index([user_id])
+  @@index([site_id])
+  @@index([shift_id])
+  @@index([status])
+}
+
+model SiteAttendance {
+  id               Int       @id @default(autoincrement())
+  site_employee_id Int
+  date             DateTime  @db.Date
+  punch_in         DateTime?
+  punch_out        DateTime?
+  working_hours    Float     @default(0.0)
+  overtime_hours   Float     @default(0.0)
+  late_minutes     Int       @default(0)
+  status           String    @default("Pending") // Present, Absent, Late, Missing Punch
+  remark           String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  siteEmployee SiteEmployee @relation(fields: [site_employee_id], references: [id], onDelete: Cascade)
+
+  @@unique([site_employee_id, date])
+  @@index([site_employee_id])
+  @@index([date])
+  @@index([status])
+}
+
+model SitePurchase {
+  id           Int      @id @default(autoincrement())
+  site_id      Int
+  item_name    String
+  vendor_name  String
+  quantity     Float    @default(0.0)
+  unit_price   Float    @default(0.0)
+  total_amount Float    @default(0.0)
+  date         DateTime @db.Date
+  bill_url     String?
+  status       String   @default("Approved") // Pending, Approved, Rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  site Site @relation(fields: [site_id], references: [id], onDelete: Cascade)
+
+  @@index([site_id])
+  @@index([date])
+}
+
+// ============================================================
+// PMS – Performance Matrix System
+// ============================================================
+
+model PmsDimension {
+  id          Int     @id @default(autoincrement())
+  name        String
+  code        String  @unique
+  description String? @db.Text
+  status      String  @default("Active") // Active | Inactive
+
+  createdById Int?
+  createdBy   User? @relation("PmsDimensionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subGroupLinks PmsDimSubGroupDimension[]
+  evaluations   PmsEvaluation[]
+
+  @@index([status])
+}
+
+model PmsDimensionSubGroup {
+  id              Int     @id @default(autoincrement())
+  name            String
+  weightage_type  String  @default("Percentage") // Percentage | Fixed
+  total_weightage Float   @default(100.0)
+  description     String? @db.Text
+  status          String  @default("Active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dimensions PmsDimSubGroupDimension[]
+  pmsAssigns PmsAssign[]
+}
+
+// Many-to-Many join: SubGroup ↔ Dimension with individual weightage
+model PmsDimSubGroupDimension {
+  id          Int   @id @default(autoincrement())
+  subGroupId  Int
+  dimensionId Int
+  weightage   Float @default(0.0)
+
+  subGroup  PmsDimensionSubGroup @relation(fields: [subGroupId], references: [id], onDelete: Cascade)
+  dimension PmsDimension         @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+
+  @@unique([subGroupId, dimensionId])
+}
+
+model PmsScoreBand {
+  id         Int     @id @default(autoincrement())
+  from_score Float
+  to_score   Float
+  rating     String // Excellent | Good | Average | Poor | Outstanding
+  grade      String // A+ | A | B | C | D
+  remark     String? @db.Text
+  status     String  @default("Active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PmsAssign {
+  id          Int      @id @default(autoincrement())
+  pms_type    String // Weekly | Monthly | Quarterly | Annual
+  pms_date    DateTime @db.Date
+  status      String   @default("Active") // Active | Completed | Cancelled
+  description String?  @db.Text
+
+  branchId     Int?
+  departmentId Int?
+  subGroupId   Int?
+
+  branch     Branch?               @relation("PmsAssignBranch", fields: [branchId], references: [id], onDelete: SetNull)
+  department Department?           @relation("PmsAssignDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  subGroup   PmsDimensionSubGroup? @relation(fields: [subGroupId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedEmployees PmsAssignEmployee[]
+  evaluations       PmsEvaluation[]
+
+  @@index([pms_type])
+  @@index([pms_date])
+  @@index([status])
+}
+
+model PmsAssignEmployee {
+  id                Int    @id @default(autoincrement())
+  pmsAssignId       Int
+  userId            Int
+  evaluation_status String @default("Pending") // Pending | Self | Manager | Completed
+
+  pmsAssign PmsAssign @relation(fields: [pmsAssignId], references: [id], onDelete: Cascade)
+  user      User      @relation("PmsAssignEmployees", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pmsAssignId, userId])
+  @@index([evaluation_status])
+}
+
+model PmsEvaluation {
+  id             Int     @id @default(autoincrement())
+  pmsAssignId    Int
+  userId         Int // evaluated employee
+  dimensionId    Int
+  self_score     Float   @default(0.0)
+  manager_score  Float   @default(0.0)
+  final_score    Float   @default(0.0) // avg of self + manager, or manager only
+  weightage      Float   @default(0.0)
+  weighted_score Float   @default(0.0) // (final_score × weightage) / 100
+  remark         String? @db.Text
+  evaluator_type String  @default("Manager") // Self | Manager | Both
+  evaluatedById  Int?
+
+  pmsAssign   PmsAssign    @relation(fields: [pmsAssignId], references: [id], onDelete: Cascade)
+  user        User         @relation("PmsEvaluatedUser", fields: [userId], references: [id], onDelete: Cascade)
+  dimension   PmsDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  evaluatedBy User?        @relation("PmsEvaluatedBy", fields: [evaluatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pmsAssignId, userId, dimensionId])
+  @@index([pmsAssignId])
+  @@index([userId])
+}
+
+// =============================================
+// Employee Vehicles
+// =============================================
+
+model VehicleCategory {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String? @db.Text
+  status      String  @default("Active")
+
+  createdById Int?
+  createdBy   User? @relation("VehicleCategoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  vehicles EmployeeVehicle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmployeeVehicle {
+  id             Int      @id @default(autoincrement())
+  vehicle_name   String
+  vehicle_number String   @unique
+  vehicle_value  Float?   @default(0)
+  image_url_1    String?  @db.Text
+  image_url_2    String?  @db.Text
+  image_url_3    String?  @db.Text
+  status         String   @default("Active")
+  assigned_date  DateTime @default(now())
+
+  userId       Int
+  categoryId   Int
+  branchId     Int?
+  departmentId Int?
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   VehicleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  branch     Branch?         @relation("VehicleBranch", fields: [branchId], references: [id], onDelete: SetNull)
+  department Department?     @relation("VehicleDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([branchId])
+}
+
+// ==========================================
+// Phase 12: Idea Box Module
+// ==========================================
+
+model IdeaCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  status      String   @default("Active") // Active, Inactive
+  created_by  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator User?  @relation("IdeaCategoryCreatedBy", fields: [created_by], references: [id], onDelete: SetNull)
+  ideas   Idea[]
+
+  @@index([created_by])
+}
+
+model Idea {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  categoryId         Int
+  userId             Int
+  description        String    @db.Text
+  attachmentUrl      String?
+  expectedBenefit    String?   @db.Text // Cost saving, Time saving, Revenue growth, etc.
+  status             String    @default("Pending") // Pending, Under Review, Approved, Rejected, Implemented
+  approvalRemarks    String?   @db.Text
+  isAnonymous        Boolean   @default(false)
+  rewardPoints       Int       @default(0)
+  implementationDate DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  category IdeaCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User          @relation("IdeaSubmittedBy", fields: [userId], references: [id], onDelete: Cascade)
+  votes    IdeaVote[]
+  comments IdeaComment[]
+  rewards  IdeaReward[]
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model IdeaVote {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, userId])
+}
+
+model IdeaComment {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  userId    Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model IdeaReward {
+  id          Int      @id @default(autoincrement())
+  ideaId      Int
+  userId      Int
+  points      Int
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user User @relation("IdeaRewardReceivedBy", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ideaId])
+}
+
+// ==========================================
+// Phase 13: SOS Management Module
+// ==========================================
+
+model SosType {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  imageUrl        String?  @db.Text
+  validityMinutes Int      @default(60)
+  status          String   @default("Active") // Active, Inactive
+  isPredefined    Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  alerts SosAlert[]
+}
+
+model SosAlert {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  sosTypeId  Int
+  message    String?   @db.Text
+  imageUrl   String?   @db.Text // Proof photo
+  latitude   Float?
+  longitude  Float?
+  status     String    @default("Active") // Active, Resolved, Closed
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sosType SosType @relation(fields: [sosTypeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sosTypeId])
+  @@index([status])
+}
+
+// ==========================================
+// Phase 14: Holiday Management Module
+// ==========================================
+
+model Holiday {
+  id          Int      @id @default(autoincrement())
+  name        String
+  date        DateTime @db.Date
+  type        String   @default("Public") // Public, Company, Optional
+  description String?  @db.Text
+  status      String   @default("Active") // Active, Inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Branch multi-select stored as JSON array [1, 2, 5]
+  branchIds Json? @default("[]")
+
+  groups   HolidayInGroup[]
+  requests OptionalHolidayRequest[]
+
+  @@index([date])
+  @@index([type])
+}
+
+model HolidayGroup {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  holidays    HolidayInGroup[]
+  assignments HolidayGroupAssignment[]
+}
+
+model HolidayInGroup {
+  holidayId Int
+  groupId   Int
+  holiday   Holiday      @relation(fields: [holidayId], references: [id], onDelete: Cascade)
+  group     HolidayGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([holidayId, groupId])
+  @@index([holidayId])
+  @@index([groupId])
+}
+
+model HolidayGroupAssignment {
+  id           Int      @id @default(autoincrement())
+  groupId      Int
+  userId       Int?
+  departmentId Int?
+  createdAt    DateTime @default(now())
+
+  group      HolidayGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: SetNull) // Added relation to User needs to be reflected in User model too
+  department Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([groupId])
+  @@index([userId])
+  @@index([departmentId])
+}
+
+model OptionalHolidayRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  holidayId Int
+  status    String   @default("Pending") // Pending, Approved, Rejected
+  remarks   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holiday Holiday @relation(fields: [holidayId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([holidayId])
+  @@index([status])
+}
+
+// ==========================================
+// Phase 15: Mobile Device Bind Module
+// ==========================================
+
+model MobileDevice {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @unique
+  macAddress       String?
+  deviceId         String?
+  deviceName       String?
+  deviceModel      String?
+  osVersion        String?
+  lastLoginAt      DateTime?
+  status           String    @default("Unbound") // Bound, Unbound
+  isActive         Boolean   @default(true) // For Toggle (Active/Inactive)
+  isBindingEnabled Boolean   @default(true) // Whether strict binding is enforced for this user
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model DeviceChangeRequest {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  oldDeviceId   String?
+  oldDeviceName String?
+  newDeviceId   String
+  newDeviceName String?
+  reason        String    @db.Text
+  attachmentUrl String?
+  status        String    @default("Pending") // Pending, Approved, Rejected
+  adminRemarks  String?   @db.Text
+  approvedById  Int?
+  requestDate   DateTime  @default(now())
+  resolvedAt    DateTime?
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User? @relation("DeviceRequestApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ==========================================
+// Phase 14: Manage Chat Group Module
+// ==========================================
+
+model ChatGroup {
+  id             Int     @id @default(autoincrement())
+  name           String
+  icon           String? @db.Text
+  type           String  @default("Manual") // Auto Created, Manual
+  visibilityType String  @default("Public") // Private, Public (for Manual groups)
+
+  // Auto-Group Metadata
+  isAutoCreated    Boolean @default(false)
+  autoBranchId     Int?
+  autoDepartmentId Int?
+  autoZoneId       Int?
+  autoLevelId      Int?
+
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  ChatGroupMember[]
+  messages ChatMessage[]
+
+  @@index([type])
+  @@index([isAutoCreated])
+}
+
+model ChatGroupMember {
+  id         Int     @id @default(autoincrement())
+  groupId    Int
+  userId     Int
+  role       String  @default("Member") // Admin, Member
+  visibility Boolean @default(true) // If true, user can see group
+  status     String  @default("Active") // Active, Removed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId])
+}
+
+model ChatMessage {
+  id         Int     @id @default(autoincrement())
+  groupId    Int
+  senderId   Int
+  message    String? @db.Text
+  attachment String? @db.Text
+  type       String  @default("Text") // Text, Image, File, System
+  status     String  @default("Sent") // Sent, Delivered, Seen
+
+  isPinned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group  ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([senderId])
+}
+
+// ==========================================
+// Phase 16: Vendor Management Module
+// ==========================================
+
+model VendorCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  status      String   @default("Active") // Active, Inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subCategories VendorSubCategory[]
+  vendors       Vendor[]
+}
+
+model VendorSubCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?  @db.Text
+  status      String   @default("Active")
+  categoryId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category VendorCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  vendors  Vendor[]
+
+  @@unique([name, categoryId])
+}
+
+model Vendor {
+  id            Int     @id @default(autoincrement())
+  name          String
+  categoryId    Int
+  subCategoryId Int?
+  contactPerson String?
+  mobile        String
+  email         String?
+
+  // Business Details
+  gstNumber   String?
+  panNumber   String?
+  companyName String?
+
+  // Address Details
+  country     String?
+  state       String?
+  city        String?
+  area        String?
+  pincode     String?
+  fullAddress String? @db.Text
+
+  // Financial Details
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  paymentTerms  Int? // Credit Days
+
+  // Additional
+  status        String  @default("Active")
+  attachmentUrl String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category    VendorCategory     @relation(fields: [categoryId], references: [id])
+  subCategory VendorSubCategory? @relation(fields: [subCategoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([subCategoryId])
+  @@index([city])
+  @@index([status])
+}
+
+// ==========================================
+// Phase 9: Background Verification (BGV) Module
+// ==========================================
+
+model VerificationType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  status      String   @default("Active") // Active, Inactive
+  added_by    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  verifications BackgroundVerification[]
+
+  @@index([added_by])
+}
+
+model BackgroundVerification {
+  id                   Int    @id @default(autoincrement())
+  employee_id          Int
+  branch_id            Int?
+  department_id        Int?
+  verification_type_id Int
+  verification_way     String // Call, Email, Physical Visit, Document Verification
+
+  // Status: Verified, Pending, Failed, Visit Not Started
+  status String @default("Pending")
+
+  verified_by       Int?
+  verification_date DateTime?
+  document_url      Json? // Array of document URLs
+  remarks           String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee         User             @relation("VerificationEmployee", fields: [employee_id], references: [id], onDelete: Cascade)
+  verifier         User?            @relation("VerificationVerifier", fields: [verified_by], references: [id], onDelete: SetNull)
+  verificationType VerificationType @relation(fields: [verification_type_id], references: [id], onDelete: Cascade)
+  branch           Branch?          @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  department       Department?      @relation(fields: [department_id], references: [id], onDelete: SetNull)
+
+  @@index([employee_id])
+  @@index([verification_type_id])
+  @@index([status])
+  @@index([branch_id])
+  @@index([department_id])
+}
+
+// ==========================================
+// Phase 10: Visitors Module
+// ==========================================
+
+model VisitorSubType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  category  String // Interview, Delivery, Transport, Services, Others
+  status    String   @default("Active") // Active, Inactive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visitorLogs VisitorLog[]
+}
+
+model VisitorProfile {
+  id             Int      @id @default(autoincrement())
+  name           String
+  mobile         String   @unique
+  email          String?
+  company        String?
+  city           String?
+  photo_url      String?
+  is_blacklisted Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  visitorLogs VisitorLog[]
+
+  @@index([mobile])
+}
+
+model VisitorLog {
+  id             Int       @id @default(autoincrement())
+  visitor_id     Int
+  sub_type_id    Int?
+  employee_id    Int? // Employee whom to meet
+  branch_id      Int?
+  department_id  Int?
+  purpose        String?   @db.Text
+  in_time        DateTime  @default(now())
+  out_time       DateTime?
+  status         String    @default("Inside") // Inside, Checked-Out, Rejected, Cancelled
+  otp_verified   Boolean   @default(false)
+  vehicle_number String?
+  added_by       Int? // Admin/Guard who checked-in
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  visitor    VisitorProfile  @relation(fields: [visitor_id], references: [id], onDelete: Cascade)
+  subType    VisitorSubType? @relation(fields: [sub_type_id], references: [id], onDelete: SetNull)
+  employee   User?           @relation("EmployeeToMeet", fields: [employee_id], references: [id], onDelete: SetNull)
+  branch     Branch?         @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  department Department?     @relation(fields: [department_id], references: [id], onDelete: SetNull)
+
+  @@index([visitor_id])
+  @@index([employee_id])
+  @@index([status])
+  @@index([in_time])
+}
+
+model VisitorSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  type      String   @default("String") // String, Number, Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+// ==========================================
+// Phase 11: Complaints Module
+// ==========================================
+
+model ComplaintCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  sla_limit Int // Resolution time in hours
+  status    String   @default("Active") // Active, Inactive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  complaints Complaint[]
+}
+
+model Complaint {
+  id              Int       @id @default(autoincrement())
+  complaint_no    String    @unique // CMP-YYYY-XXXX
+  user_id         Int // Employee who raised it
+  category_id     Int
+  branch_id       Int?
+  department_id   Int?
+  title           String
+  description     String    @db.Text
+  priority        String    @default("Medium") // Low, Medium, High
+  status          String    @default("Open") // Open, In Progress, Closed, Re-Open
+  assigned_to     Int? // Admin/Manager ID
+  rating          Int? // 1-5 feedback
+  is_anonymous    Boolean   @default(false)
+  last_updated_at DateTime? @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User                  @relation("ComplaintEmployee", fields: [user_id], references: [id], onDelete: Cascade)
+  category    ComplaintCategory     @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  assignee    User?                 @relation("ComplaintAssignee", fields: [assigned_to], references: [id], onDelete: SetNull)
+  branch      Branch?               @relation(fields: [branch_id], references: [id], onDelete: SetNull)
+  department  Department?           @relation(fields: [department_id], references: [id], onDelete: SetNull)
+  comments    ComplaintComment[]
+  attachments ComplaintAttachment[]
+
+  @@index([user_id])
+  @@index([category_id])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ComplaintComment {
+  id           Int      @id @default(autoincrement())
+  complaint_id Int
+  user_id      Int
+  comment      String   @db.Text
+  is_internal  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaint_id], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([complaint_id])
+}
+
+model ComplaintAttachment {
+  id           Int      @id @default(autoincrement())
+  complaint_id Int
+  file_url     String
+  file_name    String
+  createdAt    DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaint_id], references: [id], onDelete: Cascade)
+
+  @@index([complaint_id])
+}
+
+model ComplaintEmail {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================
+// Discussion Forum Module
+// ============================================================
+
+model Discussion {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.LongText
+  created_by  Int
+  status      String   @default("Active") // Active, Closed, Deactivated
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation("DiscussionCreatedBy", fields: [created_by], references: [id], onDelete: Cascade)
+
+  targetsBranch DiscussionTargetBranch[]
+  targetsDept   DiscussionTargetDept[]
+  targetsUser   DiscussionTargetUser[]
+  comments      DiscussionComment[]
+  attachments   DiscussionAttachment[]
+  reactions     DiscussionReaction[]
+
+  @@index([created_by])
+  @@index([status])
+}
+
+model DiscussionTargetBranch {
+  id            Int @id @default(autoincrement())
+  discussion_id Int
+  branch_id     Int
+
+  discussion Discussion @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  branch     Branch     @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@index([discussion_id])
+  @@index([branch_id])
+}
+
+model DiscussionTargetDept {
+  id            Int @id @default(autoincrement())
+  discussion_id Int
+  department_id Int
+
+  discussion Discussion @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [department_id], references: [id], onDelete: Cascade)
+
+  @@index([discussion_id])
+  @@index([department_id])
+}
+
+model DiscussionTargetUser {
+  id            Int @id @default(autoincrement())
+  discussion_id Int
+  user_id       Int
+
+  discussion Discussion @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  user       User       @relation("DiscussionTargetUsers", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([discussion_id])
+  @@index([user_id])
+}
+
+model DiscussionComment {
+  id            Int      @id @default(autoincrement())
+  discussion_id Int
+  user_id       Int
+  parent_id     Int? // For threaded replies
+  comment       String   @db.LongText
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  discussion  Discussion             @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  user        User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent      DiscussionComment?     @relation("ThreadedComments", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies     DiscussionComment[]    @relation("ThreadedComments")
+  attachments DiscussionAttachment[]
+  reactions   DiscussionReaction[]
+
+  @@index([discussion_id])
+  @@index([user_id])
+  @@index([parent_id])
+}
+
+model DiscussionAttachment {
+  id            Int     @id @default(autoincrement())
+  file_url      String
+  file_name     String
+  file_type     String?
+  discussion_id Int?
+  comment_id    Int?
+
+  discussion Discussion?        @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment    DiscussionComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+
+  @@index([discussion_id])
+  @@index([comment_id])
+}
+
+model DiscussionReaction {
+  id            Int    @id @default(autoincrement())
+  discussion_id Int?
+  comment_id    Int?
+  user_id       Int
+  reaction      String // Emoji or reaction type (e.g., 'like', 'love', 'insightful')
+
+  discussion Discussion?        @relation(fields: [discussion_id], references: [id], onDelete: Cascade)
+  comment    DiscussionComment? @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([discussion_id])
+  @@index([comment_id])
+  @@index([user_id])
+}
+
+// ==========================================
+// Phase 12: Escalations Module
+// ==========================================
+
+model Escalation {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String    @db.Text
+  sender_id   Int
+  receiver_id Int?
+  branch_id   Int?
+  priority    String    @default("Medium") // Urgent, High, Medium, Low
+  status      String    @default("Open") // Open, In Progress, Closed
+  category    String?
+  reply_date  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sender   User    @relation("EscalationSender", fields: [sender_id], references: [id], onDelete: Cascade)
+  receiver User?   @relation("EscalationReceiver", fields: [receiver_id], references: [id], onDelete: SetNull)
+  branch   Branch? @relation("EscalationBranch", fields: [branch_id], references: [id], onDelete: SetNull)
+
+  attachments EscalationAttachment[]
+  replies     EscalationReply[]
+
+  @@index([sender_id])
+  @@index([receiver_id])
+  @@index([status])
+  @@index([priority])
+}
+
+model EscalationAttachment {
+  id            Int      @id @default(autoincrement())
+  escalation_id Int
+  file_url      String   @db.Text
+  name          String
+  file_type     String?
+  createdAt     DateTime @default(now())
+
+  escalation Escalation @relation(fields: [escalation_id], references: [id], onDelete: Cascade)
+
+  @@index([escalation_id])
+}
+
+model EscalationReply {
+  id            Int      @id @default(autoincrement())
+  escalation_id Int
+  user_id       Int
+  message       String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  escalation Escalation @relation(fields: [escalation_id], references: [id], onDelete: Cascade)
+  user       User       @relation("EscalationReplyUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  attachments EscalationReplyAttachment[]
+
+  @@index([escalation_id])
+  @@index([user_id])
+}
+
+model EscalationReplyAttachment {
+  id                  Int      @id @default(autoincrement())
+  escalation_reply_id Int
+  file_url            String   @db.Text
+  name                String
+  file_type           String?
+  createdAt           DateTime @default(now())
+
+  reply EscalationReply @relation(fields: [escalation_reply_id], references: [id], onDelete: Cascade)
+
+  @@index([escalation_reply_id])
+}
+
+// ==========================================
+// Phase 13: Meeting Module
+// ==========================================
+
+model Meeting {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String?  @db.Text
+  meeting_type    String   @default("Offline") // Online, Offline
+  meeting_date    DateTime @db.Date
+  start_time      String // HH:mm
+  end_time        String // HH:mm
+  organizer_id    Int
+  location        String? // for offline
+  meeting_link    String?  @db.Text // for online
+  priority        String   @default("Medium") // Low, Medium, High
+  status          String   @default("Scheduled") // Scheduled, Ongoing, Completed, Cancelled
+  reminder_before Int?     @default(30) // minutes
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organizer    User                 @relation("MeetingOrganizer", fields: [organizer_id], references: [id])
+  participants MeetingParticipant[]
+  attachments  MeetingAttachment[]
+  mom          MeetingMOM?
+  actionItems  MeetingActionItem[]
+
+  @@index([organizer_id])
+  @@index([meeting_date])
+  @@index([status])
+}
+
+model MeetingParticipant {
+  id                Int       @id @default(autoincrement())
+  meeting_id        Int
+  user_id           Int
+  attendance_status String    @default("Absent") // Present, Absent, Late
+  join_time         DateTime?
+  leave_time        DateTime?
+  createdAt         DateTime  @default(now())
+
+  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+  user    User    @relation("MeetingParticipantUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([meeting_id, user_id])
+  @@index([meeting_id])
+  @@index([user_id])
+}
+
+model MeetingMOM {
+  id                Int      @id @default(autoincrement())
+  meeting_id        Int      @unique
+  discussion_points String?  @db.LongText
+  decisions         String?  @db.LongText
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+
+  @@index([meeting_id])
+}
+
+model MeetingActionItem {
+  id          Int       @id @default(autoincrement())
+  meeting_id  Int
+  assigned_to Int
+  description String    @db.Text
+  deadline    DateTime? @db.Date
+  status      String    @default("Pending") // Pending, In Progress, Completed
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  meeting  Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+  assignee User    @relation("MeetingActionAssignee", fields: [assigned_to], references: [id], onDelete: Cascade)
+
+  @@index([meeting_id])
+  @@index([assigned_to])
+  @@index([status])
+}
+
+model MeetingAttachment {
+  id         Int      @id @default(autoincrement())
+  meeting_id Int
+  file_url   String   @db.Text
+  name       String
+  file_type  String?
+  createdAt  DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meeting_id], references: [id], onDelete: Cascade)
+
+  @@index([meeting_id])
+}
+
+model MeetingSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,239 @@
+.el-container {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: #0f172a;
+    font-family: 'Inter', sans-serif;
+}
+
+.el-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.el-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.el-header p {
+    color: #64748b;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.el-header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+/* Hierarchy Tree Chart */
+.el-tree-card {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+
+.el-tree-card h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0f172a;
+}
+
+.el-tree-container {
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.el-tree {
+    padding-left: 20px;
+    list-style-type: none;
+    border-left: 2px solid #cbd5e1;
+    margin-left: 10px;
+}
+
+.el-node {
+    margin: 12px 0;
+    position: relative;
+}
+
+.el-node::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: -20px;
+    width: 20px;
+    height: 2px;
+    background: #cbd5e1;
+}
+
+.el-node-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.el-node-icon {
+    color: #3b82f6;
+    background: #ffffff;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.el-node-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* List Layout */
+.el-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 24px;
+    align-items: start;
+}
+
+.el-list-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+}
+
+.el-list-card h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 12px;
+}
+
+.el-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.el-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid #f1f5f9;
+    border-radius: 10px;
+    transition: all 0.2s;
+    background: #ffffff;
+}
+
+.el-item:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.el-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+}
+
+.el-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dbeafe;
+}
+
+.el-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.el-details p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.el-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.el-badge.root {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+.el-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.4;
+    transition: opacity 0.2s;
+}
+
+.el-item:hover .el-actions {
+    opacity: 1;
+}
+
+.el-form-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f1f5f9;
+    position: sticky;
+    top: 24px;
+}
+
+.el-form-card h2 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 12px;
+}
+
+@media (max-width: 1024px) {
+    .el-layout {
+        grid-template-columns: 1fr;
+    }
+}

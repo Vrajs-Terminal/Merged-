@@ -1,0 +1,41 @@
+/* Standardized Attendance Tracking — Premium Grid */
+
+.attendance-grid-container {
+   /* Style via index.css */
+}
+
+/* Sticky Headers & Columns */
+.grid-scroll-wrapper {
+    overflow-x: auto;
+    max-height: calc(100vh - 300px);
+}
+
+.attendance-table-fixed {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.sticky-col-left {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    box-shadow: 4px 0 8px rgba(0,0,0,0.05);
+}
+
+.day-col-header {
+    min-width: 40px;
+    padding: 12px 4px;
+}
+
+/* Legend Styling */
+.legend-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}

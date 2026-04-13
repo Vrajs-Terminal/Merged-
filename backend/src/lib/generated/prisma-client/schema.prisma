@@ -1,0 +1,1832 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "."
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-1.1.x", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                          Int                          @id @default(autoincrement())
+  name                        String
+  email                       String                       @unique
+  password_hash               String
+  role                        String                       @default("Admin")
+  branch_id                   Int?
+  department_id               Int?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  employee_level_id           Int?
+  employee_grade_id           Int?
+  resetPasswordOtp            String?
+  resetPasswordOtpExpiry      DateTime?
+  shift_id                    Int?
+  designation_id              Int?
+  permissions                 Json?
+  activityLogs                ActivityLog[]
+  adminBranchRestrictions     AdminBranchRestriction[]
+  adminDepartmentRestrictions AdminDepartmentRestriction[]
+  attendanceRecords           AttendanceRecord[]
+  approvedRequests            AttendanceRequest[]          @relation("RequestApprover")
+  attendanceRequests          AttendanceRequest[]          @relation("RequestUser")
+  breakLogs                   BreakLog[]
+  chatGroups                  ChatGroupMember[]
+  chatMessagesSent            ChatMessage[]
+  dailyWorks                  DailyWork[]
+  deviceChangeRequests        DeviceChangeRequest[]
+  approvedDocs                DocumentRequest[]            @relation("DocumentApprover")
+  documentRequests            DocumentRequest[]            @relation("DocumentRequestUser")
+  bankDetails                 EmployeeBankDetail[]
+  employeeCTCs                EmployeeCTC[]
+  employeeGradeHistory        EmployeeGradeHistory[]
+  approvedIncentives          EmployeeIncentiveDetail[]    @relation("ApproverIncentive")
+  incentiveDetails            EmployeeIncentiveDetail[]    @relation("EmployeeIncentive")
+  EmployeeTaxRegime           EmployeeTaxRegime[]
+  EmployeeTdsRule             EmployeeTdsRule[]
+  employeeVehicles            EmployeeVehicle[]
+  escalationsReceived         Escalation[]                 @relation("EscalationReceiver")
+  escalationsSent             Escalation[]                 @relation("EscalationSender")
+  escalationReplies           EscalationReply[]
+  expenses                    ExpenseRequest[]
+  ffSettlements               FFSettlement[]
+  form12BDetails              Form12BDetail[]
+  form16Documents             Form16Document[]
+  ideasSubmitted              Idea[]                       @relation("IdeaSubmittedBy")
+  ideaCategoriesCreated       IdeaCategory[]               @relation("IdeaCategoryCreatedBy")
+  ideaComments                IdeaComment[]
+  ideaRewardsReceived         IdeaReward[]                 @relation("IdeaRewardReceivedBy")
+  ideaVotes                   IdeaVote[]
+  mobileDevice                MobileDevice?
+  optionalHolidayRequests     OptionalHolidayRequest[]
+  otherEarningsDeductions     OtherEarningDeduction[]
+  otherIncomeLosses           OtherIncomeLoss[]
+  parkingSlot                 ParkingSlot?
+  payrolls                    Payroll[]
+  pmsAssignedEmployees        PmsAssignEmployee[]          @relation("PmsAssignEmployees")
+  pmsDimensionsCreated        PmsDimension[]               @relation("PmsDimensionCreatedBy")
+  pmsEvaluationsGiven         PmsEvaluation[]              @relation("PmsEvaluatedBy")
+  pmsEvaluationsReceived      PmsEvaluation[]              @relation("PmsEvaluatedUser")
+  salaryGenerationLogs        SalaryGenerationLog[]
+  changedGroupLogs            SalaryGroupChangeLog[]       @relation("AdminGroupLogs")
+  salaryGroupLogs             SalaryGroupChangeLog[]       @relation("UserGroupLogs")
+  holdRequestsAsEmployee      SalaryHoldRequest[]          @relation("EmployeeHoldRequests")
+  holdRequestsAsReporter      SalaryHoldRequest[]          @relation("ReportingUserHoldRequests")
+  salarySlips                 SalarySlip[]
+  siteManager                 Site[]                       @relation("SiteReportingManager")
+  siteEmployees               SiteEmployee[]
+  sosAlerts                   SosAlert[]
+  taxBenefitDocuments         TaxBenefitDocument[]
+  tdsPaidSummaries            TdsPaidSummary[]
+  trackingConfig              TrackingConfig?
+  trackingExceptions          TrackingException[]
+  trackingLogs                TrackingLog[]
+  branch                      Branch?                      @relation(fields: [branch_id], references: [id])
+  department                  Department?                  @relation(fields: [department_id], references: [id])
+  designation                 Designation?                 @relation(fields: [designation_id], references: [id])
+  employeeGrade               EmployeeGrade?               @relation(fields: [employee_grade_id], references: [id])
+  employeeLevel               EmployeeLevel?               @relation(fields: [employee_level_id], references: [id])
+  shift                       Shift?                       @relation(fields: [shift_id], references: [id])
+  vehicleCategoriesCreated    VehicleCategory[]            @relation("VehicleCategoryCreatedBy")
+  approved_visits             Visit[]                      @relation("VisitApprover")
+  visits                      Visit[]                      @relation("VisitUser")
+  workAllocationsAssigned     WorkAllocation[]             @relation("AssignedBy")
+  workAllocations             WorkAllocation[]             @relation("AssignedTo")
+  workAllocationApprovals     WorkAllocation[]             @relation("HodReference")
+  workAccessGiven             WorkAllocationAccess[]       @relation("AccessGivenBy")
+  workAccessReceived          WorkAllocationAccess[]       @relation("AccessGivenTo")
+  workCategoryCreated         WorkCategory[]
+
+  @@index([branch_id], map: "User_branch_id_fkey")
+  @@index([department_id], map: "User_department_id_fkey")
+  @@index([employee_level_id])
+  @@index([employee_grade_id])
+  @@index([shift_id])
+  @@index([designation_id])
+}
+
+model ExpenseRequest {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  amount       Float
+  category     String
+  description  String?  @db.Text
+  date         DateTime @db.Date
+  status       String   @default("Pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  adminRemarks String?
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model BreakLog {
+  id               Int               @id @default(autoincrement())
+  user_id          Int
+  attendance_id    Int?
+  start_time       DateTime          @default(now())
+  end_time         DateTime?
+  duration_minutes Int               @default(0)
+  break_type       String            @default("Standard")
+  status           String            @default("Completed")
+  attendance       AttendanceRecord? @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([attendance_id], map: "BreakLog_attendance_id_fkey")
+}
+
+model DocumentRequest {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  request_type   String
+  requested_data Json
+  reason         String?  @db.Text
+  status         String   @default("Pending")
+  approver_id    Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  approver       User?    @relation("DocumentApprover", fields: [approver_id], references: [id])
+  user           User     @relation("DocumentRequestUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([approver_id], map: "DocumentRequest_approver_id_fkey")
+}
+
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String
+  code        String?  @unique
+  website     String?
+  logo_url    String?
+  tax_info    String?
+  status      String   @default("Active")
+  order_index Int      @default(0)
+  branches    Branch[]
+}
+
+model Zone {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  order_index Int      @default(0)
+  branches    Branch[]
+}
+
+model Branch {
+  id                      Int                      @id @default(autoincrement())
+  name                    String
+  code                    String                   @unique
+  type                    String                   @default("Metro")
+  order_index             Int                      @default(0)
+  company_id              Int?
+  zone_id                 Int?
+  adminBranchRestrictions AdminBranchRestriction[]
+  company                 Company?                 @relation(fields: [company_id], references: [id])
+  zone                    Zone?                    @relation(fields: [zone_id], references: [id])
+  departments             Department[]
+  employeeVehicles        EmployeeVehicle[]        @relation("VehicleBranch")
+  Escalation              Escalation[]
+  idCardTemplates         IdCardTemplate[]
+  pmsAssigns              PmsAssign[]              @relation("PmsAssignBranch")
+  sites                   Site[]
+  users                   User[]
+  workAllocations         WorkAllocation[]
+
+  @@index([zone_id], map: "Branch_zone_id_fkey")
+  @@index([company_id])
+}
+
+model Department {
+  id                          Int                          @id @default(autoincrement())
+  name                        String
+  branch_id                   Int
+  order_index                 Int                          @default(0)
+  adminDepartmentRestrictions AdminDepartmentRestriction[]
+  branch                      Branch                       @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  employeeVehicles            EmployeeVehicle[]            @relation("VehicleDepartment")
+  idCardTemplates             IdCardTemplate[]
+  pmsAssigns                  PmsAssign[]                  @relation("PmsAssignDepartment")
+  sites                       Site[]
+  subDepartments              SubDepartment[]
+  users                       User[]
+  workAllocations             WorkAllocation[]
+
+  @@index([branch_id], map: "Department_branch_id_fkey")
+}
+
+model SubDepartment {
+  id            Int           @id @default(autoincrement())
+  name          String
+  department_id Int
+  order_index   Int           @default(0)
+  designations  Designation[]
+  department    Department    @relation(fields: [department_id], references: [id], onDelete: Cascade)
+
+  @@unique([name, department_id])
+  @@index([department_id], map: "SubDepartment_department_id_fkey")
+}
+
+model Designation {
+  id                Int           @id @default(autoincrement())
+  name              String
+  sub_department_id Int
+  order_index       Int           @default(0)
+  subDepartment     SubDepartment @relation(fields: [sub_department_id], references: [id], onDelete: Cascade)
+  users             User[]
+
+  @@unique([name, sub_department_id])
+  @@index([sub_department_id], map: "Designation_sub_department_id_fkey")
+}
+
+model EmployeeLevel {
+  id          Int             @id @default(autoincrement())
+  name        String
+  parent_id   Int?
+  order_index Int             @default(0)
+  parent      EmployeeLevel?  @relation("EmployeeLevelHierarchy", fields: [parent_id], references: [id])
+  children    EmployeeLevel[] @relation("EmployeeLevelHierarchy")
+  users       User[]
+
+  @@index([parent_id])
+}
+
+model EmployeeGrade {
+  id      Int                    @id @default(autoincrement())
+  name    String
+  code    String?                @unique
+  status  String                 @default("Active")
+  history EmployeeGradeHistory[]
+  users   User[]
+}
+
+model AdminBranchRestriction {
+  id        Int    @id @default(autoincrement())
+  user_id   Int
+  branch_id Int
+  branch    Branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, branch_id])
+  @@index([user_id])
+  @@index([branch_id])
+}
+
+model AdminDepartmentRestriction {
+  id            Int        @id @default(autoincrement())
+  user_id       Int
+  department_id Int
+  department    Department @relation(fields: [department_id], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, department_id])
+  @@index([user_id])
+  @@index([department_id])
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entity_type String
+  entity_name String
+  details     String?  @db.Text
+  user_id     Int?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([createdAt])
+  @@index([entity_type])
+}
+
+model EmployeeGradeHistory {
+  id             Int           @id @default(autoincrement())
+  user_id        Int
+  grade_id       Int
+  effective_from DateTime
+  effective_to   DateTime?
+  remarks        String?       @db.Text
+  assigned_by    Int?
+  status         String        @default("Active")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  grade          EmployeeGrade @relation(fields: [grade_id], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([grade_id])
+}
+
+model ParkingSlot {
+  id             Int      @id @default(autoincrement())
+  slot_number    String   @unique
+  user_id        Int?     @unique
+  vehicle_number String?
+  access_type    String   @default("QR")
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User?    @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
+
+model EmergencyNumber {
+  id           Int      @id @default(autoincrement())
+  contact_name String
+  number       String
+  type         String   @default("Medical")
+  status       String   @default("Active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WhatsAppAlert {
+  id               Int      @id @default(autoincrement())
+  alert_name       String
+  trigger_event    String
+  recipient_type   String   @default("Individual")
+  message_template String   @db.Text
+  status           String   @default("Active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model IdCardTemplate {
+  id            Int         @id @default(autoincrement())
+  template_name String
+  template_type String      @default("Employee")
+  branch_id     Int?
+  department_id Int?
+  status        String      @default("Active")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  branch        Branch?     @relation(fields: [branch_id], references: [id])
+  department    Department? @relation(fields: [department_id], references: [id])
+
+  @@index([branch_id])
+  @@index([department_id])
+}
+
+model DailyAttendanceEmail {
+  id             Int      @id @default(autoincrement())
+  report_name    String
+  recipient_type String   @default("Manager")
+  filter_value   String?
+  schedule_time  String
+  email_template String?  @db.Text
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CompanySetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Shift {
+  id                  Int            @id @default(autoincrement())
+  name                String
+  start_time          String
+  end_time            String
+  grace_time_minutes  Int            @default(0)
+  half_day_min_hours  Float          @default(4)
+  full_day_min_hours  Float          @default(8)
+  break_duration_mins Int            @default(60)
+  is_active           Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  siteEmployees       SiteEmployee[]
+  users               User[]
+}
+
+model AttendanceRecord {
+  id                  Int        @id @default(autoincrement())
+  user_id             Int
+  date                DateTime   @db.Date
+  in_time             DateTime?
+  out_time            DateTime?
+  break_minutes       Int        @default(0)
+  total_working_hours Float      @default(0)
+  late_by_minutes     Int        @default(0)
+  early_leaving_mins  Int        @default(0)
+  overtime_hours      Float      @default(0)
+  status              String     @default("Absent")
+  source              String     @default("Web")
+  remarks             String?    @db.Text
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  user                User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  breakLogs           BreakLog[]
+
+  @@unique([user_id, date])
+  @@index([user_id])
+  @@index([date])
+  @@index([status])
+}
+
+model AttendanceRequest {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  request_type     String
+  date             DateTime @db.Date
+  requested_data   Json
+  reason           String   @db.Text
+  status           String   @default("Pending")
+  approver_id      Int?
+  approver_remarks String?  @db.Text
+  createdAt        DateTime @default(now())
+  modifiedAt       DateTime @updatedAt
+  approver         User?    @relation("RequestApprover", fields: [approver_id], references: [id])
+  user             User     @relation("RequestUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([approver_id])
+  @@index([status])
+}
+
+model Payroll {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  month        Int
+  year         Int
+  basic_salary Float
+  allowances   Float     @default(0)
+  deductions   Float     @default(0)
+  net_salary   Float
+  status       String    @default("Pending")
+  paid_at      DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, month, year])
+  @@index([user_id])
+}
+
+model Geofence {
+  id            Int      @id @default(autoincrement())
+  name          String
+  latitude      String
+  longitude     String
+  radius        Int      @default(200)
+  status        String   @default("Active")
+  punchRule     String   @default("inside_only")
+  employeeCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TrackingConfig {
+  id               Int      @id @default(autoincrement())
+  user_id          Int      @unique
+  enabled          Boolean  @default(true)
+  frequency        Int      @default(15)
+  workingHoursOnly Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model TrackingLog {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  latitude     String
+  longitude    String
+  location     String?
+  status       String   @default("Working")
+  batteryLevel Int?
+  timestamp    DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([timestamp])
+  @@index([status])
+}
+
+model TrackingException {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  type        String
+  severity    String    @default("Medium")
+  description String?   @db.Text
+  status      String    @default("Pending")
+  reason      String?   @db.Text
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model DailyWork {
+  id               Int            @id @default(autoincrement())
+  user_id          Int
+  work_date        DateTime       @db.Date
+  check_in_time    DateTime?
+  check_out_time   DateTime?
+  total_work_hours Float          @default(0)
+  total_distance   Float          @default(0)
+  tasks_completed  Int            @default(0)
+  break_time_mins  Int            @default(0)
+  status           String         @default("Pending")
+  admin_remark     String?        @db.Text
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  work_type        String         @default("Field")
+  user             User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  activities       WorkActivity[]
+
+  @@unique([user_id, work_date])
+  @@index([user_id])
+  @@index([work_date])
+  @@index([status])
+}
+
+model WorkActivity {
+  id            Int       @id @default(autoincrement())
+  daily_work_id Int
+  activity_time DateTime  @default(now())
+  latitude      String?
+  longitude     String?
+  activity_type String
+  location      String?
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  dailyWork     DailyWork @relation(fields: [daily_work_id], references: [id], onDelete: Cascade)
+
+  @@index([daily_work_id])
+}
+
+model Visit {
+  id                     Int       @id @default(autoincrement())
+  user_id                Int
+  date                   DateTime  @db.Date
+  client_name            String
+  client_contact         String?
+  company_name           String?
+  city                   String?
+  address                String?   @db.Text
+  purpose                String?   @db.Text
+  priority_level         String    @default("Medium")
+  remarks                String?   @db.Text
+  status                 String    @default("Draft")
+  check_in_time          DateTime?
+  check_in_latitude      String?
+  check_in_longitude     String?
+  check_in_photo_url     String?
+  check_out_time         DateTime?
+  check_out_latitude     String?
+  check_out_longitude    String?
+  work_summary           String?   @db.Text
+  next_follow_up_date    DateTime? @db.Date
+  document_url           String?
+  customer_signature_url String?
+  approver_id            Int?
+  approval_status        String?
+  approval_comments      String?   @db.Text
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  area                   String?
+  country                String?
+  state                  String?
+  approver               User?     @relation("VisitApprover", fields: [approver_id], references: [id])
+  user                   User      @relation("VisitUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([date])
+  @@index([status])
+  @@index([approver_id], map: "Visit_approver_id_fkey")
+}
+
+model EarningDeductionType {
+  id                    Int                    @id @default(autoincrement())
+  name                  String                 @unique
+  type                  String
+  taxable               Boolean                @default(false)
+  description           String?                @db.Text
+  status                String                 @default("Active")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  salaryGroupComponents SalaryGroupComponent[]
+}
+
+model SalaryGroup {
+  id                    Int                    @id @default(autoincrement())
+  name                  String                 @unique
+  payroll_frequency     String                 @default("Monthly")
+  working_days_type     String                 @default("Calendar Days")
+  salary_calc_type      String                 @default("Per Day")
+  payout_formulas       Json?
+  slip_display_settings Json?
+  common_settings       Json?
+  calculation_rules     Json?
+  incentive_settings    Json?
+  employee_count        Int                    @default(0)
+  status                String                 @default("Active")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  employeeCTCs          EmployeeCTC[]
+  newGroupLogs          SalaryGroupChangeLog[] @relation("NewGroup")
+  oldGroupLogs          SalaryGroupChangeLog[] @relation("OldGroup")
+  components            SalaryGroupComponent[]
+}
+
+model SalaryGroupComponent {
+  id                        Int                  @id @default(autoincrement())
+  salary_group_id           Int
+  earning_deduction_type_id Int
+  amount                    Float                @default(0)
+  earningDeductionType      EarningDeductionType @relation(fields: [earning_deduction_type_id], references: [id], onDelete: Cascade)
+  salaryGroup               SalaryGroup          @relation(fields: [salary_group_id], references: [id], onDelete: Cascade)
+
+  @@unique([salary_group_id, earning_deduction_type_id])
+  @@index([salary_group_id])
+  @@index([earning_deduction_type_id])
+}
+
+model IncentiveType {
+  id                 Int                       @id @default(autoincrement())
+  name               String                    @unique
+  incentive_type     String
+  calculation_method String
+  applicable_on      String
+  description        String?                   @db.Text
+  status             String                    @default("Active")
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  employeeIncentives EmployeeIncentiveDetail[]
+}
+
+model GratuitySetting {
+  id                        Int      @id @default(autoincrement())
+  enabled                   Boolean  @default(false)
+  min_service_years         Int      @default(5)
+  formula                   String   @default("(Last Drawn Salary * 15 * Number of Completed Years) / 26")
+  included_components       Json?
+  max_limit                 Float    @default(2000000)
+  round_off                 Boolean  @default(true)
+  applicable_on_resignation Boolean  @default(true)
+  auto_calculate_fnf        Boolean  @default(true)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+}
+
+model EmployeeCTC {
+  id                  Int          @id @default(autoincrement())
+  user_id             Int
+  salary_group_id     Int
+  salary_type         String
+  gross_salary        Float
+  increment_remark    String?      @db.Text
+  start_date          DateTime     @db.Date
+  next_increment_date DateTime?    @db.Date
+  status              String       @default("Current")
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  salaryGroup         SalaryGroup  @relation(fields: [salary_group_id], references: [id], onDelete: Cascade)
+  user                User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  salarySlips         SalarySlip[]
+
+  @@index([user_id])
+  @@index([salary_group_id])
+}
+
+model SalarySlip {
+  id                    Int              @id @default(autoincrement())
+  user_id               Int
+  employee_ctc_id       Int
+  branch_id             Int?
+  department_id         Int?
+  month                 Int
+  year                  Int
+  salary_type           String
+  month_working_days    Int
+  employee_working_days Float
+  paid_leaves           Float            @default(0)
+  unpaid_leaves         Float            @default(0)
+  total_leaves          Float            @default(0)
+  paid_holidays         Int              @default(0)
+  paid_week_offs        Int              @default(0)
+  extra_days            Float            @default(0)
+  joining_net_salary    Float
+  joining_gross_salary  Float
+  this_month_gross      Float
+  per_day_salary        Float
+  per_day_extra         Float            @default(0)
+  total_earnings        Float
+  total_deductions      Float
+  net_salary            Float
+  salary_mode           String
+  status                String           @default("Generated")
+  is_shared             Boolean          @default(false)
+  description           String?          @db.Text
+  generated_by          Int?
+  updated_by            Int?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  employeeCtc           EmployeeCTC      @relation(fields: [employee_ctc_id], references: [id], onDelete: Cascade)
+  user                  User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items                 SalarySlipItem[]
+
+  @@unique([user_id, month, year])
+  @@index([user_id])
+  @@index([employee_ctc_id])
+  @@index([month, year])
+  @@index([status])
+}
+
+model SalarySlipItem {
+  id             Int        @id @default(autoincrement())
+  salary_slip_id Int
+  name           String
+  amount         Float
+  type           String
+  category       String     @default("CTC")
+  salarySlip     SalarySlip @relation(fields: [salary_slip_id], references: [id], onDelete: Cascade)
+
+  @@index([salary_slip_id])
+}
+
+model SalaryGenerationLog {
+  id           Int      @id @default(autoincrement())
+  action_type  String
+  status       String
+  month        Int
+  year         Int
+  details      Json?
+  processed_by Int?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [processed_by], references: [id])
+
+  @@index([processed_by])
+  @@index([createdAt])
+}
+
+model OtherEarningDeduction {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  name         String
+  type         String
+  amount       Float
+  percentage   Float?
+  description  String?  @db.Text
+  month        Int
+  year         Int
+  is_recurring Boolean  @default(false)
+  status       String   @default("Active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([month, year])
+}
+
+model EmployeeIncentiveDetail {
+  id                Int           @id @default(autoincrement())
+  user_id           Int
+  incentive_type_id Int
+  amount            Float
+  description       String?       @db.Text
+  month             Int
+  year              Int
+  status            String        @default("Pending")
+  added_by          Int?
+  approved_by       Int?
+  approved_at       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  addedBy           User?         @relation("ApproverIncentive", fields: [added_by], references: [id])
+  incentiveType     IncentiveType @relation(fields: [incentive_type_id], references: [id], onDelete: Cascade)
+  user              User          @relation("EmployeeIncentive", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([month, year])
+  @@index([added_by], map: "EmployeeIncentiveDetail_added_by_fkey")
+  @@index([incentive_type_id], map: "EmployeeIncentiveDetail_incentive_type_id_fkey")
+}
+
+model FFSettlement {
+  id               Int                @id @default(autoincrement())
+  user_id          Int
+  resignation_date DateTime           @db.Date
+  last_working_day DateTime           @db.Date
+  status           String             @default("Pending")
+  total_earnings   Float              @default(0)
+  total_deductions Float              @default(0)
+  net_settlement   Float              @default(0)
+  payment_mode     String?
+  remarks          String?            @db.Text
+  processed_by     Int?
+  settled_at       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items            FFSettlementItem[]
+
+  @@index([user_id])
+}
+
+model FFSettlementItem {
+  id               Int          @id @default(autoincrement())
+  ff_settlement_id Int
+  name             String
+  amount           Float
+  type             String
+  ffSettlement     FFSettlement @relation(fields: [ff_settlement_id], references: [id], onDelete: Cascade)
+
+  @@index([ff_settlement_id])
+}
+
+model EmployeeBankDetail {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int
+  bank_name           String
+  bank_branch         String
+  account_number      String
+  account_type        String   @default("Saving")
+  ifsc_code           String
+  account_holder_name String
+  pan_no              String?
+  crn_no              String?
+  esic_no             String?
+  pf_no               String?
+  uan_no              String?
+  micr_code           String?
+  insurance_no        String?
+  is_primary          Boolean  @default(false)
+  status              String   @default("Active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model SalaryGroupChangeLog {
+  id             Int         @id @default(autoincrement())
+  user_id        Int
+  old_group_id   Int
+  new_group_id   Int
+  reason         String?     @db.Text
+  effective_date DateTime    @default(now())
+  changed_by     Int?
+  createdAt      DateTime    @default(now())
+  admin          User?       @relation("AdminGroupLogs", fields: [changed_by], references: [id])
+  newGroup       SalaryGroup @relation("NewGroup", fields: [new_group_id], references: [id], onDelete: Cascade)
+  oldGroup       SalaryGroup @relation("OldGroup", fields: [old_group_id], references: [id], onDelete: Cascade)
+  user           User        @relation("UserGroupLogs", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([changed_by], map: "SalaryGroupChangeLog_changed_by_fkey")
+  @@index([new_group_id], map: "SalaryGroupChangeLog_new_group_id_fkey")
+  @@index([old_group_id], map: "SalaryGroupChangeLog_old_group_id_fkey")
+}
+
+model EmployeeTaxRegime {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  financial_year     String
+  tax_regime         String   @default("Not Assigned")
+  metro_type         String   @default("Non-Metro")
+  declaration_status String   @default("Not Submitted")
+  lock_status        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, financial_year])
+  @@index([user_id])
+}
+
+model TdsGlobalRule {
+  id                   Int      @id @default(autoincrement())
+  financial_year       String   @unique
+  min_ctc_new_regime   Float
+  min_ctc_old_regime   Float
+  default_cycle        String
+  auto_apply_ctc_rules Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model EmployeeTdsRule {
+  id                   Int      @id @default(autoincrement())
+  user_id              Int
+  financial_year       String
+  deduction_rule       String
+  estimated_yearly_tds Float    @default(0)
+  status               String   @default("Active")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, financial_year])
+  @@index([user_id])
+}
+
+model TaxBenefitCategory {
+  id                Int                     @id @default(autoincrement())
+  category_name     String
+  section_code      String                  @unique
+  max_limit         Float                   @default(0)
+  applicable_regime String
+  financial_year    String
+  description       String?                 @db.Text
+  status            String                  @default("Active")
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  taxDocuments      TaxBenefitDocument[]
+  subCategories     TaxBenefitSubCategory[]
+}
+
+model TaxBenefitSubCategory {
+  id                Int                  @id @default(autoincrement())
+  category_id       Int
+  sub_category_name String
+  code              String               @unique
+  max_limit         Float                @default(0)
+  proof_required    Boolean              @default(false)
+  declaration_type  String
+  applicable_regime String
+  description       String?              @db.Text
+  status            String               @default("Active")
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  taxDocuments      TaxBenefitDocument[]
+  category          TaxBenefitCategory   @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@index([category_id])
+}
+
+model IncomeTaxSlab {
+  id             Int      @id @default(autoincrement())
+  financial_year String
+  tax_regime     String
+  slab_type      String
+  from_amount    Float
+  to_amount      Float?
+  tax_percentage Float
+  status         String   @default("Active")
+  is_locked      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model TaxBenefitDocument {
+  id               Int                   @id @default(autoincrement())
+  user_id          Int
+  category_id      Int
+  sub_category_id  Int
+  financial_year   String
+  declared_amount  Float
+  proof_url        String?               @db.Text
+  status           String                @default("Pending")
+  rejection_reason String?               @db.Text
+  submitted_date   DateTime              @default(now())
+  action_date      DateTime?
+  action_by_id     Int?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  category         TaxBenefitCategory    @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  subCategory      TaxBenefitSubCategory @relation(fields: [sub_category_id], references: [id], onDelete: Cascade)
+  user             User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([category_id], map: "TaxBenefitDocument_category_id_fkey")
+  @@index([sub_category_id], map: "TaxBenefitDocument_sub_category_id_fkey")
+  @@index([user_id], map: "TaxBenefitDocument_user_id_fkey")
+}
+
+model OtherIncomeLoss {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  financial_year String
+  type           String
+  source         String
+  amount         Float
+  description    String?  @db.Text
+  proof_url      String?  @db.Text
+  status         String   @default("Pending")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "OtherIncomeLoss_user_id_fkey")
+}
+
+model TdsChallan {
+  id             Int              @id @default(autoincrement())
+  financial_year String
+  month          Int
+  tds_type       String           @default("TDS")
+  payment_mode   String
+  bank_name      String?
+  challan_date   DateTime
+  total_amount   Float
+  bsr_code       String?
+  cin_no         String?
+  status         String           @default("Generated")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  summaries      TdsPaidSummary[]
+}
+
+model TdsPaidSummary {
+  id             Int        @id @default(autoincrement())
+  user_id        Int
+  challan_id     Int
+  financial_year String
+  tds_amount     Float
+  deposit_date   DateTime
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  challan        TdsChallan @relation(fields: [challan_id], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([challan_id], map: "TdsPaidSummary_challan_id_fkey")
+  @@index([user_id], map: "TdsPaidSummary_user_id_fkey")
+}
+
+model Form12BDetail {
+  id                 Int      @id @default(autoincrement())
+  user_id            Int
+  financial_year     String
+  previous_company   String
+  tan_no             String?
+  period_from        DateTime
+  period_to          DateTime
+  gross_salary       Float    @default(0)
+  exemptions         Float    @default(0)
+  professional_tax   Float    @default(0)
+  standard_deduction Float    @default(0)
+  other_deductions   Float    @default(0)
+  tds_deducted       Float    @default(0)
+  other_income       Float    @default(0)
+  status             String   @default("Draft")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "Form12BDetail_user_id_fkey")
+}
+
+model Form16Document {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  financial_year String
+  status         String    @default("Pending")
+  pdf_url        String?
+  generated_date DateTime?
+  sent_date      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "Form16Document_user_id_fkey")
+}
+
+model SalaryHoldRequest {
+  id                Int      @id @default(autoincrement())
+  employee_id       Int
+  reporting_user_id Int
+  month             Int
+  year              Int
+  start_date        DateTime
+  end_date          DateTime
+  reason            String?  @db.Text
+  status            String   @default("Pending")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  employee          User     @relation("EmployeeHoldRequests", fields: [employee_id], references: [id], onDelete: Cascade)
+  reportingUser     User     @relation("ReportingUserHoldRequests", fields: [reporting_user_id], references: [id], onDelete: Cascade)
+
+  @@index([employee_id], map: "SalaryHoldRequest_employee_id_fkey")
+  @@index([reporting_user_id], map: "SalaryHoldRequest_reporting_user_id_fkey")
+}
+
+model WorkCategory {
+  id            Int              @id @default(autoincrement())
+  name          String           @unique
+  code          String           @unique
+  priority      String           @default("Medium")
+  status        String           @default("Active")
+  sla_hours     Int              @default(24)
+  description   String?          @db.Text
+  created_by_id Int?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  allocations   WorkAllocation[]
+  createdBy     User?            @relation(fields: [created_by_id], references: [id])
+
+  @@index([created_by_id])
+}
+
+model WorkAllocationAccess {
+  id                    Int      @id @default(autoincrement())
+  assign_by_id          Int
+  assign_to_id          Int
+  category_ids          Json
+  access_type           String   @default("Full")
+  max_task_per_day      Int      @default(0)
+  max_task_per_employee Int      @default(0)
+  allow_reassign        Boolean  @default(false)
+  approval_required     Boolean  @default(false)
+  status                String   @default("Active")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  assignBy              User     @relation("AccessGivenBy", fields: [assign_by_id], references: [id], onDelete: Cascade)
+  assignTo              User     @relation("AccessGivenTo", fields: [assign_to_id], references: [id], onDelete: Cascade)
+
+  @@index([assign_by_id])
+  @@index([assign_to_id])
+}
+
+model WorkAllocation {
+  id                     Int          @id @default(autoincrement())
+  task_id                String       @unique
+  category_id            Int
+  title                  String
+  description            String?      @db.Text
+  assigned_by_id         Int
+  assigned_to_id         Int
+  priority               String       @default("Medium")
+  status                 String       @default("Pending")
+  start_date             DateTime     @db.Date
+  due_date               DateTime     @db.Date
+  completion_date        DateTime?    @db.Date
+  progress               Int          @default(0)
+  delay_flag             Boolean      @default(false)
+  attachments            Json?
+  comments               Json?
+  project_sr_no          String?
+  site                   String?
+  location               String?
+  branch_id              Int?
+  department_id          Int?
+  hod_id                 Int?
+  hod_remark             String?      @db.Text
+  engineer_status        String?
+  engineer_remark        String?      @db.Text
+  completion_remark      String?      @db.Text
+  authorized_date_by_hod DateTime?    @db.Date
+  authorized_remark      String?      @db.Text
+  remark_from_hod        String?      @db.Text
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  assignedBy             User         @relation("AssignedBy", fields: [assigned_by_id], references: [id], onDelete: Cascade)
+  assignedTo             User         @relation("AssignedTo", fields: [assigned_to_id], references: [id], onDelete: Cascade)
+  branch                 Branch?      @relation(fields: [branch_id], references: [id])
+  category               WorkCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  department             Department?  @relation(fields: [department_id], references: [id])
+  hodReference           User?        @relation("HodReference", fields: [hod_id], references: [id])
+
+  @@index([category_id])
+  @@index([assigned_by_id])
+  @@index([assigned_to_id])
+  @@index([status])
+  @@index([due_date])
+  @@index([branch_id])
+  @@index([department_id])
+  @@index([hod_id], map: "WorkAllocation_hod_id_fkey")
+}
+
+model Site {
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  contact_name         String
+  mobile_no            String
+  email                String?
+  area                 String
+  address              String?        @db.Text
+  city_state           String?
+  revenue_share_pct    Float          @default(0)
+  commission_bearer    String         @default("Company")
+  status               String         @default("Active")
+  agreement_start      DateTime?      @db.Date
+  agreement_end        DateTime?      @db.Date
+  document_url         String?
+  branch_id            Int
+  department_id        Int?
+  reporting_manager_id Int?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  branch               Branch         @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+  department           Department?    @relation(fields: [department_id], references: [id])
+  reportingManager     User?          @relation("SiteReportingManager", fields: [reporting_manager_id], references: [id])
+  siteEmployees        SiteEmployee[]
+  sitePurchases        SitePurchase[]
+
+  @@unique([name, mobile_no])
+  @@index([branch_id])
+  @@index([department_id])
+  @@index([reporting_manager_id])
+  @@index([status])
+}
+
+model SiteEmployee {
+  id              Int              @id @default(autoincrement())
+  site_id         Int
+  user_id         Int
+  role            String           @default("Worker")
+  shift_id        Int?
+  join_date       DateTime         @db.Date
+  exit_date       DateTime?        @db.Date
+  status          String           @default("Active")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  siteAttendances SiteAttendance[]
+  shift           Shift?           @relation(fields: [shift_id], references: [id])
+  site            Site             @relation(fields: [site_id], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([site_id, user_id])
+  @@index([user_id])
+  @@index([site_id])
+  @@index([shift_id])
+  @@index([status])
+}
+
+model SiteAttendance {
+  id               Int          @id @default(autoincrement())
+  site_employee_id Int
+  date             DateTime     @db.Date
+  punch_in         DateTime?
+  punch_out        DateTime?
+  working_hours    Float        @default(0)
+  overtime_hours   Float        @default(0)
+  late_minutes     Int          @default(0)
+  status           String       @default("Pending")
+  remark           String?      @db.Text
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  siteEmployee     SiteEmployee @relation(fields: [site_employee_id], references: [id], onDelete: Cascade)
+
+  @@unique([site_employee_id, date])
+  @@index([site_employee_id])
+  @@index([date])
+  @@index([status])
+}
+
+model SitePurchase {
+  id           Int      @id @default(autoincrement())
+  site_id      Int
+  item_name    String
+  vendor_name  String
+  quantity     Float    @default(0)
+  unit_price   Float    @default(0)
+  total_amount Float    @default(0)
+  date         DateTime @db.Date
+  bill_url     String?
+  status       String   @default("Approved")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  site         Site     @relation(fields: [site_id], references: [id], onDelete: Cascade)
+
+  @@index([site_id])
+  @@index([date])
+}
+
+model PmsDimension {
+  id            Int                       @id @default(autoincrement())
+  name          String
+  code          String                    @unique
+  description   String?                   @db.Text
+  status        String                    @default("Active")
+  createdById   Int?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  subGroupLinks PmsDimSubGroupDimension[]
+  createdBy     User?                     @relation("PmsDimensionCreatedBy", fields: [createdById], references: [id])
+  evaluations   PmsEvaluation[]
+
+  @@index([status])
+  @@index([createdById], map: "PmsDimension_createdById_fkey")
+}
+
+model PmsDimensionSubGroup {
+  id              Int                       @id @default(autoincrement())
+  name            String
+  weightage_type  String                    @default("Percentage")
+  total_weightage Float                     @default(100)
+  description     String?                   @db.Text
+  status          String                    @default("Active")
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  pmsAssigns      PmsAssign[]
+  dimensions      PmsDimSubGroupDimension[]
+}
+
+model PmsDimSubGroupDimension {
+  id          Int                  @id @default(autoincrement())
+  subGroupId  Int
+  dimensionId Int
+  weightage   Float                @default(0)
+  dimension   PmsDimension         @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  subGroup    PmsDimensionSubGroup @relation(fields: [subGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([subGroupId, dimensionId])
+  @@index([dimensionId], map: "PmsDimSubGroupDimension_dimensionId_fkey")
+}
+
+model PmsScoreBand {
+  id         Int      @id @default(autoincrement())
+  from_score Float
+  to_score   Float
+  rating     String
+  grade      String
+  remark     String?  @db.Text
+  status     String   @default("Active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model PmsAssign {
+  id                Int                   @id @default(autoincrement())
+  pms_type          String
+  pms_date          DateTime              @db.Date
+  status            String                @default("Active")
+  description       String?               @db.Text
+  branchId          Int?
+  departmentId      Int?
+  subGroupId        Int?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  branch            Branch?               @relation("PmsAssignBranch", fields: [branchId], references: [id])
+  department        Department?           @relation("PmsAssignDepartment", fields: [departmentId], references: [id])
+  subGroup          PmsDimensionSubGroup? @relation(fields: [subGroupId], references: [id])
+  assignedEmployees PmsAssignEmployee[]
+  evaluations       PmsEvaluation[]
+
+  @@index([pms_type])
+  @@index([pms_date])
+  @@index([status])
+  @@index([branchId], map: "PmsAssign_branchId_fkey")
+  @@index([departmentId], map: "PmsAssign_departmentId_fkey")
+  @@index([subGroupId], map: "PmsAssign_subGroupId_fkey")
+}
+
+model PmsAssignEmployee {
+  id                Int       @id @default(autoincrement())
+  pmsAssignId       Int
+  userId            Int
+  evaluation_status String    @default("Pending")
+  pmsAssign         PmsAssign @relation(fields: [pmsAssignId], references: [id], onDelete: Cascade)
+  user              User      @relation("PmsAssignEmployees", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pmsAssignId, userId])
+  @@index([evaluation_status])
+  @@index([userId], map: "PmsAssignEmployee_userId_fkey")
+}
+
+model PmsEvaluation {
+  id             Int          @id @default(autoincrement())
+  pmsAssignId    Int
+  userId         Int
+  dimensionId    Int
+  self_score     Float        @default(0)
+  manager_score  Float        @default(0)
+  final_score    Float        @default(0)
+  weightage      Float        @default(0)
+  weighted_score Float        @default(0)
+  remark         String?      @db.Text
+  evaluator_type String       @default("Manager")
+  evaluatedById  Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  dimension      PmsDimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  evaluatedBy    User?        @relation("PmsEvaluatedBy", fields: [evaluatedById], references: [id])
+  pmsAssign      PmsAssign    @relation(fields: [pmsAssignId], references: [id], onDelete: Cascade)
+  user           User         @relation("PmsEvaluatedUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pmsAssignId, userId, dimensionId])
+  @@index([pmsAssignId])
+  @@index([userId])
+  @@index([dimensionId], map: "PmsEvaluation_dimensionId_fkey")
+  @@index([evaluatedById], map: "PmsEvaluation_evaluatedById_fkey")
+}
+
+model VehicleCategory {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?           @db.Text
+  status      String            @default("Active")
+  createdById Int?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  vehicles    EmployeeVehicle[]
+  createdBy   User?             @relation("VehicleCategoryCreatedBy", fields: [createdById], references: [id])
+
+  @@index([createdById], map: "VehicleCategory_createdById_fkey")
+}
+
+model EmployeeVehicle {
+  id             Int             @id @default(autoincrement())
+  vehicle_name   String
+  vehicle_number String          @unique
+  vehicle_value  Float?          @default(0)
+  image_url_1    String?         @db.Text
+  image_url_2    String?         @db.Text
+  image_url_3    String?         @db.Text
+  status         String          @default("Active")
+  assigned_date  DateTime        @default(now())
+  userId         Int
+  categoryId     Int
+  branchId       Int?
+  departmentId   Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  branch         Branch?         @relation("VehicleBranch", fields: [branchId], references: [id])
+  category       VehicleCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  department     Department?     @relation("VehicleDepartment", fields: [departmentId], references: [id])
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([branchId])
+  @@index([departmentId], map: "EmployeeVehicle_departmentId_fkey")
+}
+
+model IdeaCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  status      String   @default("Active")
+  created_by  Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ideas       Idea[]
+  creator     User?    @relation("IdeaCategoryCreatedBy", fields: [created_by], references: [id])
+
+  @@index([created_by])
+}
+
+model Idea {
+  id                 Int           @id @default(autoincrement())
+  title              String
+  categoryId         Int
+  userId             Int
+  description        String        @db.Text
+  attachmentUrl      String?
+  expectedBenefit    String?       @db.Text
+  status             String        @default("Pending")
+  approvalRemarks    String?       @db.Text
+  isAnonymous        Boolean       @default(false)
+  rewardPoints       Int           @default(0)
+  implementationDate DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  category           IdeaCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user               User          @relation("IdeaSubmittedBy", fields: [userId], references: [id], onDelete: Cascade)
+  comments           IdeaComment[]
+  rewards            IdeaReward[]
+  votes              IdeaVote[]
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([status])
+}
+
+model IdeaVote {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ideaId, userId])
+  @@index([userId], map: "IdeaVote_userId_fkey")
+}
+
+model IdeaComment {
+  id        Int      @id @default(autoincrement())
+  ideaId    Int
+  userId    Int
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId], map: "IdeaComment_ideaId_fkey")
+  @@index([userId], map: "IdeaComment_userId_fkey")
+}
+
+model IdeaReward {
+  id          Int      @id @default(autoincrement())
+  ideaId      Int
+  userId      Int
+  points      Int
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  idea        Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user        User     @relation("IdeaRewardReceivedBy", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([ideaId])
+}
+
+model SosType {
+  id              Int        @id @default(autoincrement())
+  name            String     @unique
+  imageUrl        String?    @db.Text
+  validityMinutes Int        @default(60)
+  status          String     @default("Active")
+  isPredefined    Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  alerts          SosAlert[]
+}
+
+model SosAlert {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  sosTypeId  Int
+  message    String?   @db.Text
+  imageUrl   String?   @db.Text
+  latitude   Float?
+  longitude  Float?
+  status     String    @default("Active")
+  resolvedAt DateTime?
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  sosType    SosType   @relation(fields: [sosTypeId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sosTypeId])
+  @@index([status])
+}
+
+model ChatGroup {
+  id               Int               @id @default(autoincrement())
+  name             String
+  icon             String?           @db.Text
+  type             String            @default("Manual")
+  visibilityType   String            @default("Public")
+  isAutoCreated    Boolean           @default(false)
+  autoBranchId     Int?
+  autoDepartmentId Int?
+  autoZoneId       Int?
+  autoLevelId      Int?
+  status           String            @default("Active")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  members          ChatGroupMember[]
+  messages         ChatMessage[]
+
+  @@index([type])
+  @@index([isAutoCreated])
+}
+
+model ChatGroupMember {
+  id         Int       @id @default(autoincrement())
+  groupId    Int
+  userId     Int
+  role       String    @default("Member")
+  visibility Boolean   @default(true)
+  status     String    @default("Active")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  group      ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId])
+}
+
+model ChatMessage {
+  id         Int       @id @default(autoincrement())
+  groupId    Int
+  senderId   Int
+  message    String?   @db.Text
+  attachment String?   @db.Text
+  type       String    @default("Text")
+  status     String    @default("Sent")
+  isPinned   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  group      ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender     User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([senderId])
+}
+
+model Holiday {
+  id         Int                      @id @default(autoincrement())
+  name       String
+  date       DateTime                 @db.Date
+  type       String                   @default("Public")
+  status     String                   @default("Active")
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+  groupId    Int?
+  visibility String                   @default("All")
+  group      HolidayGroup?            @relation(fields: [groupId], references: [id])
+  requests   OptionalHolidayRequest[]
+
+  @@index([groupId], map: "Holiday_groupId_fkey")
+}
+
+model HolidayGroup {
+  id          Int                  @id @default(autoincrement())
+  name        String               @unique
+  description String?              @db.Text
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  status      String               @default("Active")
+  holidays    Holiday[]
+  assignments HolidayGroupAssign[]
+}
+
+model HolidayGroupAssign {
+  id           Int          @id @default(autoincrement())
+  groupId      Int
+  userId       Int?
+  branchId     Int?
+  departmentId Int?
+  createdAt    DateTime     @default(now())
+  group        HolidayGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId], map: "HolidayGroupAssign_groupId_fkey")
+}
+
+model OptionalHolidayRequest {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  holidayId    Int
+  status       String   @default("Pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  adminRemarks String?
+  reason       String?  @db.Text
+  holiday      Holiday  @relation(fields: [holidayId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([holidayId])
+  @@index([userId])
+}
+
+model MobileDevice {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  deviceId    String?  @unique
+  deviceName  String?
+  osVersion   String?
+  status      String   @default("Bound")
+  isActive    Boolean  @default(true)
+  macAddress  String?
+  deviceModel String?
+  appVersion  String?
+  boundAt     DateTime @default(now())
+  lastActive  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model DeviceChangeRequest {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  oldDeviceId   String?
+  reason        String    @db.Text
+  status        String    @default("Pending")
+  resolvedAt    DateTime?
+  approvedById  Int?
+  newDeviceId   String?
+  newDeviceName String?
+  oldDeviceName String?
+  requestedAt   DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([approvedById], map: "DeviceChangeRequest_approvedById_fkey")
+  @@index([userId])
+}
+
+model VendorCategory {
+  id            Int                 @id @default(autoincrement())
+  name          String              @unique
+  description   String?             @db.Text
+  status        String              @default("Active")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  vendors       Vendor[]
+  subCategories VendorSubCategory[]
+}
+
+model VendorSubCategory {
+  id          Int            @id @default(autoincrement())
+  name        String
+  description String?        @db.Text
+  status      String         @default("Active")
+  categoryId  Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  vendors     Vendor[]
+  category    VendorCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([name, categoryId])
+  @@index([categoryId], map: "VendorSubCategory_categoryId_fkey")
+}
+
+model Vendor {
+  id            Int                @id @default(autoincrement())
+  name          String
+  categoryId    Int
+  subCategoryId Int?
+  contactPerson String?
+  mobile        String
+  email         String?
+  gstNumber     String?
+  panNumber     String?
+  companyName   String?
+  country       String?
+  state         String?
+  city          String?
+  area          String?
+  pincode       String?
+  fullAddress   String?            @db.Text
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  paymentTerms  Int?
+  status        String             @default("Active")
+  attachmentUrl String?            @db.Text
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  category      VendorCategory     @relation(fields: [categoryId], references: [id])
+  subCategory   VendorSubCategory? @relation(fields: [subCategoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([subCategoryId])
+  @@index([city])
+  @@index([status])
+}
+
+model Escalation {
+  id          Int                    @id @default(autoincrement())
+  title       String
+  description String                 @db.Text
+  sender_id   Int
+  receiver_id Int?
+  branch_id   Int?
+  status      String                 @default("Open")
+  priority    String                 @default("Medium")
+  category    String?
+  reply_date  DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  branch      Branch?                @relation(fields: [branch_id], references: [id])
+  receiver    User?                  @relation("EscalationReceiver", fields: [receiver_id], references: [id])
+  sender      User                   @relation("EscalationSender", fields: [sender_id], references: [id])
+  attachments EscalationAttachment[]
+  replies     EscalationReply[]
+
+  @@index([sender_id])
+  @@index([receiver_id])
+  @@index([status])
+  @@index([branch_id], map: "Escalation_branch_id_fkey")
+}
+
+model EscalationReply {
+  id            Int                    @id @default(autoincrement())
+  escalation_id Int
+  user_id       Int
+  message       String                 @db.Text
+  createdAt     DateTime               @default(now())
+  attachments   EscalationAttachment[]
+  escalation    Escalation             @relation(fields: [escalation_id], references: [id], onDelete: Cascade)
+  user          User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([escalation_id], map: "EscalationReply_escalation_id_fkey")
+  @@index([user_id], map: "EscalationReply_user_id_fkey")
+}
+
+model EscalationAttachment {
+  id            Int              @id @default(autoincrement())
+  escalation_id Int?
+  reply_id      Int?
+  file_url      String
+  name          String
+  file_type     String
+  escalation    Escalation?      @relation(fields: [escalation_id], references: [id], onDelete: Cascade)
+  reply         EscalationReply? @relation(fields: [reply_id], references: [id], onDelete: Cascade)
+
+  @@index([escalation_id], map: "EscalationAttachment_escalation_id_fkey")
+  @@index([reply_id], map: "EscalationAttachment_reply_id_fkey")
+}

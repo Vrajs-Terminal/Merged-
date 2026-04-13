@@ -1,0 +1,39 @@
+/* Profile Change Requests — Standardized Dashboard Styles */
+
+.profile-change-container {
+    /* Layout handled by index.css */
+}
+
+/* Modals */
+.review-modal-content {
+    max-width: 650px;
+    border-radius: var(--radius-xl);
+}
+
+.diff-table {
+    width: 100%;
+    margin: 16px 0;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.diff-table th {
+    padding: 10px 16px;
+    background: var(--color-gray-50);
+}
+
+.diff-table td {
+    padding: 12px 16px;
+}
+
+.old-val {
+    color: var(--color-danger-600);
+    text-decoration: line-through;
+}
+
+.new-val {
+    color: var(--color-success-600);
+    font-weight: 600;
+}

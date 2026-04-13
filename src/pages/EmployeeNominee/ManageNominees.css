@@ -1,0 +1,152 @@
+/* Beneficiary Registry page-specific layout and table clarity */
+
+.manage-nominees-header {
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.manage-nominees-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.manage-nominees-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.manage-nominees-card-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.manage-nominees-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.manage-nominees-count-badge {
+  background: var(--color-primary-50) !important;
+  color: var(--primary) !important;
+  border: 1px solid var(--color-primary-200);
+  white-space: nowrap;
+}
+
+.manage-nominees-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.manage-nominees-table {
+  min-width: 1340px;
+  table-layout: fixed;
+}
+
+.manage-nominees-table th:nth-child(1),
+.manage-nominees-table td:nth-child(1) {
+  width: 88px;
+}
+
+.manage-nominees-table th:nth-child(2),
+.manage-nominees-table td:nth-child(2) {
+  width: 190px;
+}
+
+.manage-nominees-table th:nth-child(3),
+.manage-nominees-table td:nth-child(3) {
+  width: 170px;
+}
+
+.manage-nominees-table th:nth-child(4),
+.manage-nominees-table td:nth-child(4) {
+  width: 120px;
+}
+
+.manage-nominees-table th:nth-child(5),
+.manage-nominees-table td:nth-child(5) {
+  width: 130px;
+}
+
+.manage-nominees-table th:nth-child(6),
+.manage-nominees-table td:nth-child(6) {
+  width: 190px;
+}
+
+.manage-nominees-table th:nth-child(7),
+.manage-nominees-table td:nth-child(7) {
+  width: 170px;
+}
+
+.manage-nominees-table th:nth-child(8),
+.manage-nominees-table td:nth-child(8) {
+  width: 110px;
+}
+
+.manage-nominees-table th:nth-child(9),
+.manage-nominees-table td:nth-child(9) {
+  width: 110px;
+  text-align: right;
+}
+
+.manage-nominees-actions-col {
+  text-align: right !important;
+}
+
+.manage-nominees-empty {
+  padding: 80px;
+  text-align: center;
+}
+
+.manage-nominees-empty-icon-wrap {
+  background: rgba(79, 70, 229, 0.04);
+  padding: 24px;
+  border-radius: 24px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.manage-nominees-empty-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+}
+
+.manage-nominees-empty-desc {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .manage-nominees-header {
+    align-items: flex-start;
+  }
+
+  .manage-nominees-actions {
+    width: 100%;
+  }
+
+  .manage-nominees-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .manage-nominees-actions .btn {
+    flex: 1;
+  }
+
+  .manage-nominees-empty {
+    padding: 56px 20px;
+  }
+}

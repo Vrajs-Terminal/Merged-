@@ -1,0 +1,18 @@
+/* Add Event - component-scoped styles */
+
+.add-event-page .add-event-header {
+  margin-bottom: 24px;
+}
+
+.add-event-page .add-event-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+
+@media (max-width: 1024px) {
+  .add-event-page .add-event-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}

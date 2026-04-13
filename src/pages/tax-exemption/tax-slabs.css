@@ -1,0 +1,195 @@
+.tax-slabs-layout {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: calc(100vh - 60px);
+}
+
+.tax-slabs-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ts-header h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 24px;
+}
+
+.ts-header p {
+    margin: 4px 0 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.ts-filter-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+}
+
+.ts-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.ts-filter-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+
+.ts-input, .ts-select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+    background: white;
+}
+
+.ts-input:focus, .ts-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ts-grid-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+}
+
+.ts-slab-builder {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+}
+
+.ts-slab-builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ts-slab-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.ts-slab-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ts-slab-col label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.ts-slab-col span {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.btn-add-slab {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    background: white;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    transition: all 0.2s;
+}
+
+.btn-add-slab:hover {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.btn-primary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.ts-calculator-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+    position: sticky;
+    top: 24px;
+}
+
+.ts-calc-result {
+    margin-top: 20px;
+    padding: 16px;
+    background: #eff6ff;
+    border-radius: 10px;
+    border: 1px solid #bfdbfe;
+}
+
+.ts-calc-result p {
+    margin: 0;
+    color: #1e3a8a;
+    font-size: 14px;
+}
+
+.ts-calc-result h3 {
+    margin: 8px 0 0 0;
+    color: #1d4ed8;
+    font-size: 28px;
+}

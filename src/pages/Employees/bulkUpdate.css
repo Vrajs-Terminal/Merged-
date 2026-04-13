@@ -1,0 +1,26 @@
+/* Standardized Bulk Update — Premium CSV Workflows */
+
+.bulk-update-container {
+  /* Layout handled via index.css */
+}
+
+/* Stepper logic is handled via wizard-nav in index.css or local override */
+
+.step-content-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border);
+}
+
+/* Validation table custom styles */
+.row-error {
+  background: var(--color-danger-50);
+}
+
+.change-item {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+}

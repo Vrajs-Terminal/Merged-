@@ -1,0 +1,27 @@
+/* ============================================================
+   Ex-Employees Module — Premium Styling
+   Aligned with global index.css & tokens.css
+   ============================================================ */
+
+.ex-container {
+  /* Layout handled by index.css */
+}
+
+/* Status nuances for Ex-Employees specifically */
+.status-badge.resigned {
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-200);
+}
+
+.status-badge.terminated {
+  background: var(--color-danger-50);
+  color: var(--color-danger-700);
+  border: 1px solid var(--color-danger-200);
+}
+
+.status-badge.retired {
+  background: var(--color-gray-100);
+  color: var(--color-gray-700);
+  border: 1px solid var(--color-gray-300);
+}

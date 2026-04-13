@@ -1,0 +1,119 @@
+.id-card-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+.card-type-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.preview-container {
+    background: #f1f5f9;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+.dummy-id-card {
+    width: 200px;
+    height: 300px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.card-header-bg {
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.card-content-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    z-index: 1;
+    margin-top: 20px;
+}
+
+.profile-pic {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.name-placeholder {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.desig-placeholder {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+.id-placeholder {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 4px 12px;
+    border-radius: 4px;
+    margin-bottom: auto;
+}
+
+.qr-placeholder {
+    width: 50px;
+    height: 50px;
+    background: #f1f5f9;
+    border: 1px dashed #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+}
+
+.card-footer-bg {
+    height: 20px;
+    background: #0f172a;
+    width: 100%;
+}

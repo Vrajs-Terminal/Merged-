@@ -1,0 +1,419 @@
+/* Holiday Management Module Styling */
+
+/* ===================== Header Section ===================== */
+.holiday-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-6);
+  padding: 0;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-8);
+}
+
+.holiday-header-content h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.holiday-header-content p {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.holiday-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-fast);
+}
+
+/* ===================== Alert Messages ===================== */
+.holiday-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-6);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.holiday-alert-success {
+  background: var(--color-success-50);
+  color: var(--color-success-600);
+  border: 1px solid var(--color-success-200);
+}
+
+.holiday-alert-error {
+  background: var(--color-danger-50);
+  color: var(--color-danger-600);
+  border: 1px solid var(--color-danger-200);
+}
+
+/* ===================== Main Content Card ===================== */
+.holiday-content-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.holiday-content-head {
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: linear-gradient(to right, #ffffff, #f8fafc);
+}
+
+.holiday-content-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.holiday-content-count {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+}
+
+/* ===================== Grid Layout ===================== */
+.holiday-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-6);
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .holiday-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===================== Holiday Cards ===================== */
+.holiday-card {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: white;
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+.holiday-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-200);
+}
+
+.holiday-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.holiday-card-type-badge {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.holiday-card-type-public {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+}
+
+.holiday-card-type-optional {
+  background: var(--color-success-50);
+  color: var(--color-success-600);
+}
+
+.holiday-card-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.holiday-card-action-btn {
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.holiday-card-action-assign {
+  color: var(--text-muted);
+}
+
+.holiday-card-action-assign:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-primary-600);
+}
+
+.holiday-card-action-delete {
+  color: var(--color-danger-600);
+  background: var(--color-danger-50);
+  border-color: var(--color-danger-200);
+}
+
+.holiday-card-action-delete:hover {
+  background: var(--color-danger-100);
+  border-color: var(--color-danger-300);
+}
+
+.holiday-card-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: var(--space-2) 0;
+}
+
+.holiday-card-date {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.holiday-card-description {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+  line-height: 1.5;
+}
+
+.holiday-card-footer {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* ===================== Modal Styling ===================== */
+.holiday-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: var(--space-4);
+}
+
+.holiday-modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 500px;
+  padding: var(--space-8);
+  animation: slideUp 0.3s ease-out;
+}
+
+.holiday-modal h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0 0 var(--space-6) 0;
+}
+
+.holiday-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ===================== Form Fields ===================== */
+.holiday-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.holiday-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.holiday-form-input,
+.holiday-form-select {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  background: white;
+  transition: all var(--transition-fast);
+}
+
+.holiday-form-input:focus,
+.holiday-form-select:focus {
+  outline: none;
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+.holiday-form-input::placeholder {
+  color: var(--text-muted);
+}
+
+.holiday-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.holiday-form-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.holiday-form-actions button {
+  flex: 1;
+  padding: var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.holiday-form-submit {
+  background: var(--color-primary-600);
+  color: white;
+}
+
+.holiday-form-submit:hover {
+  background: var(--color-primary-700);
+}
+
+.holiday-form-cancel {
+  background: var(--color-bg-secondary);
+  color: var(--text-main);
+  border: 1px solid var(--color-border);
+}
+
+.holiday-form-cancel:hover {
+  background: var(--color-bg-tertiary);
+}
+
+/* ===================== Empty State ===================== */
+.holiday-empty {
+  text-align: center;
+  padding: 72px 28px;
+  background: linear-gradient(180deg, var(--color-bg-secondary), #ffffff);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+  grid-column: 1 / -1;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.holiday-empty-icon {
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+  opacity: 0.7;
+  background: white;
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.holiday-empty-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.holiday-empty-text {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0 0 18px;
+}
+
+.holiday-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===================== Animations ===================== */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .holiday-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holiday-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .holiday-modal {
+    padding: var(--space-6);
+  }
+
+  .holiday-content-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .holiday-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

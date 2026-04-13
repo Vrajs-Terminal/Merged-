@@ -1,0 +1,319 @@
+/* ============================================================
+   Quotation Module — Premium Styling
+   Uses only centralized design tokens from tokens.css
+   ============================================================ */
+
+/* ===== PAGE CONTAINER ===== */
+.quotation-page-container {
+  padding: var(--space-6) var(--space-8);
+  background: var(--gradient-subtle);
+  min-height: calc(100vh - 72px);
+  font-family: var(--font-family-primary);
+  color: var(--color-text-primary);
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ===== PAGE HEADER ===== */
+.quotation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.quotation-header-text h1 {
+  font-family: var(--font-family-display);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.quotation-header-text p {
+  color: var(--color-text-muted);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* ===== MAIN CARD ===== */
+.quotation-main-card {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  animation: slideUpFade 0.4s ease-out;
+}
+
+/* ===== TOOLBAR ===== */
+.quotation-toolbar {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: linear-gradient(to right, #ffffff, #f9fafb);
+}
+
+/* ===== TABLE ===== */
+.quotation-table { width: 100%; border-collapse: collapse; }
+
+.quotation-table th {
+  background: var(--table-header-bg);
+  padding: 14px 18px;
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--color-text-muted); font-weight: 700;
+  border-bottom: 2px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.quotation-table td {
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--color-bg-tertiary);
+  font-size: 14px; vertical-align: middle;
+}
+
+.quotation-table tbody tr { transition: background 0.15s ease; }
+.quotation-table tbody tr:hover { background: var(--color-primary-50); }
+.quotation-table tbody tr:last-child td { border-bottom: none; }
+
+/* ===== QUOTATION NUMBER ===== */
+.quotation-number {
+  font-family: var(--font-family-mono);
+  font-weight: 700;
+  color: var(--color-primary-700);
+  font-size: 13.5px;
+  background: var(--color-primary-50);
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary-200);
+  display: inline-block;
+}
+
+/* ===== AMOUNT CELL ===== */
+.quotation-amount {
+  font-family: var(--font-family-mono);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--color-text-primary);
+}
+
+/* ===== TEMPLATE CARD ===== */
+.template-card {
+  background: white;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  transition: var(--transition-base);
+  animation: slideUpFade 0.35s ease-out both;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: var(--transition-base);
+}
+
+.template-card:hover::before { opacity: 1; }
+.template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary-300);
+}
+
+.template-card.selected {
+  border-color: var(--primary);
+  background: var(--color-primary-50);
+  box-shadow: var(--shadow-primary);
+}
+
+.template-card.selected::before { opacity: 1; }
+
+.template-card-name {
+  font-size: 16px; font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.template-card-desc {
+  font-size: 13.5px; color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.template-check-icon {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: var(--transition-spring);
+}
+
+.template-card.selected .template-check-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ===== TEMPLATES GRID ===== */
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+/* ===== LABEL CHIPS (Column Labels) ===== */
+.quotation-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-border);
+  font-size: 13px; font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: grab;
+  transition: var(--transition-fast);
+}
+
+.quotation-label-chip:hover {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary-200);
+  color: var(--primary);
+}
+
+.quotation-label-chip.active {
+  background: var(--gradient-primary);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-primary);
+}
+
+/* ===== GENERATE FORM ===== */
+.quotation-generate-card {
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: slideUpFade 0.4s ease-out;
+}
+
+.quotation-generate-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(to right, #ffffff, #f8fafc);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.quotation-generate-header h2 {
+  font-size: 18px; font-weight: 800; color: var(--color-text-primary);
+}
+
+.quotation-generate-body { padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+
+.quotation-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.quotation-form-full { grid-column: 1 / -1; }
+
+.quotation-form-group { display: flex; flex-direction: column; gap: 7px; }
+
+.quotation-form-label {
+  font-size: 13px; font-weight: 700;
+  color: var(--color-text-secondary); letter-spacing: 0.01em;
+}
+
+.quotation-form-input,
+.quotation-form-select,
+.quotation-form-textarea {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px; font-family: inherit;
+  background: white; color: var(--color-text-primary);
+  transition: var(--transition-fast);
+}
+
+.quotation-form-input:focus,
+.quotation-form-select:focus,
+.quotation-form-textarea:focus {
+  outline: none; border-color: var(--primary); box-shadow: var(--shadow-focus);
+}
+
+/* ===== LINE ITEMS TABLE ===== */
+.quotation-line-items {
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.quotation-line-items th {
+  background: var(--color-primary-50);
+  padding: 12px 14px;
+  font-size: 12px; font-weight: 700;
+  color: var(--color-primary-800);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--color-primary-200);
+}
+
+.quotation-line-items td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.quotation-line-items tbody tr:last-child td { border-bottom: none; }
+
+.quotation-total-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: var(--color-gray-50);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.quotation-total-label {
+  font-size: 14px; font-weight: 700; color: var(--color-text-muted);
+}
+
+.quotation-total-value {
+  font-family: var(--font-family-mono);
+  font-size: 20px; font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .quotation-page-container { padding: 18px; }
+  .quotation-form-grid       { grid-template-columns: 1fr; }
+  .quotation-form-full       { grid-column: auto; }
+  .templates-grid            { grid-template-columns: 1fr; }
+}

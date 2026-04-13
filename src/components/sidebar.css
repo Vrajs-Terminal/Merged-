@@ -1,0 +1,408 @@
+/* Base Sidebar Styles */
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    /* Mesh Gradient Background with Navy Overlay — image loaded via inline style in sidebar.tsx */
+    background-color: #0f172a;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    color: #f1f5f9;
+    height: 100vh;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+
+    /* Smooth Transition for Width Only */
+    overflow-x: hidden;
+    /* Vital for clipping content */
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.sidebar.sidebar-collapsed {
+    width: 80px;
+    min-width: 80px;
+}
+
+.sidebar.sidebar-collapsed .sidebar-content-wrapper {
+    width: 80px;
+    min-width: 80px;
+}
+
+.sidebar.sidebar-collapsed .company-text,
+.sidebar.sidebar-collapsed .menu-item span,
+.sidebar.sidebar-collapsed .arrow-icon,
+.sidebar.sidebar-collapsed .sub-menu {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .brand-container {
+    padding: 0;
+    margin-bottom: 0;
+    margin-top: 10px;
+    width: 80px;
+}
+
+.sidebar.sidebar-collapsed .user-profile {
+    display: none;
+}
+
+.sidebar.sidebar-collapsed .sidebar-header {
+    width: 80px;
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.sidebar.sidebar-collapsed .brand-icon {
+    width: 48px;
+    height: 48px;
+}
+
+.sidebar.sidebar-collapsed .menu-item {
+    justify-content: center;
+    padding: 10px 0;
+    width: 100%;
+}
+
+.sidebar.sidebar-collapsed .menu-item-content {
+    justify-content: center;
+    width: 100%;
+}
+
+.sidebar.sidebar-collapsed .sidebar-menu {
+    padding: 12px 6px;
+}
+
+/* Inner Wrapper to hold fixed width content */
+.sidebar-content-wrapper {
+    width: 260px;
+    /* Fixed width prevents internal reflow */
+    min-width: 260px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    /* Hide scrollbar but keep functionality */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar-content-wrapper::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+/* Header Section */
+.sidebar-header {
+    padding: 20px 24px 20px;
+    background: transparent;
+}
+
+.brand-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.brand-icon {
+    width: 200px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* User Profile Info */
+/* User Profile Info (Company Name) */
+.user-profile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    /*margin-bottom: 24px;*/
+    padding: 12px;
+    /* Matched to btn */
+    background: rgba(255, 255, 255, 0.05);
+    /* Matched to btn */
+    color: #e2e8f0;
+    /* Matched to btn */
+    border-radius: 12px;
+    /* Matched to btn */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Matched to btn */
+    backdrop-filter: blur(8px);
+    /* Matched to btn */
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+.user-profile:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.user-detail {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-icon {
+    color: #ffffff;
+}
+
+.company-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.profile-icon {
+    color: #94a3b8;
+    min-width: 16px;
+    transition: color 0.3s ease;
+}
+
+.user-profile:hover .profile-icon {
+    color: #ffffff;
+}
+
+.company-text {
+    font-weight: 600;
+    /* Matched to btn likely */
+    color: inherit;
+    font-size: 11px;
+    transition: color 0.3s ease;
+}
+
+
+
+/* Menu Section */
+.sidebar-menu {
+    padding: 12px 16px;
+    flex: 1;
+}
+
+.sidebar-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-menu li.menu-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 12px;
+    color: #94a3b8;
+    /* Light Grey for inactive */
+    font-weight: 600;
+    font-size: 13px;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+    height: auto;
+    /* Allow growth */
+    min-height: 48px;
+    text-decoration: none;
+}
+
+/* Real Glass Effect */
+.menu-item:hover,
+.menu-item.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Active State Specifics */
+.menu-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.3) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-left: 1px solid rgba(129, 140, 248, 0.5);
+}
+
+/* Shimmer/Gloss Animation */
+.menu-item::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent);
+    transform: skewX(-20deg);
+    transition: none;
+}
+
+.menu-item:hover::after {
+    left: 150%;
+    transition: left 1.5s ease-in-out;
+}
+
+.menu-item-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2;
+    flex: 1;
+    /* Take available width */
+    min-width: 0;
+    /* Allow shrinking for text wrap */
+    padding-right: 8px;
+    /* Space before arrow */
+}
+
+.menu-item-content span {
+    white-space: normal;
+    /* Allow wrap */
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    /* Standard property */
+    /* Limit to 2 lines if needed, or remove for full wrap */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.menu-icon {
+    min-width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    color: #cbd5e1;
+    flex-shrink: 0;
+    /* Don't shrink icon */
+}
+
+.menu-item:hover .menu-icon,
+.menu-item.active .menu-icon {
+    opacity: 1;
+    color: #ffffff;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+.arrow-icon {
+    color: #64748b;
+    /* Stays muted */
+    transition: all 0.3s;
+    font-size: 14px;
+    z-index: 2;
+    flex-shrink: 0;
+    /* Important: Don't shrink arrow */
+    min-width: 16px;
+}
+
+.menu-item:hover .arrow-icon,
+.menu-item.active .arrow-icon {
+    color: #ffffff;
+    transform: translateX(2px);
+}
+
+/* Submenu Styles */
+.sub-menu {
+    list-style: none;
+    padding: 4px 0 4px 16px !important;
+    margin: 4px 0 0 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    margin-left: 20px !important;
+}
+
+/* Nested Submenu Indentation */
+.sub-menu.level-1 {
+    margin-left: 12px !important;
+    border-left: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.sub-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.sub-menu-item.nested {
+    justify-content: space-between;
+}
+
+.sub-menu-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sub-menu-item:hover,
+.sub-menu-item.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sub-menu-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #475569;
+    transition: all 0.3s ease;
+}
+
+.sub-menu-item:hover .sub-menu-dot,
+.sub-menu-item.active .sub-menu-dot {
+    background: #818cf8;
+    box-shadow: 0 0 8px rgba(129, 140, 248, 0.6);
+}
+
+/* Refined Scrollbar for Dark Mode */
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

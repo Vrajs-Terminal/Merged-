@@ -1,0 +1,411 @@
+/* =========================================================================
+   Attendance Module Styles — Unified with Dashboard & Company Settings
+   ========================================================================= */
+
+/* --- Page Container (matches dashboard-container) --- */
+.attendance-module-container {
+    padding: 16px;
+    color: #0f172a;
+    font-family: 'Inter', sans-serif;
+    background: #f1f5f9;
+    min-height: 100%;
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* --- Page Header (matches dashboard-header-title) --- */
+.attendance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.attendance-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #0f172a;
+}
+
+.attendance-subtitle {
+    color: #64748b;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+/* --- Buttons (matches btn-save + dashboard patterns) --- */
+.attendance-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-apply,
+.btn-reset,
+.btn-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, #0f172a, #1e293b);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    font-size: 14px;
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.btn-apply {
+    background: linear-gradient(to right, #0f172a, #1e293b);
+    color: #fff;
+}
+
+.btn-apply:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-reset {
+    background: #ffffff;
+    color: #ef4444;
+    border: 1px solid #fca5a5;
+}
+
+.btn-reset:hover {
+    background: #fef2f2;
+}
+
+.btn-link {
+    background: transparent;
+    color: #ef4444;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+/* --- Filter Bar (matches new-stat-card / chart-card styling) --- */
+.attendance-filters-bar {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 160px;
+}
+
+.filter-group label {
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.filter-group input,
+.filter-group select {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-group select option {
+    background: #ffffff;
+    color: #0f172a;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* --- KPI Cards Grid (matches new-stat-card) --- */
+.attendance-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.kpi-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.1);
+}
+
+.kpi-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.kpi-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.kpi-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.kpi-title {
+    font-size: 12px;
+    color: #64748b;
+    margin: 4px 0 0 0;
+}
+
+/* KPI Semantic Colors (matches ns-blue, ns-green, ns-orange, ns-red) */
+.color-blue .kpi-icon-wrapper {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.color-green .kpi-icon-wrapper {
+    background: #f0fdf4;
+    color: #10b981;
+}
+
+.color-red .kpi-icon-wrapper {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.color-amber .kpi-icon-wrapper {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.color-purple .kpi-icon-wrapper {
+    background: #faf5ff;
+    color: #a855f7;
+}
+
+.color-orange .kpi-icon-wrapper {
+    background: #fff7ed;
+    color: #f97316;
+}
+
+.color-indigo .kpi-icon-wrapper {
+    background: #eef2ff;
+    color: #6366f1;
+}
+
+.color-rose .kpi-icon-wrapper {
+    background: #fff1f2;
+    color: #f43f5e;
+}
+
+/* --- Charts & Tables Section (matches chart-card) --- */
+.attendance-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 1024px) {
+    .attendance-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.attendance-chart-card,
+.attendance-table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.attendance-chart-card:hover,
+.attendance-table-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #0f172a;
+}
+
+.chart-container-inner {
+    width: 100%;
+}
+
+.table-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.table-header-flex h3 {
+    margin: 0;
+}
+
+/* Custom Recharts Tooltip (matches dashboard) */
+.recharts-default-tooltip {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}
+
+/* --- Data Table Styling (matches re-table in dashboard) --- */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.attendance-table th {
+    text-align: left;
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    font-weight: 600;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.attendance-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #1e293b;
+    border-top: 1px solid #f1f5f9;
+}
+
+.attendance-table tbody tr {
+    transition: background 0.2s;
+}
+
+.attendance-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+/* Status Badges (matches emp-status dot pattern) */
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.badge-present {
+    background: #f0fdf4;
+    color: #059669;
+}
+
+.badge-absent {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.badge-late {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.badge-leave {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.badge-halfday {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+/* Animations (matches dashboard fadeUp) */
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

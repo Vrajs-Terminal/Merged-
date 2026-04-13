@@ -1,0 +1,216 @@
+/* ======================================= */
+/* Background Verification (BGV) Styles    */
+/* ======================================= */
+
+.bgv-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Header Bar */
+.bgv-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.bgv-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bgv-header-left h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.bgv-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Stats Cards */
+.bgv-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.bgv-stat-card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s;
+}
+
+.bgv-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.bgv-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bgv-stat-info h3 {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.bgv-stat-info p {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 4px 0 0 0;
+}
+
+/* Tabs */
+.bgv-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.bgv-tab {
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+}
+
+.bgv-tab.active {
+    background: #ffffff;
+    color: #3b82f6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-badge.verified { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.status-badge.pending { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.status-badge.failed { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.status-badge.not-started { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* Table Elements */
+.bgv-search-box {
+    position: relative;
+    flex: 1;
+}
+
+.bgv-search-box input {
+    width: 100%;
+    padding: 10px 14px 10px 40px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+}
+
+.bgv-search-box .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.bgv-filter-select {
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    background: #ffffff;
+    min-width: 150px;
+}
+
+/* Form Styles */
+.bgv-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Document List */
+.doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.doc-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.doc-item .doc-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #475569;
+}
+
+.btn-upload {
+    padding: 8px 16px;
+    background: #eff6ff;
+    color: #3b82f6;
+    border: 1px dashed #3b82f6;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+}
+
+@media (max-width: 1024px) {
+    .bgv-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
