@@ -5,10 +5,12 @@ import {
   Edit3, 
   Trash2, 
   Filter,
-  XCircle
+  XCircle,
+  SlidersHorizontal,
+  RotateCcw,
+  ShieldCheck
 } from "lucide-react";
 import "./AdminViewAccess.css";
-import PageTitle from "../../components/PageTitle";
 import { adminSettingsAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
 
@@ -26,9 +28,14 @@ const submodulesData: any = {
   // Add other submodules as needed
 };
 
+const accessModeFilterOptions = ["All", "View", "Modification", "Approval"] as const;
+const teamRequestFilterOptions = ["All", "Yes", "No"] as const;
+
 const AdminViewAccess = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [accessModeFilter, setAccessModeFilter] = useState<(typeof accessModeFilterOptions)[number]>("All");
+  const [teamRequestFilter, setTeamRequestFilter] = useState<(typeof teamRequestFilterOptions)[number]>("All");
   const [accessRecords, setAccessRecords] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     employeeName: "",
@@ -95,15 +102,30 @@ const AdminViewAccess = () => {
 
   const filteredRecords = accessRecords.filter((record: any) => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return true;
-    return `${record.employeeName || ""} ${record.designation || ""}`.toLowerCase().includes(q);
+    const matchesQuery = !q || `${record.employeeName || ""} ${record.designation || ""}`.toLowerCase().includes(q);
+    const matchesAccessMode = accessModeFilter === "All" || record.accessMode === accessModeFilter;
+    const teamRequestText = record.teamRequestNeeded === "Yes" || record.teamRequestNeeded === true ? "Yes" : "No";
+    const matchesTeamRequest = teamRequestFilter === "All" || teamRequestText === teamRequestFilter;
+    return matchesQuery && matchesAccessMode && matchesTeamRequest;
   });
+
+  const hasActiveFilters = Boolean(searchQuery.trim()) || accessModeFilter !== "All" || teamRequestFilter !== "All";
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setAccessModeFilter("All");
+    setTeamRequestFilter("All");
+  };
 
   return (
     <div className="settings-page-container">
       <div className="settings-header">
-        <div className="header-title-box">
-          <PageTitle title="Admin View Access" subtitle="Define and manage administrative access permissions across system modules" />
+        <div className="access-title-block">
+          <div className="access-title-row">
+            <ShieldCheck size={24} className="access-title-icon" />
+            <h1 className="settings-page-title">Admin View Access</h1>
+          </div>
+          <p className="settings-page-subtitle">Define and manage administrative access permissions across system modules</p>
         </div>
         <button className="primary-save-btn" onClick={() => setShowAddModal(true)}>
           <Plus size={18} />
@@ -111,7 +133,12 @@ const AdminViewAccess = () => {
         </button>
       </div>
 
-      <div className="premium-card mt-4">
+      <div className="premium-card">
+        <div className="access-panel-header">
+          <h3>Access Rules Directory</h3>
+          <p>Track and manage role based visibility with structured filters.</p>
+        </div>
+
         <div className="card-toolbar">
           <div className="search-bar-premium">
             <Search size={16} />
@@ -121,12 +148,65 @@ const AdminViewAccess = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery.trim() && (
+              <button className="search-clear-btn" onClick={() => setSearchQuery("")} aria-label="Clear search">
+                <XCircle size={14} />
+              </button>
+            )}
           </div>
-          <div className="filter-group">
-            <button className="toolbar-btn">
-              <Filter size={16} />
-              Filter
+
+          <div className="filter-toolbar">
+            <div className="filter-block">
+              <div className="filter-block-title">
+                <SlidersHorizontal size={14} />
+                Access Mode
+              </div>
+              <div className="filter-chip-group">
+                {accessModeFilterOptions.map((option) => (
+                  <button
+                    key={option}
+                    className={`filter-chip ${accessModeFilter === option ? "active" : ""}`}
+                    onClick={() => setAccessModeFilter(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-block">
+              <div className="filter-block-title">
+                <Filter size={14} />
+                Team Request
+              </div>
+              <div className="filter-chip-group">
+                {teamRequestFilterOptions.map((option) => (
+                  <button
+                    key={option}
+                    className={`filter-chip ${teamRequestFilter === option ? "active" : ""}`}
+                    onClick={() => setTeamRequestFilter(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button className="toolbar-btn ghost" onClick={resetFilters} disabled={!hasActiveFilters}>
+              <RotateCcw size={14} />
+              Reset
             </button>
+          </div>
+        </div>
+
+        <div className="results-strip">
+          <div className="results-card">
+            <span className="results-label">Total Rules</span>
+            <strong>{accessRecords.length}</strong>
+          </div>
+          <div className="results-card">
+            <span className="results-label">Visible Results</span>
+            <strong>{filteredRecords.length}</strong>
           </div>
         </div>
 
@@ -145,11 +225,20 @@ const AdminViewAccess = () => {
               </tr>
             </thead>
             <tbody>
+              {filteredRecords.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="empty-state-inline">
+                      No access rule found for the current search and filter selection.
+                    </div>
+                  </td>
+                </tr>
+              )}
               {filteredRecords.map((record: any) => (
                 <tr key={record.id}>
                   <td>
                     <div className="user-info-cell">
-                      <div className="avatar-small">{record.employeeName.charAt(0)}</div>
+                      <div className="avatar-small">{(record.employeeName?.charAt(0) || "?").toUpperCase()}</div>
                       <span>{record.employeeName}</span>
                     </div>
                   </td>
@@ -169,7 +258,7 @@ const AdminViewAccess = () => {
                   </td>
                   <td>
                     <div className="action-btns">
-                      <button className="icon-btn edit"><Edit3 size={16} /></button>
+                      <button className="icon-btn edit" title="Edit access rule"><Edit3 size={16} /></button>
                       <button className="icon-btn delete" onClick={() => handleDelete(record.id)}><Trash2 size={16} /></button>
                     </div>
                   </td>

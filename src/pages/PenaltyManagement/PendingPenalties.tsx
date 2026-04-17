@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { penaltyAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import { Filter, CheckCircle2, XCircle, Info, Clock, Calendar, AlertTriangle } from "lucide-react";
+import { Filter, CheckCircle2, XCircle, Info, Clock, Calendar, AlertTriangle, AlertCircle, RotateCcw, Users } from "lucide-react";
+import "./Penalty.css";
 
 interface PendingPenaltiesProps {
   user: any;
@@ -55,21 +56,75 @@ const PendingPenalties: React.FC<PendingPenaltiesProps> = ({ user }) => {
     }
   };
 
+  const resetFilters = () => {
+    setFilters({
+      status: "Pending",
+      penaltyType: "All",
+      employeeId: ""
+    });
+  };
+
+  const activeFilterCount = (filters.penaltyType !== "All" ? 1 : 0) + (filters.status !== "Pending" ? 1 : 0);
+
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title"><AlertTriangle size={22} /> Pending Penalties</h1>
+    <div className="main-content animate-fade-in penalty-page-container">
+      <div className="penalty-header">
+        <div className="penalty-title-block">
+          <div className="penalty-title-row">
+            <AlertTriangle size={24} className="penalty-title-icon" />
+            <h1 className="page-title">Pending Penalties</h1>
+          </div>
           <p className="page-subtitle">Review and approve penalties before they are applied</p>
+        </div>
+        <div className="penalty-header-actions">
+          <span className="penalty-chip">{records.length} pending</span>
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginTop: "24px", padding: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-          <Filter size={20} color="var(--primary)" />
-          <h3 style={{ margin: 0 }}>Review Filters</h3>
+      <div className="penalty-stats-grid penalty-pending-stats">
+        <div className="penalty-stat-card penalty-stat-upgrade accent-danger">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Items in queue</span>
+            <span className="penalty-stat-icon danger"><AlertTriangle size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{records.length}</strong>
+          <span className="penalty-stat-note">Records awaiting review</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-warning">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Selected status</span>
+            <span className="penalty-stat-icon warning"><Clock size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{filters.status}</strong>
+          <span className="penalty-stat-note">Current review mode</span>
+        </div>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-primary">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Selected type</span>
+            <span className="penalty-stat-icon primary"><Users size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{filters.penaltyType}</strong>
+          <span className="penalty-stat-note">Violation category in view</span>
+        </div>
+      </div>
+
+      <div className="penalty-card penalty-filter-shell">
+        <div className="penalty-card-header penalty-filter-header-compact">
+          <div>
+            <div className="penalty-inline-meta">
+              <Filter size={18} className="penalty-icon-muted" />
+              <h3 className="penalty-card-title">Review Filters</h3>
+            </div>
+            <p className="penalty-card-subtitle">Refine queue by type and approval status before taking action.</p>
+          </div>
+          <div className="penalty-header-actions">
+            <span className="penalty-chip muted">{activeFilterCount} active</span>
+            <button className="penalty-btn secondary" onClick={resetFilters}>
+              <RotateCcw size={14} /> Reset
+            </button>
+          </div>
+        </div>
+        <div className="penalty-form-grid penalty-filter-grid-pending-compact">
           <div>
             <label className="input-label">Penalty Type</label>
             <select className="select-modern" value={filters.penaltyType} onChange={e => setFilters({...filters, penaltyType: e.target.value})}>
@@ -90,60 +145,67 @@ const PendingPenalties: React.FC<PendingPenaltiesProps> = ({ user }) => {
         </div>
       </div>
 
-      <div style={{ marginTop: "24px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
-        {records.map((rec) => (
-          <div key={rec.id} className="glass-card animate-slide-up" style={{ padding: "0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "20px", display: "flex", gap: "12px", borderBottom: "1px solid var(--border-color)" }}>
+      <div className="penalty-card penalty-table-shell penalty-queue-shell">
+        <div className="penalty-table-header">
+          <div>
+            <h3 className="penalty-card-title">Review Queue</h3>
+            <p className="penalty-card-subtitle">Approve or reject each case with documented reason and context.</p>
+          </div>
+          <span className="penalty-chip">{records.length} items</span>
+        </div>
+
+        <div className="penalty-rules-grid penalty-review-grid">
+          {records.map((rec) => (
+            <div key={rec.id} className="penalty-rule-card animate-slide-up penalty-review-card">
+            <div className="penalty-review-card-head">
               <div className="avatar" style={{ borderRadius: "12px" }}>{(rec.employee.firstName[0] + rec.employee.lastName[0])}</div>
               <div>
-                <div style={{ fontWeight: "600", fontSize: "16px" }}>{rec.employee.firstName} {rec.employee.lastName}</div>
-                <div style={{ fontSize: "13px", color: "var(--primary)", fontWeight: "500" }}>{rec.penaltyType} Violation</div>
+                <div className="penalty-strong">{rec.employee.firstName} {rec.employee.lastName}</div>
+                <div className="penalty-pill subtle">{rec.penaltyType} Violation</div>
               </div>
             </div>
-            <div style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
+            <div className="penalty-review-card-body">
+              <div className="penalty-inline-meta subdued">
                 <Calendar size={14} /> <span>{new Date(rec.date).toLocaleDateString()}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
+              <div className="penalty-inline-meta subdued">
                 <Clock size={14} /> <span>{rec.shift?.shiftName || "Regular"}</span>
               </div>
-              <div style={{ gridColumn: "1 / -1", display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "var(--text-muted)" }}>
+              <div className="penalty-inline-meta subdued penalty-full-span">
                 <Info size={14} /> <span>Reason: {rec.reason || "Automatic detection"}</span>
               </div>
-              <div style={{ gridColumn: "1 / -1", background: "var(--primary-light)", padding: "10px", borderRadius: "10px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="penalty-spotlight penalty-full-span">
                 <AlertCircle size={18} color="var(--primary)" />
-                <span style={{ fontWeight: "600", color: "var(--primary)" }}>
+                <span className="penalty-spotlight-text">
                   {rec.amountDeducted ? `Penalty: ₹${rec.amountDeducted} Salary` : rec.leaveDeducted ? `Penalty: ${rec.leaveDeducted} Day ${rec.rule?.penaltyType || ""}` : "Warning Only"}
                 </span>
               </div>
             </div>
-            <div style={{ padding: "16px 20px", background: "rgba(255,255,255,0.2)", display: "flex", gap: "12px", borderTop: "1px solid var(--border-color)" }}>
+            <div className="penalty-review-card-actions">
               {rec.status === "Pending" && (
                 <>
-                  <button className="btn-primary" style={{ flex: 1, padding: "8px" }} onClick={() => handleApprove(rec.id)}>
+                  <button className="penalty-btn primary penalty-btn-fluid" onClick={() => handleApprove(rec.id)}>
                     <CheckCircle2 size={16} /> Approve
                   </button>
-                  <button className="btn-secondary" style={{ flex: 1, padding: "8px", background: "#ef4444", color: "white", borderColor: "#ef4444" }} onClick={() => handleReject(rec.id)}>
+                  <button className="penalty-btn danger penalty-btn-fluid" onClick={() => handleReject(rec.id)}>
                     <XCircle size={16} /> Reject
                   </button>
                 </>
               )}
-              {rec.status === "Approved" && <div style={{ width: "100%", textAlign: "center", color: "#10b981", fontWeight: "600" }}><CheckCircle2 size={18} /> Already Approved</div>}
-              {rec.status === "Rejected" && <div style={{ width: "100%", textAlign: "center", color: "#ef4444", fontWeight: "600" }}><XCircle size={18} /> Already Rejected</div>}
+              {rec.status === "Approved" && <div className="penalty-status-note success"><CheckCircle2 size={18} /> Already Approved</div>}
+              {rec.status === "Rejected" && <div className="penalty-status-note danger"><XCircle size={18} /> Already Rejected</div>}
             </div>
-          </div>
-        ))}
-        {records.length === 0 && (
-          <div className="glass-card" style={{ gridColumn: "1 / -1", padding: "60px", textAlign: "center" }}>
-            <p>No {filters.status.toLowerCase()} penalties in the queue.</p>
-          </div>
-        )}
+            </div>
+          ))}
+          {records.length === 0 && (
+            <div className="penalty-empty-state penalty-empty-grid">
+              <p>No {filters.status.toLowerCase()} penalties in the queue.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
-
-// Internal AlertCircle if missing from imports though I have it in previous thoughts, just in case
-const AlertCircle = ({ size, color }: any) => <Info size={size} color={color} />;
 
 export default PendingPenalties;

@@ -461,8 +461,12 @@ function Sidebar({ isOpen }: SidebarProps) {
 
     const isActive = (path?: string) => {
         if (!path || path === "#") return false;
-        if (path === "/" && location.pathname !== "/") return false;
-        return location.pathname.startsWith(path);
+        if (path === "/") return location.pathname === "/";
+
+        const currentPath = location.pathname.replace(/\/+$/, "");
+        const targetPath = path.replace(/\/+$/, "");
+
+        return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
     };
 
     const isSubActive = (subItems?: SubItem[]): boolean => {

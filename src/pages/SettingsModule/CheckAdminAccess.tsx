@@ -145,6 +145,13 @@ const CheckAdminAccess = () => {
     }));
   };
 
+  const setAllForSelectedModule = (value: boolean) => {
+    setPermissions((prev: any) => ({
+      ...prev,
+      [selectedModule]: (prev[selectedModule] || []).map((perm: any) => ({ ...perm, value }))
+    }));
+  };
+
   const moduleIcons: any = {
     "Attendance": <CalendarCheck size={20} />,
     "Leaves": <ArrowRight size={20} />,
@@ -265,8 +272,8 @@ const CheckAdminAccess = () => {
              <p>Toggle specific feature-level administrative rights</p>
            </div>
            <div className="bulk-actions">
-             <button className="btn-text">Select All</button>
-             <button className="btn-text">Deselect All</button>
+             <button className="btn-text" onClick={() => setAllForSelectedModule(true)}>Select All</button>
+             <button className="btn-text" onClick={() => setAllForSelectedModule(false)}>Deselect All</button>
            </div>
          </div>
          <div className="card-body mt-4">

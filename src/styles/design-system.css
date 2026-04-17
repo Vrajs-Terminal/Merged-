@@ -252,6 +252,31 @@ textarea:focus-visible {
   font-size: 28px;
 }
 
+.page-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary-600);
+  flex-shrink: 0;
+}
+
+.page-title-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .page-subtitle,
 .lm-page-subtitle,
 .dashboard-header-title p {

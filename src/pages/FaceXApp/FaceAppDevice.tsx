@@ -11,7 +11,11 @@ import {
   AlertCircle,
   Activity,
     Scan,
-  Globe
+    Globe,
+    Shield,
+    X,
+    CalendarClock,
+    RefreshCw
 } from "lucide-react";
 import { faceXAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
@@ -24,26 +28,46 @@ interface FaceAppDeviceProps {
 const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
     const [devices, setDevices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [searchInput, setSearchInput] = useState("");
     const [totalEntries, setTotalEntries] = useState(0);
     const [page] = useState(1);
+    const [selectedDevice, setSelectedDevice] = useState<any | null>(null);
 
-    const fetchDevices = async () => {
+    const fetchDevices = async (silent = false) => {
         try {
-            setLoading(true);
+            if (silent) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
             const res = await faceXAPI.getDevices({ search: searchQuery, page, limit: 25 });
-            setDevices(res.data.devices);
-            setTotalEntries(res.data.total);
+            setDevices(res.data?.devices || []);
+            setTotalEntries(res.data?.total || 0);
         } catch (error) {
             toast.error("Failed to load devices");
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useEffect(() => {
         fetchDevices();
     }, [page, searchQuery]);
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setSearchQuery(searchInput.trim());
+        }, 320);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [searchInput]);
+
+    useEffect(() => {
+        void setActivePage;
+    }, [setActivePage]);
 
     const handleUpdateStatus = async (id: number, status: string) => {
         const confirmMsg = status === "Blocked" ? "Block this device? This will stop all facial authentication from this hardware." : "Allow this device?";
@@ -52,7 +76,7 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
         try {
             await faceXAPI.updateDeviceStatus(id, { status });
             toast.success(`Success! Device is now ${status}.`);
-            fetchDevices();
+            fetchDevices(true);
         } catch (error) {
             toast.error("Failed to update status");
         }
@@ -65,11 +89,18 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
         try {
             await faceXAPI.updateDeviceStatus(id, { remark });
             toast.success("Remark updated");
-            fetchDevices();
+            fetchDevices(true);
         } catch (error) {
             toast.error("Failed to save remark");
         }
     };
+
+    const getStatusClass = (status: string) => (status === "Allowed" ? "badge-success" : "badge-danger");
+
+    const getDeviceTypeIcon = (type: string) =>
+        type === "Tablet"
+            ? <Tablet size={14} color="var(--primary)" />
+            : <Smartphone size={14} color="var(--primary)" />;
 
     const stats = {
         total: totalEntries,
@@ -77,78 +108,93 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
         allowed: devices.filter(d => d.status === "Allowed").length,
         synced: devices.filter(d => d.lastSyncDate).length
     };
+    const hasSearchQuery = searchInput.trim().length > 0;
+    const isSearchSyncing = searchInput.trim() !== searchQuery;
 
     return (
         <div className="main-content animate-fade-in fx-device-page">
-            <div className="page-header fx-page-header">
-                <div>
-                    <h1 className="page-title"><Scan size={22} /> Registered Devices</h1>
-                    <p className="page-subtitle">Security control and health monitoring for all hardware devices running FaceX application</p>
+            <div className="fx-page-header">
+                <div className="fx-title-block">
+                    <div className="fx-title-row">
+                        <Scan size={24} className="fx-title-icon" />
+                        <h1 className="page-title">FaceX Device Security Console</h1>
+                    </div>
+                    <p className="page-subtitle">Security control and health monitoring for all hardware devices running FaceX application.</p>
+                </div>
+                <button className="btn-secondary fx-refresh-btn" onClick={() => fetchDevices(true)} disabled={loading || refreshing}>
+                    <RefreshCw size={16} className={refreshing ? "spin" : ""} />
+                    {refreshing ? "Refreshing..." : "Refresh Fleet"}
+                </button>
+            </div>
+
+            <div className="fx-stats-grid">
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Inventory</span>
+                        <span className="fx-stat-icon blue"><Smartphone size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.total}</strong>
+                    <span className="fx-stat-note">Total Fleet</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Authorized</span>
+                        <span className="fx-stat-icon green"><Activity size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.allowed}</strong>
+                    <span className="fx-stat-note">Active Hardware</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Blocked</span>
+                        <span className="fx-stat-icon red"><ShieldX size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.blocked}</strong>
+                    <span className="fx-stat-note">Safety Lockdown</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Verified</span>
+                        <span className="fx-stat-icon purple"><Globe size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.synced}</strong>
+                    <span className="fx-stat-note">Cloud Synced</span>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="main-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "30px" }}>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.1s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-blue"><Smartphone size={16} /></div>
-                        <div className="ns-change positive">Inventory</div>
+            <div className="glass-card fx-table-card">
+                <div className="fx-table-header">
+                    <div className="fx-table-title-wrap">
+                        <h3>Registered Hardware Inventory</h3>
+                        <span className="fx-chip">Total Devices: {totalEntries}</span>
                     </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.total}</div>
-                        <div className="ns-title">Total Fleet</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.2s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-green"><Activity size={16} /></div>
-                        <div className="ns-change positive">Authorized</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.allowed}</div>
-                        <div className="ns-title">Active Hardware</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.3s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-red"><ShieldX size={16} /></div>
-                        <div className="ns-change negative">Blocked</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.blocked}</div>
-                        <div className="ns-title">Safety Lockdown</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.4s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-purple"><Globe size={16} /></div>
-                        <div className="ns-change positive">Verified</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.synced}</div>
-                        <div className="ns-title">Cloud Synced</div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="glass-card">
-                <div className="table-header" style={{ display: "flex", justifyContent: "space-between", padding: "24px", alignItems: "center" }}>
-                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                        <div className="badge badge-info" style={{ fontWeight: "600", fontSize: "14px" }}>
-                            Total Devices: {totalEntries}
-                        </div>
-                    </div>
-                    <div className="search-box" style={{ width: "350px", position: "relative" }}>
-                        <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                    <div className="fx-search-wrap">
+                        <Search size={18} className="fx-search-icon" />
                         <input 
                             type="text" 
-                            className="form-control" 
+                            className="form-control fx-search-input"
                             placeholder="MAC Address, Device ID or Model..." 
-                            style={{ paddingLeft: "40px" }}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                         />
+                        {hasSearchQuery && (
+                            <button
+                                type="button"
+                                className="fx-search-clear"
+                                onClick={() => setSearchInput("")}
+                                aria-label="Clear device search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                     </div>
+                </div>
+                <div className="fx-search-meta">
+                    {isSearchSyncing
+                        ? "Searching devices..."
+                        : hasSearchQuery
+                            ? `Showing ${devices.length} result${devices.length === 1 ? "" : "s"} for "${searchQuery}"`
+                            : `Showing all ${devices.length} devices`}
                 </div>
 
                 <div className="table-responsive">
@@ -170,8 +216,9 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan={10} style={{ textAlign: "center", padding: "100px" }}>
-                                        <Loader2 className="animate-spin" size={40} style={{ margin: "0 auto" }} />
+                                    <td colSpan={10} className="fx-empty-row">
+                                        <Loader2 className="spin" size={22} />
+                                        <span>Loading device inventory...</span>
                                     </td>
                                 </tr>
                             ) : devices.length > 0 ? (
@@ -179,9 +226,12 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
                                     <tr key={d.id} className={d.status === "Blocked" ? "row-muted" : ""}>
                                         <td>{(page - 1) * 25 + index + 1}</td>
                                         <td>
-                                            <div style={{ display: "flex", gap: "8px" }}>
+                                            <div className="fx-actions">
                                                 <button className="btn-icon" title="View Logs" onClick={() => toast.info(`Activity logs for ${d.deviceId}`)}>
                                                     <Eye size={16} />
+                                                </button>
+                                                <button className="btn-icon" title="View Details" onClick={() => setSelectedDevice(d)}>
+                                                    <Shield size={16} />
                                                 </button>
                                                 <button className="btn-icon color-primary" title="Edit Remark" onClick={() => handleEditRemark(d.id, d.remark)}>
                                                     <Tag size={16} />
@@ -189,40 +239,38 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
                                             </div>
                                         </td>
                                         <td>
-                                            <div style={{ fontWeight: "600" }}>{d.deviceModel || "Unknown Product"}</div>
-                                            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{d.remark || "No label set"}</div>
+                                            <div className="fx-device-cell">
+                                                <strong>{d.deviceModel || "Unknown Product"}</strong>
+                                                <span>{d.remark || "No label set"}</span>
+                                            </div>
                                         </td>
                                         <td>
-                                            <code style={{ fontSize: "10px" }}>{d.deviceMac || d.deviceId}</code>
+                                            <code className="fx-code-pill">{d.deviceMac || d.deviceId}</code>
                                         </td>
                                         <td>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                                {d.type === "Tablet" ? <Tablet size={16} color="var(--primary)" /> : <Smartphone size={16} color="var(--primary)" />}
+                                            <div className="fx-type-pill">
+                                                {getDeviceTypeIcon(d.type)}
                                                 {d.type}
                                             </div>
                                         </td>
                                         <td>
-                                            <span style={{ fontSize: "12px", border: "1px solid #e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>
+                                            <span className="fx-version-pill">
                                                 v{d.appVersion || "1.0"}
                                             </span>
                                         </td>
+                                        <td>{d.branch?.branchName || "All Centers"}</td>
                                         <td>
-                                            <div style={{ fontSize: "12px" }}>{d.branch?.branchName || "All Centers"}</div>
+                                           <span className="fx-sync-text">{d.lastSyncDate ? new Date(d.lastSyncDate).toLocaleString() : "Never Synced"}</span>
                                         </td>
+                                        <td><strong>{d.cameraSteadySeconds}s</strong></td>
                                         <td>
-                                           <div style={{ fontSize: "11px" }}>{d.lastSyncDate ? new Date(d.lastSyncDate).toLocaleString() : "Never Synced"}</div>
-                                        </td>
-                                        <td>
-                                            <div style={{ fontWeight: "700" }}>{d.cameraSteadySeconds}s</div>
-                                        </td>
-                                        <td>
-                                            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                            <div className="fx-status-wrap">
                                                 {d.status === "Allowed" ? (
-                                                    <button className="badge badge-success" style={{ border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }} onClick={() => handleUpdateStatus(d.id, "Blocked")}>
+                                                    <button className="badge badge-success fx-status-btn" onClick={() => handleUpdateStatus(d.id, "Blocked")}>
                                                         <ShieldCheck size={12} /> Allowed
                                                     </button>
                                                 ) : (
-                                                    <button className="badge badge-danger" style={{ border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }} onClick={() => handleUpdateStatus(d.id, "Allowed")}>
+                                                    <button className="badge badge-danger fx-status-btn" onClick={() => handleUpdateStatus(d.id, "Allowed")}>
                                                         <ShieldX size={12} /> Blocked
                                                     </button>
                                                 )}
@@ -232,9 +280,9 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={10} style={{ textAlign: "center", padding: "80px", opacity: 0.5 }}>
-                                        <AlertCircle size={48} style={{ margin: "0 auto 16px" }} />
-                                        <h3>No devices found in the fleet.</h3>
+                                    <td colSpan={10} className="fx-empty-row">
+                                        <AlertCircle size={22} />
+                                        <span>No devices found in the fleet.</span>
                                     </td>
                                 </tr>
                             )}
@@ -242,11 +290,65 @@ const FaceAppDevice: React.FC<FaceAppDeviceProps> = ({ setActivePage }) => {
                     </table>
                 </div>
 
-                {/* Pagination Placeholder */}
-                <div style={{ padding: "20px", display: "flex", justifyContent: "flex-end" }}>
-                   <div style={{ color: "var(--text-muted)", fontSize: "12px" }}>Showing 25 entries per page</div>
+                <div className="fx-table-footer">
+                   <div>Showing 25 entries per page</div>
                 </div>
             </div>
+
+            {selectedDevice && (
+                <div className="fx-modal-overlay" onClick={() => setSelectedDevice(null)}>
+                    <div className="fx-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="fx-modal-head">
+                            <div className="fx-modal-title-row">
+                                <Shield size={18} />
+                                <h4>Device Detail</h4>
+                            </div>
+                            <button className="btn-icon" onClick={() => setSelectedDevice(null)}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="fx-modal-grid">
+                            <div>
+                                <label>Model</label>
+                                <p>{selectedDevice.deviceModel || "Unknown Product"}</p>
+                            </div>
+                            <div>
+                                <label>Type</label>
+                                <p>{selectedDevice.type || "Unknown"}</p>
+                            </div>
+                            <div>
+                                <label>MAC / Device ID</label>
+                                <p>{selectedDevice.deviceMac || selectedDevice.deviceId}</p>
+                            </div>
+                            <div>
+                                <label>Status</label>
+                                <p>
+                                    <span className={`badge ${getStatusClass(selectedDevice.status)}`}>{selectedDevice.status || "Unknown"}</span>
+                                </p>
+                            </div>
+                            <div>
+                                <label>Branch</label>
+                                <p>{selectedDevice.branch?.branchName || "All Centers"}</p>
+                            </div>
+                            <div>
+                                <label>Last Sync</label>
+                                <p><CalendarClock size={14} /> {selectedDevice.lastSyncDate ? new Date(selectedDevice.lastSyncDate).toLocaleString() : "Never Synced"}</p>
+                            </div>
+                            <div>
+                                <label>Camera Steady Seconds</label>
+                                <p>{selectedDevice.cameraSteadySeconds || 0}s</p>
+                            </div>
+                            <div>
+                                <label>Remark</label>
+                                <p>{selectedDevice.remark || "No label set"}</p>
+                            </div>
+                        </div>
+                        <div className="fx-modal-actions">
+                            <button className="btn-secondary" onClick={() => setSelectedDevice(null)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

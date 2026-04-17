@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { penaltyAPI, departmentAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import { Filter, Download, FileText, BarChart2, TrendingUp, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Filter, Download, FileText, BarChart2, TrendingUp, CheckCircle2, AlertTriangle, RotateCcw, CalendarRange, Users } from "lucide-react";
+import "./Penalty.css";
 
 const PenaltiesReport: React.FC = () => {
   const [reportData, setReportData] = useState<any[]>([]);
@@ -40,25 +41,79 @@ const PenaltiesReport: React.FC = () => {
     toast.info(`Exporting report to ${type}...`);
   };
 
+  const resetFilters = () => {
+    setFilters({
+      employeeId: "",
+      departmentId: "All",
+      penaltyType: "All",
+      startDate: "",
+      endDate: ""
+    });
+  };
+
+  const totalPenalties = reportData.reduce((acc, curr) => acc + curr.totalPenalties, 0);
+  const totalSalaryDeduction = reportData.reduce((acc, curr) => acc + curr.totalAmountDeducted, 0);
+  const totalLeaveDeducted = reportData.reduce((acc, curr) => acc + curr.leaveDeducted, 0);
+  const activeFilterCount = (filters.departmentId !== "All" ? 1 : 0) + (filters.penaltyType !== "All" ? 1 : 0) + (filters.startDate ? 1 : 0) + (filters.endDate ? 1 : 0);
+
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 className="page-title"><AlertTriangle size={22} /> Penalties Report</h1>
+    <div className="main-content animate-fade-in penalty-page-container penalty-report-page">
+      <div className="penalty-header">
+        <div className="penalty-title-block">
+          <div className="penalty-title-row">
+            <AlertTriangle size={24} className="penalty-title-icon" />
+            <h1 className="page-title">Penalties Report</h1>
+          </div>
           <p className="page-subtitle">Track discipline and automated deductions across your organization</p>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button className="btn-secondary" onClick={() => handleExport("Excel")}><FileText size={18} /> Excel Export</button>
-          <button className="btn-secondary" onClick={() => handleExport("PDF")}><Download size={18} /> PDF Export</button>
+        <div className="penalty-header-actions">
+          <button className="penalty-btn secondary" onClick={() => handleExport("Excel")}><FileText size={16} /> Excel Export</button>
+          <button className="penalty-btn secondary" onClick={() => handleExport("PDF")}><Download size={16} /> PDF Export</button>
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginTop: "24px", padding: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-          <Filter size={20} color="var(--primary)" />
-          <h3 style={{ margin: 0 }}>Report Filters</h3>
+      <div className="penalty-stats-grid penalty-report-stats">
+        <div className="penalty-stat-card penalty-stat-upgrade accent-danger">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Total penalties</span>
+            <span className="penalty-stat-icon danger"><BarChart2 size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{totalPenalties}</strong>
+          <span className="penalty-stat-note">Across selected filters</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px" }}>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-warning">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Salary deductions</span>
+            <span className="penalty-stat-icon warning"><TrendingUp size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">Rs. {totalSalaryDeduction.toLocaleString()}</strong>
+          <span className="penalty-stat-note">Monetary impact</span>
+        </div>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-primary">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Leave deducted</span>
+            <span className="penalty-stat-icon primary"><CheckCircle2 size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{totalLeaveDeducted} days</strong>
+          <span className="penalty-stat-note">Converted leave impact</span>
+        </div>
+      </div>
+
+      <div className="penalty-card penalty-filter-shell">
+        <div className="penalty-card-header">
+          <div>
+            <div className="penalty-inline-meta">
+              <Filter size={18} className="penalty-icon-muted" />
+              <h3 className="penalty-card-title">Report Filters</h3>
+              <span className="penalty-chip muted">{activeFilterCount} active</span>
+            </div>
+            <p className="penalty-card-subtitle">Use filters to focus on specific departments, violation types, and periods.</p>
+          </div>
+          <button className="penalty-btn secondary" onClick={resetFilters}>
+            <RotateCcw size={14} /> Reset
+          </button>
+        </div>
+        <div className="penalty-form-grid penalty-filter-grid-report">
           <div>
             <label className="input-label">Department</label>
             <select className="select-modern" value={filters.departmentId} onChange={e => setFilters({...filters, departmentId: e.target.value})}>
@@ -75,73 +130,63 @@ const PenaltiesReport: React.FC = () => {
               <option value="Absent">Absent</option>
             </select>
           </div>
-          <div>
-            <label className="input-label">Date From</label>
-            <input type="date" className="input-modern" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} />
+          <div className="penalty-field-span-2">
+            <label className="input-label">Date Range</label>
+            <div className="penalty-date-range">
+              <div className="penalty-date-field">
+                <CalendarRange size={15} className="penalty-icon-muted" />
+                <input type="date" className="input-modern" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} />
+              </div>
+              <span className="penalty-date-separator">to</span>
+              <div className="penalty-date-field">
+                <CalendarRange size={15} className="penalty-icon-muted" />
+                <input type="date" className="input-modern" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="input-label">Date To</label>
-            <input type="date" className="input-modern" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} />
+          <div className="penalty-filter-meta-card">
+            <span className="penalty-filter-meta-label">Rows in report</span>
+            <strong className="penalty-filter-meta-value">{reportData.length}</strong>
+            <span className="penalty-filter-meta-note"><Users size={12} /> Employees shown</span>
           </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginTop: "24px" }}>
-        <div className="glass-card" style={{ padding: "24px", borderLeft: "4px solid #ef4444" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "14px", fontWeight: "600" }}>Total Penalties</p>
-              <h2 style={{ fontSize: "32px", margin: "8px 0" }}>{reportData.reduce((acc, curr) => acc + curr.totalPenalties, 0)}</h2>
-            </div>
-            <div style={{ background: "rgba(239, 68, 68, 0.1)", padding: "12px", borderRadius: "12px", height: "fit-content" }}><BarChart2 size={24} color="#ef4444" /></div>
+      <div className="penalty-card penalty-table-shell">
+        <div className="penalty-table-header">
+          <div>
+            <h3 className="penalty-card-title">Report summary</h3>
+            <p className="penalty-card-subtitle">Department-wise breakdown of violations and deductions.</p>
           </div>
+          <span className="penalty-chip">{reportData.length} employees</span>
         </div>
-        <div className="glass-card" style={{ padding: "24px", borderLeft: "4px solid #f59e0b" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "14px", fontWeight: "600" }}>Salary Deductions</p>
-              <h2 style={{ fontSize: "32px", margin: "8px 0" }}>₹{reportData.reduce((acc, curr) => acc + curr.totalAmountDeducted, 0).toLocaleString()}</h2>
-            </div>
-            <div style={{ background: "rgba(245, 158, 11, 0.1)", padding: "12px", borderRadius: "12px", height: "fit-content" }}><TrendingUp size={24} color="#f59e0b" /></div>
-          </div>
-        </div>
-        <div className="glass-card" style={{ padding: "24px", borderLeft: "4px solid var(--primary)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "14px", fontWeight: "600" }}>Leave Deducted</p>
-              <h2 style={{ fontSize: "32px", margin: "8px 0" }}>{reportData.reduce((acc, curr) => acc + curr.leaveDeducted, 0)} Days</h2>
-            </div>
-            <div style={{ background: "rgba(var(--primary-rgb), 0.1)", padding: "12px", borderRadius: "12px", height: "fit-content" }}><CheckCircle2 size={24} color="var(--primary)" /></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card animate-slide-up" style={{ marginTop: "24px", overflow: "hidden" }}>
-        <table className="table-modern">
-          <thead>
-            <tr>
-              <th>Employee Name</th>
-              <th>Department</th>
-              <th style={{ textAlign: "center" }}>Total Penalties</th>
-              <th style={{ textAlign: "center" }}>Deducted Amount</th>
-              <th style={{ textAlign: "center" }}>Leave Deducted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(reportData as any[]).map((row, i) => (
-              <tr key={i}>
-                <td style={{ fontWeight: "600", color: "var(--primary)" }}>{row.employee}</td>
-                <td><span className="badge badge-info-light">{row.department || "General"}</span></td>
-                <td style={{ textAlign: "center", fontWeight: "700" }}>{row.totalPenalties}</td>
-                <td style={{ textAlign: "center", color: "#ef4444", fontWeight: "700" }}>₹{row.totalAmountDeducted}</td>
-                <td style={{ textAlign: "center", color: "#f59e0b", fontWeight: "700" }}>{row.leaveDeducted}</td>
+        <div className="penalty-table-wrap">
+          <table className="penalty-table animate-slide-up">
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Department</th>
+                <th style={{ textAlign: "center" }}>Total Penalties</th>
+                <th style={{ textAlign: "center" }}>Deducted Amount</th>
+                <th style={{ textAlign: "center" }}>Leave Deducted</th>
               </tr>
-            ))}
-            {reportData.length === 0 && (
-              <tr><td colSpan={5} style={{ textAlign: "center", padding: "60px" }}>No activity in this period</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(reportData as any[]).map((row, i) => (
+                <tr key={i}>
+                  <td className="penalty-strong">{row.employee}</td>
+                  <td><span className="penalty-pill">{row.department || "General"}</span></td>
+                  <td style={{ textAlign: "center", fontWeight: "700" }}>{row.totalPenalties}</td>
+                  <td style={{ textAlign: "center" }} className="penalty-negative">Rs. {row.totalAmountDeducted}</td>
+                  <td style={{ textAlign: "center" }} className="penalty-warning-text">{row.leaveDeducted}</td>
+                </tr>
+              ))}
+              {reportData.length === 0 && (
+                <tr><td colSpan={5}><div className="penalty-empty-state">No activity in this period</div></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

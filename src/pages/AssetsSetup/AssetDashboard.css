@@ -35,6 +35,22 @@
   flex-wrap: wrap;
 }
 
+.asset-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.asset-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.asset-title-icon {
+  color: var(--color-primary-600);
+}
+
 .asset-dashboard-page .asset-header-actions {
   display: flex;
   gap: 10px;

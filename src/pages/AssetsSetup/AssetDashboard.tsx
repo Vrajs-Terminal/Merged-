@@ -10,9 +10,9 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { toast } from '../../components/Toast';
-import PageTitle from "../../components/PageTitle";
 import "./Assets.css";
 import "./AssetDashboard.css";
+import './AssetReportsScrap.css';
 
 const AssetDashboard: React.FC<{ setActivePage?: (page: string) => void }> = ({ setActivePage }) => {
   const [stats, setStats] = useState<any>(null);
@@ -52,18 +52,23 @@ const AssetDashboard: React.FC<{ setActivePage?: (page: string) => void }> = ({ 
   const totalItems = stats?.total || 0;
 
   return (
-   <div className="main-content animate-fade-in asset-dashboard-page">
-      {/* Header */}
-         <div className="asset-header">
-        <PageTitle title="Asset Infrastructure" subtitle="Total Lifecycle Visibility & Operational Analytics" />
-            <div className="asset-header-actions">
+    <div className="main-content animate-fade-in asset-dashboard-page asset-insights-page">
+         <div className="asset-page-header">
+                  <div className="asset-title-block">
+                      <div className="asset-title-row">
+                           <Package size={24} className="asset-title-icon" />
+                           <h1 className="page-title">Asset Dashboard</h1>
+                      </div>
+                      <p className="page-subtitle">Total Lifecycle Visibility & Operational Analytics</p>
+                  </div>
+                  <div className="asset-header-actions">
           <button 
             onClick={fetchStats}
-            className="btn btn-secondary shadow-sm"
+                  className="asset-btn secondary"
           >
             <Clock size={16} /> Sync Realtime
           </button>
-        </div>
+            </div>
       </div>
 
       {/* Grid Stats */}

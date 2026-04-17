@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { penaltyAPI, shiftAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import { Plus, Save, Trash2, Edit, AlertCircle, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Save, Trash2, Edit, AlertCircle, Clock, AlertTriangle, X } from "lucide-react";
+import "./Penalty.css";
 
 interface PenaltyRulesProps {
   setActivePage: (page: string) => void;
@@ -131,25 +132,35 @@ const PenaltyRules: React.FC<PenaltyRulesProps> = ({ setActivePage }) => {
   };
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 className="page-title"><AlertTriangle size={22} /> Penalty Rules</h1>
+    <div className="main-content animate-fade-in penalty-page-container">
+      <div className="penalty-header">
+        <div className="penalty-title-block">
+          <div className="penalty-title-row">
+            <AlertTriangle size={24} className="penalty-title-icon" />
+            <h1 className="page-title">Penalty Rules</h1>
+          </div>
           <p className="page-subtitle">Automate discipline and attendance policy</p>
         </div>
-        <button className="btn-primary" onClick={() => { setShowForm(true); setEditingRule(null); }}>
-          <Plus size={18} /> Add New Rule
-        </button>
+        <div className="penalty-header-actions">
+          <button className="penalty-btn primary" onClick={() => { setShowForm(true); setEditingRule(null); }}>
+            <Plus size={18} /> Add New Rule
+          </button>
+        </div>
       </div>
 
       {showForm && (
-        <div className="glass-card animate-slide-up" style={{ marginTop: "24px", padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <h3>{editingRule ? "Edit Penalty Rule" : "Create Penalty Rule"}</h3>
-            <button className="action-btn" onClick={() => setShowForm(false)}>×</button>
+        <div className="penalty-card penalty-form-shell animate-slide-up">
+          <div className="penalty-card-header">
+            <div>
+              <h3 className="penalty-card-title">{editingRule ? "Edit Penalty Rule" : "Create Penalty Rule"}</h3>
+              <p className="penalty-card-subtitle">Define how attendance violations should be handled.</p>
+            </div>
+            <button className="penalty-icon-btn" onClick={() => setShowForm(false)} aria-label="Close form">
+              <X size={16} />
+            </button>
           </div>
           
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
+          <div className="penalty-form-grid">
             <div>
               <label className="input-label">Rule Name*</label>
               <input 
@@ -206,63 +217,76 @@ const PenaltyRules: React.FC<PenaltyRulesProps> = ({ setActivePage }) => {
             </div>
           </div>
 
-          <div style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-            <button className="btn-secondary" onClick={() => handleSubmit(true)}>Save & Add More</button>
-            <button className="btn-primary" onClick={() => handleSubmit(false)}>
+          <div className="penalty-form-actions">
+            <button className="penalty-btn secondary" onClick={() => handleSubmit(true)}>Save & Add More</button>
+            <button className="penalty-btn primary" onClick={() => handleSubmit(false)}>
               <Save size={18} /> {editingRule ? "Update Rule" : "Save Rule"}
             </button>
           </div>
         </div>
       )}
 
-      <div className="glass-card" style={{ marginTop: "24px", overflow: "hidden" }}>
-        <table className="table-modern">
-          <thead>
-            <tr>
-              <th>Rule Name</th>
-              <th>Applicable On</th>
-              <th>Trigger After</th>
-              <th>Grace Time</th>
-              <th>Penalty</th>
-              <th>Frequency</th>
-              <th>Shift Link</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rules.map((rule) => (
-              <tr key={rule.id}>
-                <td style={{ fontWeight: "600" }}>{rule.ruleName}</td>
-                <td><span className="badge badge-info-light">{rule.applicableOn}</span></td>
-                <td>{rule.penaltyTriggerAfter} Counts</td>
-                <td>{rule.graceTime} Min</td>
-                <td>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <AlertCircle size={14} color={rule.penaltyType === "Warning Only" ? "#f59e0b" : "#ef4444"} />
-                    {rule.penaltyType} ({rule.penaltyValue || 0})
-                  </div>
-                </td>
-                <td>{rule.frequency}</td>
-                <td>
-                  {rule.shift ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Clock size={14} /> {rule.shift.shiftName}
-                    </div>
-                  ) : "All Shifts"}
-                </td>
-                <td>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button className="action-btn" onClick={() => handleEdit(rule)}><Edit size={16} /></button>
-                    <button className="action-btn" onClick={() => handleDelete(rule.id)} style={{ color: "#ef4444" }}><Trash2 size={16} /></button>
-                  </div>
-                </td>
+      <div className="penalty-card penalty-table-shell">
+        <div className="penalty-table-header">
+          <div>
+            <h3 className="penalty-card-title">Configured rules</h3>
+            <p className="penalty-card-subtitle">Review triggers, penalties, and shift targeting in one place.</p>
+          </div>
+          <span className="penalty-chip">{rules.length} rules</span>
+        </div>
+        <div className="penalty-table-wrap">
+          <table className="penalty-table">
+            <thead>
+              <tr>
+                <th>Rule Name</th>
+                <th>Applicable On</th>
+                <th>Trigger After</th>
+                <th>Grace Time</th>
+                <th>Penalty</th>
+                <th>Frequency</th>
+                <th>Shift Link</th>
+                <th>Action</th>
               </tr>
-            ))}
-            {!loading && rules.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", padding: "40px" }}>No rules defined yet.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rules.map((rule) => (
+                <tr key={rule.id}>
+                  <td className="penalty-strong">{rule.ruleName}</td>
+                  <td><span className="penalty-pill">{rule.applicableOn}</span></td>
+                  <td>{rule.penaltyTriggerAfter} counts</td>
+                  <td>{rule.graceTime} min</td>
+                  <td>
+                    <div className="penalty-inline-meta">
+                      <AlertCircle size={14} className={rule.penaltyType === "Warning Only" ? "penalty-warn" : "penalty-danger"} />
+                      {rule.penaltyType} ({rule.penaltyValue || 0})
+                    </div>
+                  </td>
+                  <td>{rule.frequency}</td>
+                  <td>
+                    {rule.shift ? (
+                      <div className="penalty-inline-meta">
+                        <Clock size={14} /> {rule.shift.shiftName}
+                      </div>
+                    ) : "All Shifts"}
+                  </td>
+                  <td>
+                    <div className="penalty-row-actions">
+                      <button className="penalty-icon-btn" onClick={() => handleEdit(rule)} aria-label="Edit rule"><Edit size={16} /></button>
+                      <button className="penalty-icon-btn danger" onClick={() => handleDelete(rule.id)} aria-label="Delete rule"><Trash2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {!loading && rules.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="penalty-empty-state">No rules defined yet.</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

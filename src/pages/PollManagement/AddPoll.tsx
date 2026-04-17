@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { pollAPI } from "../../services/apiService";
 import "./AddPoll.css";
-import PageTitle from "../../components/PageTitle";
 
 const AddPoll = ({ setActivePage }: { setActivePage: (page: string) => void }) => {
   const [loading, setLoading] = useState(false);
@@ -87,8 +86,12 @@ const AddPoll = ({ setActivePage }: { setActivePage: (page: string) => void }) =
   return (
     <div className="poll-page-container">
       <div className="poll-header">
-        <div className="header-text">
-          <PageTitle title="Create New Engagement Poll" subtitle="Design an interactive poll to collect employee feedback and insights" />
+        <div className="poll-title-block">
+          <div className="poll-title-row">
+            <MessageCircle size={24} className="poll-title-icon" />
+            <h1 className="poll-page-title">Add Poll</h1>
+          </div>
+          <p className="poll-page-subtitle">Design an interactive poll to collect employee feedback and insights</p>
         </div>
         <button className="back-btn" onClick={() => setActivePage("pollSummary")}>
           <ArrowLeft size={18} />

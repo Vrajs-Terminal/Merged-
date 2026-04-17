@@ -4,25 +4,28 @@ import {
   Search, Plus, Eye, Edit, Trash2, 
   ChevronLeft, ChevronRight, MapPin, Clock, Zap
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { eventAPI, branchAPI, departmentAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import PageTitle from "../../components/PageTitle";
+import "./ViewEvents.css";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 interface ViewEventsProps {
-  setActivePage: (page: string) => void;
-  setSelectedEvent: (event: any) => void;
+  setActivePage?: (page: string) => void;
+  setSelectedEvent?: (event: any) => void;
 }
 
 const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent }) => {
+  const navigate = useNavigate();
   const [view, setView] = useState<"Table" | "Card" | "Calendar">("Card");
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [filters, setFilters] = useState({
     startDate: "",
@@ -64,6 +67,12 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
     }
   };
 
+  const openEventEditor = (event: any | null) => {
+    setSelectedEvent?.(event);
+    setActivePage?.("addEvent");
+    navigate("/modules/addEvent");
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Upcoming": return "#6366f1";
@@ -73,6 +82,23 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
       default: return "var(--primary)";
     }
   };
+
+  const filteredEvents = events.filter((event) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+
+    return [
+      event.eventName,
+      event.eventType,
+      event.location,
+      event.status,
+      event.description,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query));
+  });
+
+  const openCreateEvent = () => openEventEditor(null);
 
   const renderTableView = () => (
     <div className="glass-card animate-slide-up" style={{ marginTop: "24px" }}>
@@ -89,7 +115,7 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
           </tr>
         </thead>
         <tbody>
-          {events.map((ev, i) => (
+          {filteredEvents.map((ev, i) => (
             <tr key={ev.id}>
               <td>{i + 1}</td>
               <td style={{ fontWeight: "600" }}>{ev.eventName}</td>
@@ -109,14 +135,14 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
               <td><span className="badge" style={{ background: getStatusColor(ev.status) + "20", color: getStatusColor(ev.status) }}>{ev.status}</span></td>
               <td>
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <button className="action-btn" title="View Details" onClick={() => { setSelectedEvent(ev); setActivePage("addEvent"); }}><Eye size={14} /></button>
-                  <button className="action-btn" title="Edit" onClick={() => { setSelectedEvent(ev); setActivePage("addEvent"); }}><Edit size={14} /></button>
+                  <button className="action-btn" title="View Details" onClick={() => openEventEditor(ev)}><Eye size={14} /></button>
+                  <button className="action-btn" title="Edit" onClick={() => openEventEditor(ev)}><Edit size={14} /></button>
                   <button className="action-btn" title="Delete" onClick={() => handleDelete(ev.id)}><Trash2 size={14} color="#ef4444" /></button>
                 </div>
               </td>
             </tr>
           ))}
-          {events.length === 0 && <tr><td colSpan={7} style={{ textAlign: "center", padding: "40px" }}>No events found</td></tr>}
+          {filteredEvents.length === 0 && <tr><td colSpan={7} style={{ textAlign: "center", padding: "40px" }}>No events found</td></tr>}
         </tbody>
       </table>
     </div>
@@ -124,7 +150,7 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
 
   const renderCardView = () => (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "24px", marginTop: "24px" }}>
-      {events.map(ev => (
+      {filteredEvents.map(ev => (
         <div key={ev.id} className="glass-card animate-scale-up" style={{ padding: "0", overflow: "hidden", position: "relative", border: `1px solid ${getStatusColor(ev.status)}20` }}>
           <div style={{ height: "120px", background: `linear-gradient(135deg, ${getStatusColor(ev.status)}30 0%, ${getStatusColor(ev.status)}05 100%)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
              <CalendarIcon size={48} color={getStatusColor(ev.status)} />
@@ -149,8 +175,8 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
             </div>
 
             <div style={{ marginTop: "20px", display: "flex", gap: "12px" }}>
-              <button className="btn-primary" style={{ flex: 1, padding: "8px" }} onClick={() => { setSelectedEvent(ev); setActivePage("addEvent"); }}>View Details</button>
-              <button className="btn-secondary" style={{ padding: "8px" }} onClick={() => { setSelectedEvent(ev); setActivePage("addEvent"); }}><Edit size={16} /></button>
+              <button className="btn-primary" style={{ flex: 1, padding: "8px" }} onClick={() => openEventEditor(ev)}>View Details</button>
+              <button className="btn-secondary" style={{ padding: "8px" }} onClick={() => openEventEditor(ev)}><Edit size={16} /></button>
               <button className="btn-secondary" style={{ padding: "8px", color: "#ef4444" }} onClick={() => handleDelete(ev.id)}><Trash2 size={16} /></button>
             </div>
           </div>
@@ -169,50 +195,65 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
     while (cells.length % 7 !== 0) cells.push(null);
 
     const getDayEvents = (day: number) => {
-        return events.filter(ev => {
+        return filteredEvents.filter(ev => {
             const d = new Date(ev.startDate);
             return d.getDate() === day && d.getMonth() === month && d.getFullYear() === year;
         });
     };
 
+    const totalMonthEvents = filteredEvents.filter((event) => {
+      const date = new Date(event.startDate);
+      return date.getMonth() === month && date.getFullYear() === year;
+    }).length;
+
+    const upcomingMonthEvents = filteredEvents.filter((event) => {
+      const date = new Date(event.startDate);
+      return date >= today && date.getMonth() === month && date.getFullYear() === year;
+    }).length;
+
+    const handleMonthShift = (offset: number) => {
+      setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + offset, 1));
+    };
+
     return (
-      <div className="glass-card animate-slide-up" style={{ marginTop: "24px", padding: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <button className="action-btn" onClick={() => setCurrentDate(new Date(currentDate.setMonth(month - 1)))}><ChevronLeft size={16} /></button>
-            <h3 style={{ margin: 0, minWidth: "150px", textAlign: "center" }}>{MONTHS[month]} {year}</h3>
-            <button className="action-btn" onClick={() => setCurrentDate(new Date(currentDate.setMonth(month + 1)))}><ChevronRight size={16} /></button>
+      <div className="glass-card animate-slide-up events-calendar-card" style={{ marginTop: "24px", padding: "24px" }}>
+        <div className="events-calendar-header">
+          <div className="events-calendar-title">
+            <div className="events-calendar-nav-group">
+              <button className="events-month-nav-btn" onClick={() => handleMonthShift(-1)} aria-label="Previous month">
+                <ChevronLeft size={16} />
+                <span>Previous</span>
+              </button>
+              <div>
+                <h3 className="events-calendar-month">{MONTHS[month]} {year}</h3>
+                <p className="events-calendar-subtitle">{totalMonthEvents} events this month, {upcomingMonthEvents} upcoming</p>
+              </div>
+              <button className="events-month-nav-btn" onClick={() => handleMonthShift(1)} aria-label="Next month">
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-          <button className="btn-secondary" onClick={() => setCurrentDate(new Date())}>Today</button>
+          <button className="btn-secondary events-calendar-today-btn" onClick={() => setCurrentDate(new Date())}>Today</button>
         </div>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", background: "#e2e8f0", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-          {DAYS.map(d => <div key={d} style={{ background: "#f8fafc", padding: "12px", textAlign: "center", fontWeight: "700", fontSize: "12px", color: "#64748b" }}>{d}</div>)}
+
+        <div className="events-calendar-grid">
+          {DAYS.map(d => <div key={d} className="events-calendar-weekday">{d}</div>)}
           {cells.map((day, i) => {
             const dayEvents = day ? getDayEvents(day) : [];
             const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
             return (
-              <div key={i} style={{ background: day ? "white" : "#f8fafc", minHeight: "120px", padding: "8px" }}>
+              <div key={i} className={`events-calendar-day${isToday ? " is-today" : ""}${day ? " has-day" : " is-empty"}`}>
                 {day && (
                   <>
-                    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "8px" }}>
-                       <span style={{ 
-                         width: "24px", height: "24px", borderRadius: "50%", 
-                         display: "flex", alignItems: "center", justifyContent: "center", 
-                         fontSize: "12px", fontWeight: "700",
-                         background: isToday ? "var(--primary)" : "transparent",
-                         color: isToday ? "white" : "inherit"
-                       }}>{day}</span>
+                    <div className="events-calendar-day-top">
+                       <span className="events-calendar-day-number">{day}</span>
+                       {dayEvents.length > 0 && <span className="events-calendar-day-count">{dayEvents.length}</span>}
                     </div>
                     {dayEvents.map(ev => (
-                      <div key={ev.id} className="calendar-event-item" style={{ 
-                        background: getStatusColor(ev.status) + "15", 
-                        color: getStatusColor(ev.status), 
-                        fontSize: "10px", padding: "4px 6px", borderRadius: "4px", fontWeight: "600",
-                        marginBottom: "4px", borderLeft: `2px solid ${getStatusColor(ev.status)}`,
-                        cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
-                      }} onClick={() => { setSelectedEvent(ev); setActivePage("addEvent"); }}>
-                        {ev.eventName}
+                      <div key={ev.id} className="calendar-event-item events-calendar-event" style={{ borderLeftColor: getStatusColor(ev.status), color: getStatusColor(ev.status) }} onClick={() => openEventEditor(ev)}>
+                        <span className="events-calendar-event-dot" style={{ background: getStatusColor(ev.status) }} />
+                        <span className="events-calendar-event-label">{ev.eventName}</span>
                       </div>
                     ))}
                   </>
@@ -226,23 +267,27 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
   };
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <PageTitle title="Events" subtitle="Manage company meetings, trainings, and celebrations" />
+    <div className="main-content animate-fade-in events-page-container">
+      <div className="events-header">
+        <div className="events-title-block">
+          <div className="events-title-row">
+            <CalendarIcon size={24} className="events-title-icon" />
+            <h1 className="page-title">Events</h1>
+          </div>
+          <p className="page-subtitle">Manage company meetings, trainings, and celebrations</p>
         </div>
-        <button className="btn-primary" onClick={() => { setSelectedEvent(null); setActivePage("addEvent"); }}>
+        <button className="btn-primary" onClick={openCreateEvent}>
           <Plus size={18} /> Create Event
         </button>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px" }}>
-        <div className="glass-card" style={{ padding: "6px", borderRadius: "12px", display: "flex", gap: "8px" }}>
-          <button style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", minWidth: "100px", justifyContent: "center", background: view === "Card" ? "white" : "transparent", color: view === "Card" ? "var(--primary)" : "var(--text-muted)", boxShadow: view === "Card" ? "0 2px 8px rgba(0,0,0,0.05)" : "none" }} onClick={() => setView("Card")}><LayoutGrid size={16} /> Card</button>
-          <button style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", minWidth: "100px", justifyContent: "center", background: view === "Table" ? "white" : "transparent", color: view === "Table" ? "var(--primary)" : "var(--text-muted)", boxShadow: view === "Table" ? "0 2px 8px rgba(0,0,0,0.05)" : "none" }} onClick={() => setView("Table")}><TableIcon size={16} /> Table</button>
-          <button style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer", fontWeight: "600", transition: "all 0.2s", minWidth: "100px", justifyContent: "center", background: view === "Calendar" ? "white" : "transparent", color: view === "Calendar" ? "var(--primary)" : "var(--text-muted)", boxShadow: view === "Calendar" ? "0 2px 8px rgba(0,0,0,0.05)" : "none" }} onClick={() => setView("Calendar")}><CalendarIcon size={16} /> Calendar</button>
+      <div className="events-toolbar-card">
+        <div className="events-view-switcher">
+          <button className={view === "Card" ? "active" : ""} onClick={() => setView("Card")}><LayoutGrid size={16} /> Card</button>
+          <button className={view === "Table" ? "active" : ""} onClick={() => setView("Table")}><TableIcon size={16} /> Table</button>
+          <button className={view === "Calendar" ? "active" : ""} onClick={() => setView("Calendar")}><CalendarIcon size={16} /> Calendar</button>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="events-filters-row">
            <select className="select-modern" style={{ width: "160px" }} value={filters.eventType} onChange={e => setFilters({...filters, eventType: e.target.value})}>
               <option value="All">All Types</option>
               <option value="Meeting">Meeting</option>
@@ -250,9 +295,9 @@ const ViewEvents: React.FC<ViewEventsProps> = ({ setActivePage, setSelectedEvent
               <option value="Celebration">Celebration</option>
               <option value="Webinar">Webinar</option>
            </select>
-           <div style={{ position: "relative" }}>
-              <input type="text" className="input-modern" style={{ paddingLeft: "36px" }} placeholder="Search events..." />
-              <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+           <div className="events-search-wrap">
+              <Search size={16} className="events-search-icon" />
+              <input type="text" className="input-modern events-search-input" style={{ paddingLeft: "36px" }} placeholder="Search events..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
            </div>
         </div>
       </div>

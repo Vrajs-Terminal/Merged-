@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Edit2, Search, Filter, Eye, ShoppingCart, CheckCircle2, XCircle, MoreVertical, FileText } from "lucide-react";
-import PageTitle from "../../components/PageTitle";
+import { Plus, Trash2, Edit2, Search, Filter, Eye, ShoppingCart, CheckCircle2, XCircle, MoreVertical, FileText, BriefcaseBusiness } from "lucide-react";
 import { orderAPI } from "../../services/apiService";
+import "./Quotation.css";
 
 type OrderRecord = {
   id: number;
@@ -102,20 +102,21 @@ const ManageQuotation: React.FC = () => {
   }, [records]);
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
-        <div>
-          <PageTitle title="Manage Quotation" subtitle="Central tracking for all issued and draft quotations" />
+    <div className="main-content animate-fade-in quotation-page-container qmanage-page">
+      <div className="quotation-header qmanage-header">
+        <div className="quotation-header-text">
+          <h1><BriefcaseBusiness size={22} /> Manage Quotation</h1>
+          <p>Central tracking for all issued and draft quotations</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-           <button className="btn btn-primary shadow-glow">
+        <div className="quotation-header-actions qmanage-header-actions">
+          <button className="btn btn-primary qmanage-btn-primary">
             <Plus size={18} /> Add Quotation
           </button>
         </div>
       </div>
 
-       <div className="glass-card" style={{ marginBottom: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+      <div className="glass-card qmanage-filter-card">
+        <div className="qmanage-filter-grid">
           <div>
             <label className="input-label">Customer / Retailer</label>
             <select className="select-modern" value={customerFilter} onChange={(e) => setCustomerFilter(e.target.value)}>
@@ -140,18 +141,18 @@ const ManageQuotation: React.FC = () => {
               ))}
             </select>
           </div>
-          <div style={{ alignSelf: "flex-end" }}>
-            <button className="btn btn-secondary" style={{ width: "100%" }}>
+          <div className="qmanage-filter-btn-wrap">
+            <button className="btn btn-secondary qmanage-filter-btn">
               <Filter size={18} /> Filter List
             </button>
           </div>
         </div>
       </div>
 
-      <div className="glass-card">
-         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <div style={{ position: "relative", width: "400px" }}>
-               <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+      <div className="glass-card qmanage-table-card">
+        <div className="qmanage-toolbar">
+          <div className="qmanage-search-wrap">
+            <Search size={18} className="qmanage-search-icon" />
               <input
                type="text"
                className="input-modern"
@@ -160,15 +161,17 @@ const ManageQuotation: React.FC = () => {
                value={search}
                onChange={(e) => setSearch(e.target.value)}
               />
-            </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <span style={{ fontSize: "13px", fontWeight: "600", color: "var(--text-muted)" }}>{tableData.length} Total Quotations Found</span>
-               <button className="btn btn-danger" style={{ padding: "8px" }}><Trash2 size={16} /></button>
-            </div>
-         </div>
+          </div>
+          <div className="qmanage-toolbar-right">
+            <span className="qmanage-count-pill">{tableData.length} Total Quotations Found</span>
+            <button className="btn btn-danger qmanage-icon-btn" aria-label="Delete quotations">
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
 
-        <div style={{ overflowX: "auto" }}>
-          <table className="table-modern">
+        <div className="qmanage-table-wrap">
+          <table className="table-modern qmanage-table">
             <thead>
               <tr>
                 <th><input type="checkbox" /></th>
@@ -184,7 +187,7 @@ const ManageQuotation: React.FC = () => {
             <tbody>
               {!loading && tableData.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>
+                  <td colSpan={8} className="qmanage-empty-row">
                     No quotation records found.
                   </td>
                 </tr>
@@ -192,33 +195,33 @@ const ManageQuotation: React.FC = () => {
               {tableData.map((item) => (
                 <tr key={item.id}>
                   <td><input type="checkbox" /></td>
-                  <td style={{ fontWeight: "700", color: "var(--primary)" }}>{item.no}</td>
-                  <td style={{ fontSize: "13px" }}>{item.date}</td>
-                  <td style={{ fontWeight: "600" }}>{item.customer}</td>
-                  <td style={{ fontWeight: "800", color: "#166534" }}>{formatCurrency(item.amount)}</td>
+                  <td className="qmanage-no">{item.no}</td>
+                  <td className="qmanage-date">{item.date}</td>
+                  <td className="qmanage-customer">{item.customer}</td>
+                  <td className="qmanage-amount">{formatCurrency(item.amount)}</td>
                   <td>
                     <span className={`badge ${
                       item.status === "Approved" ? "badge-success" : 
                       item.status === "Draft" ? "badge-gray" : 
                       item.status === "Rejected" ? "badge-danger" : "badge-primary"
-                    }`} style={{ gap: "6px" }}>
+                    } qmanage-status`}>
                       {item.status === "Approved" ? <CheckCircle2 size={12} /> : 
                        item.status === "Rejected" ? <XCircle size={12} /> : <FileText size={12} />}
                       {item.status}
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                       <button className="btn btn-secondary" style={{ padding: "6px" }}><Eye size={14} /></button>
-                       <button className="btn btn-secondary" style={{ padding: "6px" }}><Edit2 size={14} /></button>
-                       <button className="btn btn-secondary" style={{ padding: "6px" }}><MoreVertical size={14} /></button>
+                    <div className="qmanage-actions">
+                       <button className="btn btn-secondary qmanage-icon-btn" aria-label="View quotation"><Eye size={14} /></button>
+                       <button className="btn btn-secondary qmanage-icon-btn" aria-label="Edit quotation"><Edit2 size={14} /></button>
+                       <button className="btn btn-secondary qmanage-icon-btn" aria-label="More actions"><MoreVertical size={14} /></button>
                     </div>
                   </td>
                   <td>
                     {item.status === "Approved" && (
-                       <button className="btn btn-success" style={{ padding: "6px 12px", fontSize: "11px", fontWeight: "800", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "white", borderRadius: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <button className="btn btn-success qmanage-convert-btn">
                         <ShoppingCart size={14} /> To Order
-                       </button>
+                      </button>
                     )}
                   </td>
                 </tr>

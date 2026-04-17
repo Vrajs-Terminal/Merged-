@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect } from "react";
 import { penaltyAPI, employeeAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import { Filter, Trash2, Eye } from "lucide-react";
-import PageTitle from "../../components/PageTitle";
+import { Filter, Trash2, Eye, AlertTriangle, Wallet, CheckCircle2, Users, RotateCcw, CalendarRange } from "lucide-react";
+import "./Penalty.css";
 
 const ManagePenalties: React.FC = () => {
   const [records, setRecords] = useState<any[]>([]);
@@ -48,20 +48,78 @@ const ManagePenalties: React.FC = () => {
     }
   };
 
+  const resetFilters = () => {
+    setFilters({
+      employeeId: "",
+      penaltyType: "All",
+      startDate: "",
+      endDate: "",
+      status: "Approved"
+    });
+  };
+
+  const totalSalaryDeduction = records.reduce((sum, rec) => sum + Number(rec.amountDeducted || 0), 0);
+  const totalLeaveDeduction = records.reduce((sum, rec) => sum + Number(rec.leaveDeducted || 0), 0);
+  const activeFilterCount = [filters.employeeId, filters.startDate, filters.endDate]
+    .filter(Boolean).length + (filters.penaltyType !== "All" ? 1 : 0) + (filters.status !== "Approved" ? 1 : 0);
+
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <div>
-          <PageTitle title="Manage Penalties" subtitle="View and manage all approved penalty records" />
+    <div className="main-content animate-fade-in penalty-page-container">
+      <div className="penalty-header">
+        <div className="penalty-title-block">
+          <div className="penalty-title-row">
+            <AlertTriangle size={24} className="penalty-title-icon" />
+            <h1 className="page-title">Manage Penalties</h1>
+          </div>
+          <p className="page-subtitle">View and manage all approved penalty records</p>
+        </div>
+        <div className="penalty-header-actions">
+          <span className="penalty-chip">{records.length} records</span>
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginTop: "24px", padding: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
-          <Filter size={20} color="var(--primary)" />
-          <h3 style={{ margin: 0 }}>Penalty Filters</h3>
+      <div className="penalty-stats-grid">
+        <div className="penalty-stat-card penalty-stat-upgrade accent-danger">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Approved records</span>
+            <span className="penalty-stat-icon danger"><CheckCircle2 size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{records.length}</strong>
+          <span className="penalty-stat-note">Current approved queue</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-warning">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Salary deductions</span>
+            <span className="penalty-stat-icon warning"><Wallet size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">Rs. {totalSalaryDeduction.toLocaleString()}</strong>
+          <span className="penalty-stat-note">Approved salary impact</span>
+        </div>
+        <div className="penalty-stat-card penalty-stat-upgrade accent-primary">
+          <div className="penalty-stat-head">
+            <span className="penalty-stat-label">Leave deducted</span>
+            <span className="penalty-stat-icon primary"><Users size={14} /></span>
+          </div>
+          <strong className="penalty-stat-value">{totalLeaveDeduction} days</strong>
+          <span className="penalty-stat-note">Converted leave deductions</span>
+        </div>
+      </div>
+
+      <div className="penalty-card penalty-filter-shell">
+        <div className="penalty-card-header">
+          <div>
+            <div className="penalty-inline-meta">
+              <Filter size={18} className="penalty-icon-muted" />
+              <h3 className="penalty-card-title">Penalty Filters</h3>
+              <span className="penalty-chip muted">{activeFilterCount} active</span>
+            </div>
+            <p className="penalty-card-subtitle">Filter by employee, penalty type, status, and date range.</p>
+          </div>
+          <button className="penalty-btn secondary" onClick={resetFilters}>
+            <RotateCcw size={14} /> Reset
+          </button>
+        </div>
+        <div className="penalty-form-grid penalty-filter-grid-manage">
           <div>
             <label className="input-label">Select Employee</label>
             <select name="employeeId" className="select-modern" value={filters.employeeId} onChange={e => setFilters({...filters, employeeId: e.target.value})}>
@@ -80,63 +138,88 @@ const ManagePenalties: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="input-label">Date From</label>
-            <input type="date" className="input-modern" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} />
+            <label className="input-label">Status</label>
+            <select name="status" className="select-modern" value={filters.status} onChange={e => setFilters({...filters, status: e.target.value})}>
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+            </select>
           </div>
-          <div>
-            <label className="input-label">Date To</label>
-            <input type="date" className="input-modern" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} />
+          <div className="penalty-field-span-2">
+            <label className="input-label">Date Range</label>
+            <div className="penalty-date-range">
+              <div className="penalty-date-field">
+                <CalendarRange size={15} className="penalty-icon-muted" />
+                <input type="date" className="input-modern" value={filters.startDate} onChange={e => setFilters({...filters, startDate: e.target.value})} />
+              </div>
+              <span className="penalty-date-separator">to</span>
+              <div className="penalty-date-field">
+                <CalendarRange size={15} className="penalty-icon-muted" />
+                <input type="date" className="input-modern" value={filters.endDate} onChange={e => setFilters({...filters, endDate: e.target.value})} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginTop: "24px", overflow: "hidden" }}>
-        <table className="table-modern">
-          <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Type</th>
-              <th>Date</th>
-              <th>Shift</th>
-              <th>Deduction / Leave</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(records as any[]).map((rec) => (
-              <tr key={rec.id}>
-                <td style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div className="avatar-small">{(rec.employee.firstName[0] + rec.employee.lastName[0])}</div>
-                  <div>
-                    <div style={{ fontWeight: "600" }}>{rec.employee.firstName} {rec.employee.lastName}</div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>{rec.employee.employeeId}</div>
-                  </div>
-                </td>
-                <td><span className="badge badge-info-light">{rec.penaltyType}</span></td>
-                <td>{new Date(rec.date).toLocaleDateString()}</td>
-                <td>{rec.shift?.shiftName || "N/A"}</td>
-                <td>
-                  {rec.amountDeducted ? (
-                    <div style={{ color: "#ef4444", fontWeight: "600" }}>â‚¹{rec.amountDeducted} Salary</div>
-                  ) : rec.leaveDeducted ? (
-                    <div style={{ color: "#f59e0b", fontWeight: "600" }}>{rec.leaveDeducted} Day Leave</div>
-                  ) : "Warning Only"}
-                </td>
-                <td><span className="badge badge-success-light">Approved</span></td>
-                <td>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <button className="action-btn"><Eye size={16} /></button>
-                    <button className="action-btn" onClick={() => handleDelete(rec.id)} style={{ color: "#ef4444" }}><Trash2 size={16} /></button>
-                  </div>
-                </td>
+      <div className="penalty-card penalty-table-shell">
+        <div className="penalty-table-header">
+          <div>
+            <h3 className="penalty-card-title">Approved penalties</h3>
+            <p className="penalty-card-subtitle">Review entries, deduction values, and each affected employee.</p>
+          </div>
+          <span className="penalty-chip">Approved only</span>
+        </div>
+        <div className="penalty-table-wrap">
+          <table className="penalty-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Shift</th>
+                <th>Deduction / Leave</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
-            ))}
-            {records.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: "60px" }}>No penalty records found</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(records as any[]).map((rec) => (
+                <tr key={rec.id}>
+                  <td>
+                    <div className="penalty-employee-cell">
+                      <div className="avatar-small">{(rec.employee.firstName[0] + rec.employee.lastName[0])}</div>
+                      <div>
+                        <div className="penalty-strong">{rec.employee.firstName} {rec.employee.lastName}</div>
+                        <div className="penalty-muted-text">{rec.employee.employeeId}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span className="penalty-pill">{rec.penaltyType}</span></td>
+                  <td>{new Date(rec.date).toLocaleDateString()}</td>
+                  <td>{rec.shift?.shiftName || "N/A"}</td>
+                  <td>
+                    {rec.amountDeducted ? (
+                      <div className="penalty-negative">Rs. {rec.amountDeducted} Salary</div>
+                    ) : rec.leaveDeducted ? (
+                      <div className="penalty-warning-text">{rec.leaveDeducted} Day Leave</div>
+                    ) : "Warning Only"}
+                  </td>
+                  <td><span className="penalty-pill success">Approved</span></td>
+                  <td>
+                    <div className="penalty-row-actions">
+                      <button className="penalty-icon-btn"><Eye size={16} /></button>
+                      <button className="penalty-icon-btn danger" onClick={() => handleDelete(rec.id)}><Trash2 size={16} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {records.length === 0 && (
+                <tr><td colSpan={7}><div className="penalty-empty-state">No penalty records found</div></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

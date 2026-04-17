@@ -52,7 +52,11 @@ const AddSurvey = ({ setActivePage }: { setActivePage: (page: string) => void })
     <div className="survey-page-container add-survey-page">
       <div className="survey-header">
         <div className="header-text">
-          <PageTitle title="Add New Survey" subtitle="Create targeted feedback forms and engagement surveys for your organization" />
+          <PageTitle
+            title="Add New Survey"
+            subtitle="Create targeted feedback forms and engagement surveys for your organization"
+            icon={<ClipboardList size={26} />}
+          />
         </div>
         <button className="back-btn" onClick={() => setActivePage("manageSurvey")}>
           <Layout size={18} />
@@ -60,7 +64,7 @@ const AddSurvey = ({ setActivePage }: { setActivePage: (page: string) => void })
         </button>
       </div>
 
-      <form className="survey-form-main add-survey-form mt-4" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <form className="survey-form-main add-survey-form mt-4" onSubmit={handleSubmit}>
         <div className="survey-form-card">
           <div className="card-section-title">
              <FileText size={20} />
@@ -89,7 +93,7 @@ const AddSurvey = ({ setActivePage }: { setActivePage: (page: string) => void })
           </div>
         </div>
 
-        <div className="form-row-2" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        <div className="form-row-2">
           <div className="survey-form-card">
             <div className="card-section-title">
                <Calendar size={20} />

@@ -3,17 +3,18 @@ import {
   Calendar as CalendarIcon, MapPin,
   Users, Info, CheckSquare
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { eventAPI, branchAPI, departmentAPI, employeeAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import PageTitle from "../../components/PageTitle";
 import "./AddEvent.css";
 
 interface AddEventProps {
-  setActivePage: (page: string) => void;
+  setActivePage?: (page: string) => void;
   selectedEvent?: any;
 }
 
 const AddEvent: React.FC<AddEventProps> = ({ setActivePage, selectedEvent }) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [branches, setBranches] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
@@ -101,7 +102,8 @@ const AddEvent: React.FC<AddEventProps> = ({ setActivePage, selectedEvent }) => 
           allowRSVP: "No"
         });
       } else {
-        setActivePage("viewEvents");
+        setActivePage?.("viewEvents");
+        navigate("/modules/viewEvents");
       }
     } catch (err) {
       toast.error("Failed to save event");
@@ -110,11 +112,20 @@ const AddEvent: React.FC<AddEventProps> = ({ setActivePage, selectedEvent }) => 
     }
   };
 
+  const goBackToEvents = () => {
+    setActivePage?.("viewEvents");
+    navigate("/modules/viewEvents");
+  };
+
   return (
     <div className="main-content animate-fade-in add-event-page">
       <div className="page-header add-event-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <PageTitle title={selectedEvent ? "Edit Event" : "Create New Event"} subtitle="Schedule and organize company activities" />
+        <div className="add-event-title-block">
+          <div className="add-event-title-row">
+            <CalendarIcon size={24} className="add-event-title-icon" />
+            <h1 className="add-event-page-title">{selectedEvent ? "Edit Event" : "Create New Event"}</h1>
+          </div>
+          <p className="add-event-page-subtitle">Schedule and organize company activities</p>
         </div>
       </div>
 
@@ -286,6 +297,15 @@ const AddEvent: React.FC<AddEventProps> = ({ setActivePage, selectedEvent }) => 
                 onClick={() => handleSubmit(false)}
               >
                 {loading ? "Saving..." : selectedEvent ? "Update Event" : "Save Event"}
+              </button>
+              <button 
+                type="button"
+                className="btn-secondary"
+                style={{ padding: "12px 24px" }}
+                disabled={loading}
+                onClick={goBackToEvents}
+              >
+                Cancel
               </button>
             </div>
           </div>

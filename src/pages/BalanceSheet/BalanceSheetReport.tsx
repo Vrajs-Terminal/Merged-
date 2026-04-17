@@ -1,13 +1,74 @@
-import React, { useEffect, useState } from "react";
-import { FileSpreadsheet, FileText, Wallet, ArrowUpCircle, ArrowDownCircle, PieChart, Loader2, TrendingUp } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FileSpreadsheet,
+  FileText,
+  Wallet,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  PieChart,
+  Loader2,
+  TrendingUp,
+  RefreshCw,
+  Building2,
+  Layers,
+  Calendar,
+} from "lucide-react";
 import { ledgerAPI, branchAPI } from "../../services/apiService";
+import { toast } from "../../components/Toast";
+import PageTitle from "../../components/PageTitle";
+import "./BalanceSheet.css";
+
+type LedgerCategory = "Income" | "Expense" | "Asset" | "Liability";
+
+interface BranchItem {
+  id: string | number;
+  branchName?: string;
+  name?: string;
+}
+
+interface LedgerEntry {
+  id: number;
+  date: string;
+  type: string;
+  category: LedgerCategory;
+  amount: string | number;
+  remark?: string;
+  paymentMode?: string;
+  branch?: {
+    id?: string | number;
+    branchName?: string;
+    name?: string;
+  };
+}
+
+const CATEGORY_OPTIONS: Array<"All Primary Categories" | LedgerCategory> = [
+  "All Primary Categories",
+  "Income",
+  "Expense",
+  "Asset",
+  "Liability",
+];
+
+const normalizeLedgerData = (payload: any): LedgerEntry[] => {
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const normalizeBranches = (payload: any): BranchItem[] => {
+  if (Array.isArray(payload?.data?.branches)) return payload.data.branches;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const BalanceSheetReport: React.FC = () => {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [branches, setBranches] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<LedgerEntry[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     branchId: "",
+    accountType: "All Identified Accounts",
     category: "All Primary Categories",
     startDate: "",
   });
@@ -15,13 +76,14 @@ const BalanceSheetReport: React.FC = () => {
   const fetchBranches = async () => {
     try {
       const response = await branchAPI.getAll();
-      setBranches(response.data.branches || []);
+      setBranches(normalizeBranches(response));
     } catch (error) {
       console.error("Error fetching branches:", error);
+      toast.error("Unable to load branch list");
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (showToast = false) => {
     try {
       setLoading(true);
       const params: any = {};
@@ -30,9 +92,12 @@ const BalanceSheetReport: React.FC = () => {
       if (filters.startDate) params.startDate = filters.startDate;
 
       const response = await ledgerAPI.getTransactions(params);
-      setTransactions(response.data);
+      const list = normalizeLedgerData(response);
+      setTransactions(list);
+      if (showToast) toast.success(`Report processed with ${list.length} records`);
     } catch (error) {
       console.error("Error fetching transactions:", error);
+      toast.error("Failed to process report data");
     } finally {
       setLoading(false);
     }
@@ -43,149 +108,314 @@ const BalanceSheetReport: React.FC = () => {
     fetchTransactions();
   }, []);
 
-  const calculateTotals = () => {
-    const totals = {
-      income: 0,
-      expense: 0,
-      assets: 0,
-      liabilities: 0,
-    };
+  const accountTypeOptions = useMemo(
+    () => [
+      "All Identified Accounts",
+      ...Array.from(new Set(transactions.map((item) => item.type).filter(Boolean))),
+    ],
+    [transactions],
+  );
 
-    transactions.forEach(t => {
-      const amt = parseFloat(t.amount);
-      if (t.category === "Income") totals.income += amt;
-      else if (t.category === "Expense") totals.expense += amt;
-      else if (t.category === "Asset") totals.assets += amt;
-      else if (t.category === "Liability") totals.liabilities += amt;
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((item) => {
+      const dateMatch = !filters.startDate || (item.date ? item.date.slice(0, 10) === filters.startDate : false);
+      const categoryMatch =
+        filters.category === "All Primary Categories" || item.category === filters.category;
+      const typeMatch =
+        filters.accountType === "All Identified Accounts" || item.type === filters.accountType;
+      return dateMatch && categoryMatch && typeMatch;
     });
+  }, [transactions, filters.category, filters.startDate, filters.accountType]);
 
-    return totals;
-  };
+  const totals = useMemo(() => {
+    return filteredTransactions.reduce(
+      (acc, item) => {
+        const amount = Number(item.amount || 0);
+        if (item.category === "Income") acc.income += amount;
+        if (item.category === "Expense") acc.expense += amount;
+        if (item.category === "Asset") acc.assets += amount;
+        if (item.category === "Liability") acc.liabilities += amount;
+        return acc;
+      },
+      { income: 0, expense: 0, assets: 0, liabilities: 0 },
+    );
+  }, [filteredTransactions]);
 
-  const totals = calculateTotals();
   const formatCurrency = (amt: number) => {
     if (amt >= 10000000) return `₹ ${(amt / 10000000).toFixed(2)} Cr`;
     if (amt >= 100000) return `₹ ${(amt / 100000).toFixed(2)} L`;
     return `₹ ${amt.toLocaleString()}`;
   };
 
+  const handleReset = () => {
+    setFilters({
+      branchId: "",
+      accountType: "All Identified Accounts",
+      category: "All Primary Categories",
+      startDate: "",
+    });
+    toast.info("Report filters reset");
+  };
+
+  const exportAsCsv = () => {
+    if (filteredTransactions.length === 0) {
+      toast.info("No records available to export");
+      return;
+    }
+
+    const rows = [
+      ["Date", "Type", "Category", "Branch", "Amount", "Payment", "Remark"],
+      ...filteredTransactions.map((item) => [
+        item.date ? new Date(item.date).toLocaleDateString() : "-",
+        item.type || "-",
+        item.category || "-",
+        item.branch?.branchName || item.branch?.name || "Consolidated",
+        Number(item.amount || 0).toFixed(2),
+        item.paymentMode || "N/A",
+        item.remark || "",
+      ]),
+    ];
+
+    const csv = rows
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `balance_sheet_report_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.success("Financial Excel exported");
+  };
+
+  const exportAsPdf = () => {
+    if (filteredTransactions.length === 0) {
+      toast.info("No records available to export");
+      return;
+    }
+
+    const reportRows = filteredTransactions
+      .slice(0, 200)
+      .map(
+        (item) => `
+          <tr>
+            <td>${item.date ? new Date(item.date).toLocaleDateString() : "-"}</td>
+            <td>${item.type || "-"}</td>
+            <td>${item.category || "-"}</td>
+            <td>${item.branch?.branchName || item.branch?.name || "Consolidated"}</td>
+            <td style="text-align:right;">${Number(item.amount || 0).toLocaleString("en-IN")}</td>
+          </tr>
+        `,
+      )
+      .join("");
+
+    const win = window.open("", "_blank", "width=1024,height=760");
+    if (!win) {
+      toast.error("Popup blocked. Please allow popups to generate PDF.");
+      return;
+    }
+
+    win.document.write(`
+      <html>
+        <head>
+          <title>Balance Sheet Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 24px; color: #0f172a; }
+            h1 { margin: 0 0 8px; font-size: 24px; }
+            p { margin: 0 0 16px; color: #475569; }
+            .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+            .meta div { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+            th, td { border: 1px solid #e2e8f0; padding: 8px; font-size: 12px; }
+            th { background: #f8fafc; text-align: left; }
+          </style>
+        </head>
+        <body>
+          <h1>Balance Sheet Report</h1>
+          <p>Generated on ${new Date().toLocaleString()}</p>
+          <div class="meta">
+            <div><strong>Total Income</strong><br/>${formatCurrency(totals.income)}</div>
+            <div><strong>Total Expense</strong><br/>${formatCurrency(totals.expense)}</div>
+            <div><strong>Net Balance</strong><br/>${formatCurrency(totals.income - totals.expense)}</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Branch</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>${reportRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
+    toast.success("Balance Sheet PDF ready for print");
+  };
+
+  const branchOptions = branches
+    .map((branch) => ({ id: String(branch.id ?? ""), name: branch.branchName || branch.name || "" }))
+    .filter((branch) => branch.id && branch.name);
+
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
+    <div className="main-content animate-fade-in bs-report-page">
+      <div className="page-header bs-report-header">
         <div>
-          <h1 className="page-title"><TrendingUp size={22} /> Balance Sheet Report</h1>
-          <p className="page-subtitle">Deep financial analysis and consolidated balance sheets for strategic auditing</p>
+          <PageTitle
+            title="Balance Sheet Report"
+            subtitle="Deep financial analysis and consolidated balance sheets for strategic auditing"
+            icon={<TrendingUp size={22} />}
+          />
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button className="btn btn-secondary shadow-sm">
+        <div className="bs-report-header-actions">
+          <button className="btn btn-secondary shadow-sm" onClick={exportAsCsv}>
             <FileSpreadsheet size={18} color="#16a34a" /> Financial Excel
           </button>
-          <button className="btn btn-secondary shadow-sm">
+          <button className="btn btn-secondary shadow-sm" onClick={exportAsPdf}>
             <FileText size={18} color="#dc2626" /> Balance Sheet PDF
           </button>
         </div>
       </div>
 
-       <div className="glass-card" style={{ marginBottom: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
+      <div className="glass-card bs-report-filter-card">
+        <div className="bs-report-filter-grid">
           <div>
             <label className="input-label">Select Branch</label>
-            <select 
+            <select
               className="select-modern"
               value={filters.branchId}
-              onChange={(e) => setFilters({...filters, branchId: e.target.value})}
+              onChange={(e) => setFilters((prev) => ({ ...prev, branchId: e.target.value }))}
             >
-               <option value="">Consolidated (All)</option>
-               {branches.map(b => (
-                 <option key={b.id} value={b.id}>{b.branchName}</option>
-               ))}
+              <option value="">Consolidated (All)</option>
+              {branchOptions.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
             </select>
           </div>
-           <div>
+
+          <div>
             <label className="input-label">Select Account Type</label>
-            <select className="select-modern">
-               <option>All Identified Accounts</option>
-               <option>Revenue Sources</option>
-               <option>Operational Expense</option>
+            <select
+              className="select-modern"
+              value={filters.accountType}
+              onChange={(e) => setFilters((prev) => ({ ...prev, accountType: e.target.value }))}
+            >
+              {accountTypeOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
             </select>
           </div>
+
           <div>
             <label className="input-label">Category</label>
-            <select 
+            <select
               className="select-modern"
               value={filters.category}
-              onChange={(e) => setFilters({...filters, category: e.target.value})}
+              onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value as any }))}
             >
-               <option>All Primary Categories</option>
-               <option>Income</option>
-               <option>Expense</option>
-               <option>Asset</option>
-               <option>Liability</option>
+              {CATEGORY_OPTIONS.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
             </select>
           </div>
+
           <div>
             <label className="input-label">Audit Period</label>
-            <input 
-              type="date" 
-              className="input-modern" 
+            <input
+              type="date"
+              className="input-modern"
               value={filters.startDate}
-              onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+              onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value }))}
             />
           </div>
-          <div style={{ alignSelf: "flex-end" }}>
-            <button 
-              className="btn btn-primary shadow-glow" 
-              style={{ width: "100%" }}
-              onClick={fetchTransactions}
+
+          <div className="bs-report-filter-actions">
+            <button
+              className="btn btn-primary shadow-glow"
+              onClick={() => fetchTransactions(true)}
               disabled={loading}
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : <PieChart size={18} />} Process Report
+            </button>
+            <button className="btn btn-secondary" onClick={handleReset}>
+              <RefreshCw size={16} /> Reset
             </button>
           </div>
         </div>
       </div>
 
-       {/* Consolidated Financial Summary */}
-       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px", marginBottom: "32px" }}>
-          <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "20px", padding: "24px", background: "rgba(16, 185, 129, 0.05)", border: "1px solid rgba(16, 185, 129, 0.1)" }}>
-             <div style={{ background: "#ecfdf5", padding: "14px", borderRadius: "14px" }}>
-                <ArrowUpCircle size={28} color="#10b981" />
-             </div>
-             <div>
-                <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "700" }}>Total Consolidated Income</p>
-                <h3 style={{ fontSize: "24px", color: "#065f46" }}>{formatCurrency(totals.income)}</h3>
-             </div>
+      <div className="bs-report-kpi-grid">
+        <div className="glass-card bs-report-kpi-card is-income">
+          <div className="bs-report-kpi-icon is-income">
+            <ArrowUpCircle size={24} color="#10b981" />
           </div>
-          <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "20px", padding: "24px", background: "rgba(220, 38, 38, 0.05)", border: "1px solid rgba(220, 38, 38, 0.1)" }}>
-             <div style={{ background: "#fef2f2", padding: "14px", borderRadius: "14px" }}>
-                <ArrowDownCircle size={28} color="#dc2626" />
-             </div>
-             <div>
-                <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "700" }}>Total Group Expenses</p>
-                <h3 style={{ fontSize: "24px", color: "#991b1b" }}>{formatCurrency(totals.expense)}</h3>
-             </div>
+          <div>
+            <p>Total Consolidated Income</p>
+            <h3>{formatCurrency(totals.income)}</h3>
           </div>
-           <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "20px", padding: "24px", background: "rgba(79, 70, 229, 0.05)", border: "1px solid rgba(79, 70, 229, 0.1)" }}>
-             <div style={{ background: "#eef2ff", padding: "14px", borderRadius: "14px" }}>
-                <Wallet size={28} color="var(--primary)" />
-             </div>
-             <div>
-                <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "700" }}>Net Financial Balance</p>
-                <h3 style={{ fontSize: "24px", color: "var(--primary)" }}>{formatCurrency(totals.income - totals.expense)}</h3>
-             </div>
-          </div>
-       </div>
+        </div>
 
-      <div className="glass-card">
-         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "800", color: "var(--primary)" }}>Account-wise Performance Breakdown</h3>
-            <span className="badge badge-primary" style={{ padding: "6px 14px", fontSize: "10px" }}>Live Financial Status</span>
-         </div>
+        <div className="glass-card bs-report-kpi-card is-expense">
+          <div className="bs-report-kpi-icon is-expense">
+            <ArrowDownCircle size={24} color="#dc2626" />
+          </div>
+          <div>
+            <p>Total Group Expenses</p>
+            <h3>{formatCurrency(totals.expense)}</h3>
+          </div>
+        </div>
+
+        <div className="glass-card bs-report-kpi-card is-balance">
+          <div className="bs-report-kpi-icon is-balance">
+            <Wallet size={24} color="var(--primary)" />
+          </div>
+          <div>
+            <p>Net Financial Balance</p>
+            <h3>{formatCurrency(totals.income - totals.expense)}</h3>
+          </div>
+        </div>
+
+        <div className="glass-card bs-report-kpi-card is-assets">
+          <div className="bs-report-kpi-icon is-assets">
+            <Layers size={24} color="#0f766e" />
+          </div>
+          <div>
+            <p>Assets + Liabilities Snapshot</p>
+            <h3>{formatCurrency(totals.assets + totals.liabilities)}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card bs-report-table-card">
+        <div className="bs-report-table-head">
+          <h3>Account-wise Performance Breakdown</h3>
+          <div className="bs-report-live-tags">
+            <span className="badge badge-primary">Live Financial Status</span>
+            <span className="badge badge-gray">
+              <Building2 size={12} /> {filters.branchId ? "Branch Filtered" : "Consolidated"}
+            </span>
+            <span className="badge badge-gray">
+              <Calendar size={12} /> {filters.startDate || "All Dates"}
+            </span>
+          </div>
+        </div>
 
         <div style={{ overflowX: "auto" }}>
           {loading ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
+            <div className="bs-report-loader">
               <Loader2 className="animate-spin" size={32} color="var(--primary)" />
+              <p>Processing report data...</p>
             </div>
           ) : (
             <table className="table-modern">
@@ -199,19 +429,21 @@ const BalanceSheetReport: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {transactions.length > 0 ? (
-                  transactions.map((item, idx) => (
+                {filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((item, idx) => (
                     <tr key={item.id}>
                       <td>{idx + 1}</td>
                       <td><span style={{ fontWeight: "700" }}>{item.type}</span></td>
-                      <td>{item.branch?.branchName || "N/A"}</td>
-                      <td style={{ fontWeight: "800", color: item.category === 'Income' ? '#166534' : 'var(--text-main)' }}>₹ {parseFloat(item.amount).toLocaleString()}</td>
+                      <td>{item.branch?.branchName || item.branch?.name || "Consolidated"}</td>
+                      <td style={{ fontWeight: "800", color: item.category === "Income" ? "#166534" : "var(--color-text-primary)" }}>
+                        ₹ {Number(item.amount || 0).toLocaleString("en-IN")}
+                      </td>
                       <td>
                         <span className={`badge ${
-                          item.category === "Income" ? "badge-success" : 
-                          item.category === "Expense" ? "badge-danger" : 
+                          item.category === "Income" ? "badge-success" :
+                          item.category === "Expense" ? "badge-danger" :
                           item.category === "Asset" ? "badge-primary" : "badge-warning"
-                        }`} style={{ fontSize: "10px", fontWeight: "800" }}>
+                        }`}>
                           {item.category}
                         </span>
                       </td>
@@ -219,7 +451,7 @@ const BalanceSheetReport: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
+                    <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
                       No financial records found for the selected criteria.
                     </td>
                   </tr>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { penaltyAPI, leaveTypeAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import { Plus, Save, Trash2, ArrowRightCircle, AlertCircle, AlertTriangle } from "lucide-react";
+import { Plus, Save, ArrowRightCircle, AlertCircle, AlertTriangle, X } from "lucide-react";
+import "./Penalty.css";
 
 const PenaltyToLeave: React.FC = () => {
   const [conversions, setConversions] = useState<any[]>([]);
@@ -85,25 +86,35 @@ const PenaltyToLeave: React.FC = () => {
   };
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h1 className="page-title"><AlertTriangle size={22} /> Penalty to Leave Conversion</h1>
+    <div className="main-content animate-fade-in penalty-page-container penalty-conversion-page">
+      <div className="penalty-header">
+        <div className="penalty-title-block">
+          <div className="penalty-title-row">
+            <AlertTriangle size={24} className="penalty-title-icon" />
+            <h1 className="page-title">Penalty to Leave Conversion</h1>
+          </div>
           <p className="page-subtitle">Define automated leave deduction policies</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(true)}>
-          <Plus size={18} /> New Conversion Rule
-        </button>
+        <div className="penalty-header-actions">
+          <button className="penalty-btn primary" onClick={() => setShowForm(true)}>
+            <Plus size={18} /> New Conversion Rule
+          </button>
+        </div>
       </div>
 
       {showForm && (
-        <div className="glass-card animate-slide-up" style={{ marginTop: "24px", padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <h3>Create Conversion Rule</h3>
-            <button className="action-btn" onClick={() => setShowForm(false)}>×</button>
+        <div className="penalty-card penalty-form-shell penalty-conversion-form animate-slide-up">
+          <div className="penalty-card-header">
+            <div>
+              <h3 className="penalty-card-title">Create Conversion Rule</h3>
+              <p className="penalty-card-subtitle">Map repeated penalties to leave deductions using a clean, auditable policy.</p>
+            </div>
+            <button className="penalty-icon-btn" onClick={() => setShowForm(false)} aria-label="Close form">
+              <X size={16} />
+            </button>
           </div>
           
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "20px" }}>
+          <div className="penalty-form-grid penalty-conversion-grid">
             <div>
               <label className="input-label">Penalty Type*</label>
               <select name="penaltyType" className="select-modern" value={formData.penaltyType} onChange={handleInputChange}>
@@ -113,61 +124,82 @@ const PenaltyToLeave: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="input-label">Conversion Rule</label>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input type="number" name="conversionCount" className="input-modern" value={formData.conversionCount} onChange={handleInputChange} style={{ width: "80px" }} />
-                <span>Counts = </span>
-                <input type="number" name="leaveDeductionVal" className="input-modern" step="0.5" value={formData.leaveDeductionVal} onChange={handleInputChange} style={{ width: "80px" }} />
-                <span>Day Leave</span>
-              </div>
-            </div>
-            <div>
               <label className="input-label">Leave Type*</label>
               <select name="leaveTypeId" className="select-modern" value={formData.leaveTypeId} onChange={handleInputChange}>
                 <option value="">Select Leave Type</option>
                 {leaveTypes.map(lt => <option key={lt.id} value={lt.id}>{lt.name} ({lt.leaveCode})</option>)}
               </select>
             </div>
+            <div className="penalty-field-span-2">
+              <label className="input-label">Conversion Rule*</label>
+              <div className="penalty-conversion-rule-box">
+                <div className="penalty-conversion-part">
+                  <span className="penalty-conversion-label">Penalty Counts</span>
+                  <input type="number" name="conversionCount" className="input-modern" value={formData.conversionCount} onChange={handleInputChange} min={1} />
+                </div>
+                <span className="penalty-conversion-equals">=</span>
+                <div className="penalty-conversion-part">
+                  <span className="penalty-conversion-label">Leave Days Deducted</span>
+                  <input type="number" name="leaveDeductionVal" className="input-modern" step="0.5" value={formData.leaveDeductionVal} onChange={handleInputChange} min={0} />
+                </div>
+              </div>
+            </div>
             <div>
               <label className="input-label">Max Month Limit (Optional)</label>
               <input type="number" name="maxLimit" className="input-modern" value={formData.maxLimit} onChange={handleInputChange} />
             </div>
+            <div className="penalty-conversion-hint">
+              <h4 className="penalty-conversion-hint-title">Policy Preview</h4>
+              <p className="penalty-conversion-hint-text">
+                Every <strong>{formData.conversionCount || 0}</strong> <strong>{formData.penaltyType}</strong> entries will deduct
+                <strong> {formData.leaveDeductionVal || 0}</strong> day(s) from selected leave type.
+              </p>
+            </div>
           </div>
 
-          <div style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-            <button className="btn-primary" onClick={handleSubmit}>
+          <div className="penalty-form-actions">
+            <button className="penalty-btn primary" onClick={handleSubmit}>
               <Save size={18} /> Save Conversion Rule
             </button>
           </div>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px", marginTop: "24px" }}>
+      <div className="penalty-card penalty-table-shell">
+        <div className="penalty-table-header">
+          <div>
+            <h3 className="penalty-card-title">Conversion Policies</h3>
+            <p className="penalty-card-subtitle">All active penalty-to-leave mappings currently applied by the system.</p>
+          </div>
+          <span className="penalty-chip">{conversions.length} rules</span>
+        </div>
+
+        <div className="penalty-rules-grid">
         {conversions.map((conv) => (
-          <div key={conv.id} className="glass-card animate-slide-up" style={{ padding: "24px", borderLeft: "4px solid var(--primary)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
-              <div style={{ background: "var(--primary-light)", padding: "10px", borderRadius: "10px" }}>
+          <div key={conv.id} className="penalty-rule-card animate-slide-up">
+            <div className="penalty-rule-header">
+              <div className="penalty-rule-hero">
                 <ArrowRightCircle size={24} color="var(--primary)" />
               </div>
-              <button className="action-btn" style={{ color: "#ef4444" }}><Trash2 size={16} /></button>
             </div>
-            <h3 style={{ margin: "0 0 8px 0" }}>{conv.penaltyType} Policy</h3>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-muted)", fontWeight: "600" }}>
-              <span style={{ fontSize: "20px", color: "var(--primary)" }}>{conv.conversionCount} {conv.penaltyType}s</span>
+            <h3 className="penalty-rule-name">{conv.penaltyType} Policy</h3>
+            <div className="penalty-rule-meta penalty-rule-summary">
+              <span className="penalty-rule-amount">{conv.conversionCount} {conv.penaltyType}s</span>
               <ArrowRightCircle size={14} />
-              <span style={{ fontSize: "20px", color: "#10b981" }}>{conv.leaveDeductionVal} {conv.leaveType.name}</span>
+              <span className="penalty-rule-amount penalty-success">{conv.leaveDeductionVal} {conv.leaveType.name}</span>
             </div>
-            <div style={{ marginTop: "16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}>
+            <div className="penalty-rule-desc penalty-inline-meta">
               <AlertCircle size={14} />
               <span>{conv.maxLimit ? `Limit: Max ${conv.maxLimit} days/month` : "No limit set"}</span>
             </div>
           </div>
         ))}
         {conversions.length === 0 && (
-          <div className="glass-card" style={{ padding: "40px", textAlign: "center", gridColumn: "1 / -1" }}>
-            <p>No conversion rules defined. Click the button above to add one.</p>
+          <div className="penalty-empty-state penalty-empty-grid">
+            <p>No conversion rules defined. Use the button above to add the first mapping.</p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

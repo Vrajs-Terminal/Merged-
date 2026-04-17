@@ -2,7 +2,6 @@
 import { Trash2, Search, Filter, RefreshCcw, Package, AlertTriangle, Eye, CheckCircle2, XCircle, MapPin, Calendar, User, X } from "lucide-react";
 import { toast } from "../../components/Toast";
 import { lostAndFoundAPI } from "../../services/apiService";
-import PageTitle from "../../components/PageTitle";
 
 export default function ManageLostAndFound() {
   const [items, setItems] = useState<any[]>([]);
@@ -51,9 +50,13 @@ export default function ManageLostAndFound() {
     <div className="main-content animate-fade-in">
       {/* Header Section */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
-        <div>
-           <PageTitle title="Lost & Found Hub" subtitle="Centralized infrastructure for anomalous item tracking" />
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+          <AlertTriangle size={24} color="var(--primary)" />
+          <h1 className="page-title" style={{ margin: 0 }}>Manage Lost And Found</h1>
         </div>
+        <p className="page-subtitle" style={{ margin: 0 }}>Centralized infrastructure for anomalous item tracking</p>
+      </div>
         <div style={{ display: "flex", gap: "10px" }}>
            <div style={{ display: "flex", alignItems: "center", background: "white", padding: "6px 12px", borderRadius: "12px", border: "1px solid var(--color-border)", gap: "10px" }}>
               <Filter size={16} color="var(--text-muted)" />

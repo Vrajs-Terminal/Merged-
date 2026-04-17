@@ -11,7 +11,11 @@ import {
   Users,
   Activity,
     UserPlus,
-    Scan
+    Scan,
+    X,
+    Building2,
+    Layers,
+    CalendarClock
 } from "lucide-react";
 import { faceXAPI, branchAPI, departmentAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
@@ -26,6 +30,9 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
     const [branches, setBranches] = useState<any[]>([]);
     const [departments, setDepartments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+    const [searchInput, setSearchInput] = useState("");
     
     // Filters
     const [filters, setFilters] = useState({
@@ -34,21 +41,26 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
         search: ""
     });
 
-    const fetchData = async () => {
+    const fetchData = async (silent = false) => {
         try {
-            setLoading(true);
+            if (silent) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
             const [dataRes, branchRes, deptRes] = await Promise.all([
                 faceXAPI.getUserFaceData(filters),
                 branchAPI.getAll(),
                 departmentAPI.getAll()
             ]);
-            setFaceData(dataRes.data);
-            setBranches(branchRes.data);
-            setDepartments(deptRes.data);
+            setFaceData(Array.isArray(dataRes.data) ? dataRes.data : []);
+            setBranches(Array.isArray(branchRes.data) ? branchRes.data : []);
+            setDepartments(Array.isArray(deptRes.data) ? deptRes.data : []);
         } catch (error) {
             toast.error("Failed to load user biometric data");
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -56,13 +68,25 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
         fetchData();
     }, [filters]);
 
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setFilters(prev => ({ ...prev, search: searchInput.trim() }));
+        }, 320);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [searchInput]);
+
+    useEffect(() => {
+        void setActivePage;
+    }, [setActivePage]);
+
     const handleResetFace = async (id: number, employeeName: string) => {
         if (!window.confirm(`Are you sure you want to delete and reset the face data for ${employeeName}? The employee will need to enroll again from the Face App.`)) return;
 
         try {
             await faceXAPI.deleteUserFaceData(id);
             toast.success("Biometric data reset successfully");
-            fetchData();
+            fetchData(true);
         } catch (error) {
             toast.error("Failed to reset face data");
         }
@@ -75,57 +99,68 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
     const stats = {
         total: faceData.length,
         synced: faceData.filter(d => d.photoUrl).length,
-        missing: 0, // Placeholder
+        pending: faceData.filter(d => !d.photoUrl).length,
     };
+
+    const getEmployeeName = (data: any) => `${data.employee?.firstName || ""} ${data.employee?.lastName || ""}`.trim() || "Unknown Employee";
+    const hasSearchQuery = searchInput.trim().length > 0;
+    const isSearchSyncing = searchInput.trim() !== filters.search;
 
     return (
         <div className="main-content animate-fade-in fx-bio-page">
-            <div className="page-header fx-page-header">
-                <div>
-                    <h1 className="page-title"><Scan size={22} /> Biometric Face Registry</h1>
-                    <p className="page-subtitle">Repository of all employee facial identity data captured via mobile/tablet apps</p>
+            <div className="fx-page-header">
+                <div className="fx-title-block">
+                    <div className="fx-title-row">
+                        <Scan size={24} className="fx-title-icon" />
+                        <h1 className="page-title">Face Identity Registry Hub</h1>
+                    </div>
+                    <p className="page-subtitle">Repository of employee facial identity data captured via mobile and tablet apps.</p>
+                </div>
+                <button className="btn-secondary fx-refresh-btn" onClick={() => fetchData(true)} disabled={loading || refreshing}>
+                    <RefreshCw size={16} className={refreshing ? "spin" : ""} />
+                    {refreshing ? "Syncing..." : "Sync Registry"}
+                </button>
+            </div>
+
+            <div className="fx-stats-grid">
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Identity</span>
+                        <span className="fx-stat-icon blue"><Users size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.total}</strong>
+                    <span className="fx-stat-note">Employees Enrolled</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Healthy</span>
+                        <span className="fx-stat-icon green"><Activity size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">100%</strong>
+                    <span className="fx-stat-note">Data Integrity</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Captured</span>
+                        <span className="fx-stat-icon purple"><UserCheck size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.synced}</strong>
+                    <span className="fx-stat-note">Records with Face Data</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Pending</span>
+                        <span className="fx-stat-icon orange"><UserPlus size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.pending}</strong>
+                    <span className="fx-stat-note">Records without Photo</span>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="main-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "30px" }}>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.1s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-blue"><Users size={16} /></div>
-                        <div className="ns-change positive">Identity</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.total}</div>
-                        <div className="ns-title">Employees Enrolled</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.2s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-green"><Activity size={16} /></div>
-                        <div className="ns-change positive">Healthy</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">100%</div>
-                        <div className="ns-title">Data Integrity</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.3s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-orange"><UserPlus size={16} /></div>
-                        <div className="ns-change positive">New</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">12+</div>
-                        <div className="ns-title">Pending Enrollments</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Filter Bar */}
-            <div className="glass-card" style={{ padding: "24px", marginBottom: "24px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "24px", alignItems: "flex-end" }}>
+            <div className="glass-card fx-filter-card">
+                <div className="fx-filter-grid">
                     <div>
-                        <label className="form-label">Branch</label>
+                        <label className="form-label fx-label">Branch</label>
                         <select 
                             className="form-control" 
                             name="branch" 
@@ -137,7 +172,7 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="form-label">Department</label>
+                        <label className="form-label fx-label">Department</label>
                         <select 
                             className="form-control" 
                             name="department" 
@@ -148,70 +183,80 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
                             {departments.map(d => <option key={d.id} value={d.departmentName}>{d.departmentName}</option>)}
                         </select>
                     </div>
-                    <div style={{ position: "relative" }}>
-                        <label className="form-label">Employee Search</label>
-                        <div style={{ position: "relative" }}>
-                            <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+                    <div className="fx-search-field">
+                        <label className="form-label fx-label">Employee Search</label>
+                        <div className="fx-search-wrap">
+                            <Search size={18} className="fx-search-icon" />
                             <input 
                                 type="text" 
-                                className="form-control" 
+                                className="form-control fx-search-input"
                                 placeholder="Name or ID..." 
-                                style={{ paddingLeft: "40px" }}
-                                value={filters.search}
-                                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
                             />
+                            {hasSearchQuery && (
+                                <button
+                                    type="button"
+                                    className="fx-search-clear"
+                                    onClick={() => setSearchInput("")}
+                                    aria-label="Clear employee search"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                         </div>
                     </div>
-                    <button className="btn-secondary" onClick={fetchData} style={{ height: "48px" }}>
-                        <RefreshCw size={18} /> Sync Registry
+                    <button className="btn-secondary fx-sync-btn" onClick={() => fetchData(true)}>
+                        <RefreshCw size={16} className={refreshing ? "spin" : ""} /> Sync Registry
                     </button>
+                </div>
+                <div className="fx-search-meta">
+                    {isSearchSyncing
+                        ? "Searching employee records..."
+                        : hasSearchQuery
+                            ? `Showing ${faceData.length} result${faceData.length === 1 ? "" : "s"} for "${filters.search}"`
+                            : `Showing all ${faceData.length} employee records`}
                 </div>
             </div>
 
-            {/* Photo Cards Grid */}
             {loading ? (
-                <div style={{ textAlign: "center", padding: "100px" }}>
-                    <Loader2 className="animate-spin" size={48} style={{ margin: "0 auto" }} />
+                <div className="fx-loading-state">
+                    <Loader2 className="spin" size={28} />
+                    <span>Loading biometric registry...</span>
                 </div>
             ) : faceData.length > 0 ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                <div className="fx-photo-grid">
                     {faceData.map((data) => (
-                        <div key={data.id} className="glass-card animate-scale-in" style={{ padding: "0", overflow: "hidden", position: "relative" }}>
-                             <div style={{ 
-                                 height: "180px", 
-                                 background: `url(${data.photoUrl || 'https://via.placeholder.com/200x200?text=Face+Enrolled'})`,
-                                 backgroundSize: "cover",
-                                 backgroundPosition: "center",
-                                 position: "relative"
-                             }}>
-                                <div style={{ position: "absolute", bottom: "12px", left: "12px", right: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div className="badge badge-success" style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px" }}>
+                        <div key={data.id} className="glass-card animate-scale-in fx-photo-card">
+                             <div className="fx-photo-cover" style={{ backgroundImage: `url(${data.photoUrl || 'https://via.placeholder.com/320x220?text=Face+Enrolled'})` }}>
+                                <div className="fx-photo-meta-top">
+                                    <div className="badge badge-success fx-photo-badge">
                                         <UserCheck size={10} /> Face Active
                                     </div>
-                                    <div style={{ color: "white", fontSize: "10px", background: "rgba(0,0,0,0.5)", padding: "2px 6px", borderRadius: "4px" }}>
+                                    <div className="fx-photo-date">
                                         <Clock size={10} /> {new Date(data.lastUpdatedDate).toLocaleDateString()}
                                     </div>
                                 </div>
                              </div>
                              
-                             <div style={{ padding: "16px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                             <div className="fx-photo-content">
+                                <div className="fx-photo-head">
                                     <div>
-                                        <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>{data.employee?.firstName} {data.employee?.lastName}</h4>
-                                        <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "12px" }}>{data.employee?.designation} • {data.employee?.department}</p>
+                                        <h4>{getEmployeeName(data)}</h4>
+                                        <p>{data.employee?.designation} • {data.employee?.department}</p>
                                     </div>
-                                    <div style={{ display: "flex", gap: "4px" }}>
-                                        <button className="btn-icon" title="View Detail" style={{ padding: "6px" }} onClick={() => toast.info(`Viewing high-res for ${data.employee?.firstName}`)}>
+                                    <div className="fx-photo-actions">
+                                        <button className="btn-icon" title="View Detail" onClick={() => setSelectedRecord(data)}>
                                             <Eye size={14} />
                                         </button>
-                                        <button className="btn-icon color-danger" title="Reset Biometrics" style={{ padding: "6px" }} onClick={() => handleResetFace(data.id, data.employee?.firstName)}>
+                                        <button className="btn-icon color-danger" title="Reset Biometrics" onClick={() => handleResetFace(data.id, getEmployeeName(data))}>
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <div style={{ marginTop: "16px", display: "flex", gap: "8px" }}>
-                                    <button className="btn-secondary" style={{ width: "100%", fontSize: "12px" }} onClick={() => handleReuploadRequest(data.employee?.firstName)}>
+                                <div className="fx-photo-foot">
+                                    <button className="btn-secondary fx-reupload-btn" onClick={() => handleReuploadRequest(getEmployeeName(data))}>
                                         <Camera size={14} /> Request Re-upload
                                     </button>
                                 </div>
@@ -220,9 +265,54 @@ const UserFaceData: React.FC<UserFaceDataProps> = ({ setActivePage }) => {
                     ))}
                 </div>
             ) : (
-                <div className="glass-card" style={{ textAlign: "center", padding: "100px", opacity: 0.5 }}>
-                    <Users size={64} style={{ margin: "0 auto 16px" }} />
+                <div className="glass-card fx-empty-card">
+                    <Users size={52} />
                     <h3>No face biometric records found for the current selection.</h3>
+                </div>
+            )}
+
+            {selectedRecord && (
+                <div className="fx-modal-overlay" onClick={() => setSelectedRecord(null)}>
+                    <div className="fx-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="fx-modal-head">
+                            <div className="fx-modal-title-row">
+                                <Eye size={18} />
+                                <h4>Biometric Record Detail</h4>
+                            </div>
+                            <button className="btn-icon" onClick={() => setSelectedRecord(null)}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="fx-modal-grid">
+                            <div>
+                                <label>Employee</label>
+                                <p>{getEmployeeName(selectedRecord)}</p>
+                            </div>
+                            <div>
+                                <label>Designation</label>
+                                <p>{selectedRecord.employee?.designation || "-"}</p>
+                            </div>
+                            <div>
+                                <label>Branch</label>
+                                <p><Building2 size={14} /> {selectedRecord.employee?.branch || selectedRecord.branch || "-"}</p>
+                            </div>
+                            <div>
+                                <label>Department</label>
+                                <p><Layers size={14} /> {selectedRecord.employee?.department || selectedRecord.department || "-"}</p>
+                            </div>
+                            <div>
+                                <label>Last Updated</label>
+                                <p><CalendarClock size={14} /> {selectedRecord.lastUpdatedDate ? new Date(selectedRecord.lastUpdatedDate).toLocaleString() : "-"}</p>
+                            </div>
+                            <div>
+                                <label>Status</label>
+                                <p><span className="badge badge-success">Face Active</span></p>
+                            </div>
+                        </div>
+                        <div className="fx-modal-actions">
+                            <button className="btn-secondary" onClick={() => setSelectedRecord(null)}>Close</button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

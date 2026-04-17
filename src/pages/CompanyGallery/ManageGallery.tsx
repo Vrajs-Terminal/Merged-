@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { galleryAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
-import PageTitle from "../../components/PageTitle";
+import "./Gallery.css";
 
 const ManageGallery: React.FC = () => {
   const [albums, setAlbums] = useState<any[]>([]);
@@ -92,40 +92,41 @@ const ManageGallery: React.FC = () => {
   // --- ALBUM VIEW (main) ---
   if (!selectedAlbum) {
     return (
-      <div className="main-content animate-fade-in">
-        {/* Header */}
-        <div className="page-header" style={{ marginBottom: "28px" }}>
-          <div>
-            <PageTitle title="Company Gallery" subtitle="Browse and manage all albums and media collections" />
+      <div className="main-content animate-fade-in gallery-shell">
+        <div className="gallery-page-header">
+          <div className="gallery-title-block">
+            <div className="gallery-title-row">
+              <ImageIcon size={24} className="gallery-title-icon" />
+              <h1 className="page-title">Company Gallery</h1>
+            </div>
+            <p className="page-subtitle">Browse and manage all albums and media collections</p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "28px" }}>
+        <div className="gallery-stats-bar">
           {[
             { label: "Total Albums", value: albums.length, color: "#6366f1", bg: "rgba(99,102,241,0.1)" },
             { label: "Public Albums", value: albums.filter(a => a.visibility === "Public").length, color: "#10b981", bg: "rgba(16,185,129,0.1)" },
             { label: "Total Media", value: albums.reduce((acc, a) => acc + (a._count?.media || 0), 0), color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
             { label: "Restricted", value: albums.filter(a => a.visibility === "Restricted").length, color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
           ].map(stat => (
-            <div key={stat.label} className="glass-card animate-slide-in" style={{ padding: "20px" }}>
+            <div key={stat.label} className="gallery-panel" style={{ padding: "16px" }}>
               <div style={{ fontSize: "28px", fontWeight: "800", color: stat.color }}>{stat.value}</div>
               <div style={{ fontSize: "13px", color: "#64748b", marginTop: "4px" }}>{stat.label}</div>
             </div>
           ))}
         </div>
 
-        {/* Search & View Toggle */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "24px", alignItems: "center" }}>
-          <div style={{ position: "relative", flex: 1 }}>
-            <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-            <input className="form-control" style={{ paddingLeft: "38px" }}
+        <div className="gallery-toolbar-row">
+          <div className="gallery-search-input">
+            <Search size={16} />
+            <input className="gallery-control"
               placeholder="Search albums..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <div style={{ display: "flex", gap: "6px", background: "white", padding: "4px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+          <div className="gallery-view-switch">
             {(["grid", "list"] as const).map(v => (
               <button key={v} onClick={() => setViewMode(v)}
-                style={{ padding: "7px 12px", borderRadius: "8px", border: "none", cursor: "pointer", background: viewMode === v ? "#6366f1" : "transparent", color: viewMode === v ? "white" : "#64748b" }}>
+                className={viewMode === v ? "active" : ""}>
                 {v === "grid" ? <Grid size={16} /> : <List size={16} />}
               </button>
             ))}
@@ -137,10 +138,10 @@ const ManageGallery: React.FC = () => {
             <Loader2 size={48} className="animate-spin" style={{ margin: "0 auto", color: "#6366f1" }} />
           </div>
         ) : filteredAlbums.length === 0 ? (
-          <div className="glass-card" style={{ textAlign: "center", padding: "80px", opacity: 0.6 }}>
+          <div className="gallery-empty-block">
             <Folder size={64} style={{ margin: "0 auto 16px", color: "#94a3b8" }} />
-            <h3 style={{ margin: "0 0 8px" }}>No albums yet</h3>
-            <p style={{ margin: 0, color: "#64748b" }}>Upload media from "Add Gallery Media" to create albums</p>
+            <h3>No albums yet</h3>
+            <p>Upload media from "Add Gallery Media" to create albums.</p>
           </div>
         ) : viewMode === "grid" ? (
           /* CARD GRID */
@@ -175,7 +176,7 @@ const ManageGallery: React.FC = () => {
                 {/* Info */}
                 <div style={{ padding: "16px" }}>
                   <h3 style={{ margin: "0 0 4px", fontSize: "16px", fontWeight: "700" }}>{album.name}</h3>
-                  {album.event && <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: "600", marginBottom: "4px" }}>ðŸ“… {album.event.eventName}</div>}
+                  {album.event && <div style={{ fontSize: "12px", color: "#6366f1", fontWeight: "600", marginBottom: "4px" }}>Event: {album.event.eventName}</div>}
                   {album.description && <p style={{ margin: "0 0 12px", fontSize: "12px", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{album.description}</p>}
                   <div style={{ fontSize: "11px", color: "#94a3b8", marginBottom: "12px" }}>
                     Updated {new Date(album.updatedAt).toLocaleDateString()}
@@ -195,9 +196,8 @@ const ManageGallery: React.FC = () => {
             ))}
           </div>
         ) : (
-          /* LIST VIEW */
-          <div className="glass-card" style={{ padding: "0", overflow: "hidden" }}>
-            <table className="table-modern">
+          <div className="gallery-main-card" style={{ padding: "0" }}>
+            <table className="gallery-table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -214,14 +214,14 @@ const ManageGallery: React.FC = () => {
                   <tr key={album.id}>
                     <td>{i + 1}</td>
                     <td style={{ fontWeight: "600" }}>{album.name}</td>
-                    <td>{album.event?.eventName || "â€”"}</td>
+                    <td>{album.event?.eventName || "-"}</td>
                     <td>{album._count?.media || 0} items</td>
                     <td><span style={{ padding: "3px 10px", borderRadius: "12px", fontSize: "11px", fontWeight: "700", background: album.visibility === "Public" ? "#dcfce7" : "#fee2e2", color: album.visibility === "Public" ? "#16a34a" : "#dc2626" }}>{album.visibility}</span></td>
                     <td>{new Date(album.updatedAt).toLocaleDateString()}</td>
                     <td>
-                      <div className="action-btn-group">
-                        <button className="action-btn action-btn-view" onClick={() => openAlbum(album)}><Eye size={14} /></button>
-                        <button className="action-btn action-btn-delete" onClick={() => deleteAlbum(album.id)}><Trash2 size={14} /></button>
+                      <div className="gallery-list-actions">
+                        <button onClick={() => openAlbum(album)}><Eye size={14} /></button>
+                        <button onClick={() => deleteAlbum(album.id)}><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -236,7 +236,7 @@ const ManageGallery: React.FC = () => {
 
   // --- ALBUM DETAIL VIEW ---
   return (
-    <div className="main-content animate-fade-in">
+    <div className="main-content animate-fade-in gallery-shell">
       {/* Lightbox */}
       {lightbox && (
         <div style={{ position: "fixed", inset: "0", background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -271,15 +271,14 @@ const ManageGallery: React.FC = () => {
         </div>
       )}
 
-      {/* Album Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "28px" }}>
+      <div className="gallery-toolbar-row">
         <button onClick={() => setSelectedAlbum(null)}
-          style={{ padding: "10px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontWeight: "600", color: "#64748b" }}>
+          className="gallery-save-secondary" style={{ width: "auto", minHeight: "40px", padding: "0 12px" }}>
           <ChevronLeft size={18} /> All Albums
         </button>
         <div>
           <h1 className="page-title" style={{ marginBottom: "2px" }}>{selectedAlbum.name}</h1>
-          <p className="page-subtitle">{selectedAlbum.description || `${media.length} items Â· ${selectedAlbum.visibility}`}</p>
+          <p className="page-subtitle">{selectedAlbum.description || `${media.length} items · ${selectedAlbum.visibility}`}</p>
         </div>
       </div>
 
@@ -289,7 +288,7 @@ const ManageGallery: React.FC = () => {
           <Loader2 size={48} className="animate-spin" style={{ margin: "0 auto", color: "#6366f1" }} />
         </div>
       ) : media.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: "center", padding: "80px", opacity: 0.6 }}>
+        <div className="gallery-empty-block">
           <Camera size={64} style={{ margin: "0 auto 16px", color: "#94a3b8" }} />
           <h3>No media in this album yet</h3>
         </div>

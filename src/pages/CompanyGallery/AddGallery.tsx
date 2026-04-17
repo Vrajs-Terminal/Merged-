@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { galleryAPI, eventAPI, branchAPI, departmentAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./Gallery.css";
 
 const AddGallery: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
@@ -192,44 +193,35 @@ const AddGallery: React.FC = () => {
   };
 
   return (
-    <div className="main-content animate-fade-in">
-      {/* Page Header */}
-      <div className="page-header" style={{ marginBottom: "28px" }}>
+    <div className="main-content animate-fade-in gallery-shell">
+      <div className="gallery-page-header">
         <div>
-          <h1 className="page-title"><ImageIcon size={22} color="#4f46e5" strokeWidth={2.25} /> Add Gallery Media</h1>
-          <p className="page-subtitle">Upload photos, videos and memories to company albums</p>
+          <h1 className="gallery-page-title"><ImageIcon size={24} /> Add Gallery Media</h1>
+          <p className="gallery-page-subtitle">Upload photos, videos and memories to company albums</p>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "24px", alignItems: "start" }}>
-        {/* LEFT COLUMN */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div className="gallery-layout-grid">
+        <div className="gallery-left-stack">
 
-          {/* Album Section */}
-          <div className="glass-card" style={{ padding: "28px" }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
-              <FolderPlus size={18} color="#6366f1" /> Album / Event
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">
+              <FolderPlus size={18} /> Album / Event
             </h3>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+            <div className="gallery-segment">
               {["existing", "new"].map(s => (
                 <button key={s}
                   onClick={() => setForm(prev => ({ ...prev, albumSource: s }))}
-                  style={{
-                    flex: 1, padding: "12px", borderRadius: "10px", border: "2px solid",
-                    borderColor: form.albumSource === s ? "#6366f1" : "#e2e8f0",
-                    background: form.albumSource === s ? "rgba(99,102,241,0.06)" : "white",
-                    color: form.albumSource === s ? "#6366f1" : "#64748b",
-                    fontWeight: "600", cursor: "pointer", transition: "all 0.2s"
-                  }}>
+                  className={`gallery-segment-btn ${form.albumSource === s ? "active" : ""}`}>
                   {s === "existing" ? "🔗 Existing Event" : "✨ Create New Album"}
                 </button>
               ))}
             </div>
 
             {form.albumSource === "existing" ? (
-              <div>
-                <label className="form-label">Select Event *</label>
-                <select className="form-control" value={form.eventId} onChange={e => setForm(prev => ({ ...prev, eventId: e.target.value }))}>
+              <div className="gallery-field">
+                <label className="gallery-label">Select Event *</label>
+                <select className="gallery-control" value={form.eventId} onChange={e => setForm(prev => ({ ...prev, eventId: e.target.value }))}>
                   <option value="">-- Select Event --</option>
                   {events.map(ev => (
                     <option key={ev.id} value={ev.id}>{ev.eventName} ({new Date(ev.startDate).toLocaleDateString()})</option>
@@ -237,18 +229,17 @@ const AddGallery: React.FC = () => {
                 </select>
               </div>
             ) : (
-              <div>
-                <label className="form-label">New Album Name *</label>
-                <input className="form-control" placeholder="e.g. Diwali Celebration 2025"
+              <div className="gallery-field">
+                <label className="gallery-label">New Album Name *</label>
+                <input className="gallery-control" placeholder="e.g. Diwali Celebration 2025"
                   value={form.newAlbumName} onChange={e => setForm(prev => ({ ...prev, newAlbumName: e.target.value }))} />
               </div>
             )}
           </div>
 
-          {/* Drag & Drop Upload */}
-          <div className="glass-card" style={{ padding: "28px" }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: "16px", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Upload size={18} color="#6366f1" /> Media Upload
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">
+              <Upload size={18} /> Media Upload
             </h3>
 
             <div ref={dropRef}
@@ -303,37 +294,29 @@ const AddGallery: React.FC = () => {
               </div>
             )}
 
-            {/* YouTube URL */}
-            <div>
-              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div className="gallery-field">
+              <label className="gallery-label" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Link size={14} /> YouTube URL (Optional)
               </label>
-              <input className="form-control" placeholder="https://youtube.com/watch?v=..."
+              <input className="gallery-control" placeholder="https://youtube.com/watch?v=..."
                 value={form.youtubeUrl} onChange={e => setForm(prev => ({ ...prev, youtubeUrl: e.target.value }))} />
             </div>
           </div>
 
-          {/* Description */}
-          <div className="glass-card" style={{ padding: "28px" }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>Additional Details</h3>
-            <label className="form-label">Description (Optional)</label>
-            <textarea className="form-control" rows={3} placeholder="Write a caption or note for this media..."
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">Additional Details</h3>
+            <label className="gallery-label">Description (Optional)</label>
+            <textarea className="gallery-control" rows={3} placeholder="Write a caption or note for this media..."
               value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} />
 
             <div style={{ marginTop: "20px" }}>
-              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+              <label className="gallery-label" style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
                 <Tag size={14} /> Tags
               </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
                 {tagOptions.map(tag => (
                   <button key={tag} onClick={() => toggleTag(tag)}
-                    style={{
-                      padding: "6px 14px", borderRadius: "20px", border: "1.5px solid",
-                      borderColor: form.tags.includes(tag) ? "#6366f1" : "#e2e8f0",
-                      background: form.tags.includes(tag) ? "rgba(99,102,241,0.1)" : "white",
-                      color: form.tags.includes(tag) ? "#6366f1" : "#64748b",
-                      fontWeight: "600", fontSize: "12px", cursor: "pointer", transition: "all 0.2s"
-                    }}>
+                    className={`gallery-chip ${form.tags.includes(tag) ? "active" : ""}`}>
                     {tag}
                   </button>
                 ))}
@@ -342,85 +325,74 @@ const AddGallery: React.FC = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN - Settings */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div className="gallery-right-stack">
 
-          {/* Visibility */}
-          <div className="glass-card" style={{ padding: "24px" }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>Visibility</h3>
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">Visibility</h3>
             {[
               { val: "Public", label: "🌐 Public", desc: "All Employees" },
               { val: "Restricted", label: "🔒 Restricted", desc: "Branch / Department" },
             ].map(opt => (
               <div key={opt.val} onClick={() => setForm(prev => ({ ...prev, visibility: opt.val }))}
-                style={{
-                  padding: "14px 16px", borderRadius: "10px", border: "2px solid",
-                  borderColor: form.visibility === opt.val ? "#6366f1" : "#e2e8f0",
-                  background: form.visibility === opt.val ? "rgba(99,102,241,0.06)" : "white",
-                  marginBottom: "10px", cursor: "pointer", transition: "all 0.2s"
-                }}>
-                <div style={{ fontWeight: "700", fontSize: "14px" }}>{opt.label}</div>
-                <div style={{ fontSize: "12px", color: "#64748b" }}>{opt.desc}</div>
+                className={`gallery-visibility-item ${form.visibility === opt.val ? "active" : ""}`}>
+                <strong>{opt.label}</strong>
+                <span>{opt.desc}</span>
               </div>
             ))}
           </div>
 
-          {/* Branch Filter */}
-          <div className="glass-card" style={{ padding: "24px" }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>Branch Filter</h3>
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">Branch Filter</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               <button onClick={() => setForm(prev => ({ ...prev, branches: [] }))}
-                style={{ padding: "5px 12px", borderRadius: "16px", border: "1.5px solid", borderColor: form.branches.length === 0 ? "#6366f1" : "#e2e8f0", background: form.branches.length === 0 ? "rgba(99,102,241,0.1)" : "white", color: form.branches.length === 0 ? "#6366f1" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                className={`gallery-chip ${form.branches.length === 0 ? "active" : ""}`}>
                 All Branches
               </button>
               {branches.map(b => (
                 <button key={b.id} onClick={() => toggleBranch(b.branchName)}
-                  style={{ padding: "5px 12px", borderRadius: "16px", border: "1.5px solid", borderColor: form.branches.includes(b.branchName) ? "#6366f1" : "#e2e8f0", background: form.branches.includes(b.branchName) ? "rgba(99,102,241,0.1)" : "white", color: form.branches.includes(b.branchName) ? "#6366f1" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                  className={`gallery-chip ${form.branches.includes(b.branchName) ? "active" : ""}`}>
                   {b.branchName}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Department Filter */}
-          <div className="glass-card" style={{ padding: "24px" }}>
-            <h3 style={{ margin: "0 0 16px", fontSize: "16px", fontWeight: "700" }}>Department Filter</h3>
+          <div className="gallery-panel">
+            <h3 className="gallery-panel-title">Department Filter</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               <button onClick={() => setForm(prev => ({ ...prev, departments: [] }))}
-                style={{ padding: "5px 12px", borderRadius: "16px", border: "1.5px solid", borderColor: form.departments.length === 0 ? "#6366f1" : "#e2e8f0", background: form.departments.length === 0 ? "rgba(99,102,241,0.1)" : "white", color: form.departments.length === 0 ? "#6366f1" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                className={`gallery-chip ${form.departments.length === 0 ? "active" : ""}`}>
                 All Departments
               </button>
               {departments.slice(0, 8).map(d => (
                 <button key={d.id} onClick={() => toggleDept(d.departmentName)}
-                  style={{ padding: "5px 12px", borderRadius: "16px", border: "1.5px solid", borderColor: form.departments.includes(d.departmentName) ? "#6366f1" : "#e2e8f0", background: form.departments.includes(d.departmentName) ? "rgba(99,102,241,0.1)" : "white", color: form.departments.includes(d.departmentName) ? "#6366f1" : "#64748b", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                  className={`gallery-chip ${form.departments.includes(d.departmentName) ? "active" : ""}`}>
                   {d.departmentName}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Download Control */}
-          <div className="glass-card" style={{ padding: "24px" }}>
+          <div className="gallery-panel">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontWeight: "700", fontSize: "14px" }}>Allow Downloads</div>
                 <div style={{ fontSize: "12px", color: "#64748b" }}>Employees can download media</div>
               </div>
               <button onClick={() => setForm(prev => ({ ...prev, allowDownload: !prev.allowDownload }))}
-                style={{ background: form.allowDownload ? "#6366f1" : "#e2e8f0", border: "none", borderRadius: "20px", width: "44px", height: "24px", cursor: "pointer", position: "relative", transition: "all 0.2s" }}>
-                <div style={{ position: "absolute", top: "2px", left: form.allowDownload ? "22px" : "2px", width: "20px", height: "20px", background: "white", borderRadius: "50%", transition: "all 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
+                className={`gallery-toggle ${form.allowDownload ? "enabled" : ""}`}>
+                <div className="gallery-toggle-thumb" />
               </button>
             </div>
           </div>
 
-          {/* Buttons */}
           <button onClick={() => handleSave(false)} disabled={saving}
-            style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "white", fontWeight: "700", fontSize: "16px", cursor: saving ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 20px rgba(99,102,241,0.3)" }}>
+            className="gallery-save-primary">
             {saving ? <Loader2 size={18} className="animate-spin" /> : saved ? <CheckCircle size={18} /> : <Save size={18} />}
             {saving ? "Saving..." : saved ? "Saved!" : "Save Gallery"}
           </button>
           <button onClick={() => handleSave(true)} disabled={saving}
-            style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "2px solid #6366f1", background: "white", color: "#6366f1", fontWeight: "700", fontSize: "15px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+            className="gallery-save-secondary">
             <Plus size={16} /> Save & Add More
           </button>
         </div>

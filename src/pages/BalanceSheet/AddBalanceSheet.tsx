@@ -1,31 +1,84 @@
-import React, { useEffect, useState } from "react";
-import { PlusCircle, Calendar, IndianRupee, UploadCloud, Save, AlertCircle, Loader2, TrendingUp } from "lucide-react";
-import { ledgerAPI, branchAPI } from "../../services/apiService";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  Calendar,
+  CheckCircle2,
+  FileText,
+  IndianRupee,
+  Loader2,
+  PlusCircle,
+  RefreshCw,
+  Save,
+  ShieldCheck,
+  TrendingUp,
+  UploadCloud,
+  X,
+} from "lucide-react";
+import { branchAPI, ledgerAPI } from "../../services/apiService";
+import { toast } from "../../components/Toast";
+import PageTitle from "../../components/PageTitle";
+import "./BalanceSheet.css";
+
+interface BranchItem {
+  id: string | number;
+  branchName: string;
+}
+
+interface BalanceFormData {
+  category: string;
+  branchId: string;
+  date: string;
+  amount: string;
+  type: string;
+  paymentMode: string;
+  remark: string;
+}
+
+const getInitialFormData = (): BalanceFormData => ({
+  category: "",
+  branchId: "",
+  date: new Date().toISOString().split("T")[0],
+  amount: "",
+  type: "",
+  paymentMode: "Cash on Hand",
+  remark: "",
+});
 
 const AddBalanceSheet: React.FC<{ setActivePage?: (page: string) => void }> = ({ setActivePage }) => {
-  const [branches, setBranches] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    category: "",
-    branchId: "",
-    date: new Date().toISOString().split('T')[0],
-    amount: "",
-    type: "",
-    paymentMode: "Cash on Hand",
-    remark: "",
-  });
+  const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [fetchingBranches, setFetchingBranches] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState<BalanceFormData>(getInitialFormData());
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const fetchBranches = async () => {
     try {
+      setFetchingBranches(true);
       const response = await branchAPI.getAll();
       setBranches(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching branches:", error);
+      toast.error("Unable to load branches");
+    } finally {
+      setFetchingBranches(false);
     }
   };
 
   useEffect(() => {
     fetchBranches();
+
+    const savedDraft = localStorage.getItem("bsAddDraft");
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft) as BalanceFormData;
+        setFormData(parsed);
+        toast.info("Saved draft restored");
+      } catch (error) {
+        console.error("Failed to parse saved draft", error);
+      }
+    }
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -33,189 +86,318 @@ const AddBalanceSheet: React.FC<{ setActivePage?: (page: string) => void }> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async () => {
-    if (!formData.category || !formData.amount || !formData.type) {
-      alert("Please fill all required fields marked with *");
+  const isValidAttachment = (file: File) => {
+    const allowedTypes = ["image/png", "image/jpeg", "application/pdf"];
+    const maxSize = 5 * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PNG, JPG, or PDF files are allowed");
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      toast.error("File size should be under 5MB");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleAttachmentSelect = (file: File | null) => {
+    if (!file) return;
+    if (!isValidAttachment(file)) return;
+    setAttachment(file);
+    toast.success("Evidence file attached");
+  };
+
+  const validateForm = () => {
+    if (!formData.category) return "Please select balance sheet category";
+    if (!formData.branchId) return "Please select a branch";
+    if (!formData.type.trim()) return "Please enter source/type";
+    if (!formData.amount || Number(formData.amount) <= 0) return "Please enter a valid amount";
+    if (!formData.date) return "Please select entry date";
+    if (!formData.paymentMode) return "Please select payment mode";
+    return "";
+  };
+
+  const handleSaveDraft = () => {
+    localStorage.setItem("bsAddDraft", JSON.stringify(formData));
+    toast.success("Draft saved locally");
+  };
+
+  const clearForm = () => {
+    setFormData(getInitialFormData());
+    setAttachment(null);
+  };
+
+  const handleSubmit = async (goToReport = true) => {
+    const errorMessage = validateForm();
+    if (errorMessage) {
+      toast.error(errorMessage);
       return;
     }
 
     try {
-      setLoading(true);
-      await ledgerAPI.createTransaction(formData);
-      alert("Transaction recorded successfully!");
-      if (setActivePage) setActivePage("balanceSheetReport");
+      setSubmitting(true);
+      await ledgerAPI.createTransaction({
+        ...formData,
+        amount: Number(formData.amount),
+        attachmentName: attachment?.name ?? null,
+      });
+
+      localStorage.removeItem("bsAddDraft");
+      toast.success("Transaction recorded successfully");
+
+      if (goToReport) {
+        if (setActivePage) setActivePage("balanceSheetReport");
+      } else {
+        clearForm();
+      }
     } catch (error) {
       console.error("Error saving transaction:", error);
-      alert("Failed to save transaction. Please try again.");
+      toast.error("Failed to save transaction. Please try again.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  const amountLabel = useMemo(() => {
+    const amount = Number(formData.amount || 0);
+    if (!amount) return "0.00";
+    return amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [formData.amount]);
+
+  const selectedBranchName = useMemo(() => {
+    const selected = branches.find((branch) => String(branch.id) === String(formData.branchId));
+    return selected?.branchName || "Not selected";
+  }, [branches, formData.branchId]);
+
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px" }}>
+    <div className="main-content bs-add-page animate-fade-in">
+      <div className="page-header bs-add-header">
         <div>
-          <h1 className="page-title"><TrendingUp size={22} /> Add Balance Sheet Entry</h1>
-          <p className="page-subtitle">Record financial transactions for income, expenses, assets, or liabilities</p>
+          <PageTitle
+            title="Add Balance Sheet Entry"
+            subtitle="Record and organize financial transactions for accurate reporting"
+            icon={<TrendingUp size={22} />}
+          />
         </div>
-         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <span className="badge badge-primary" style={{ padding: "8px 16px", borderRadius: "20px" }}>FY 2024-25 Active</span>
-         </div>
+        <span className="badge badge-primary bs-add-fy">FY 2024-25 Active</span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "32px" }}>
-        {/* Core Entry Form */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-           <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--primary)" }}>
-              <PlusCircle size={20} />
-              <h3 style={{ fontSize: "18px" }}>Transaction Fundamentals</h3>
-           </div>
-           
-           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-              <div>
-                 <label className="input-label">Balance Sheet Category*</label>
-                 <select name="category" className="select-modern" value={formData.category} onChange={handleChange}>
-                    <option value="">-- Select Classification --</option>
-                    <option value="Income">Income</option>
-                    <option value="Expense">Expense (Operational)</option>
-                    <option value="Asset">Asset (Capex)</option>
-                    <option value="Liability">Liability</option>
-                 </select>
-              </div>
-              <div>
-                 <label className="input-label">Center Branch*</label>
-                 <select name="branchId" className="select-modern" value={formData.branchId} onChange={handleChange}>
-                    <option value="">-- Select Branch --</option>
-                    {branches.map(b => (
-                      <option key={b.id} value={b.id}>{b.branchName}</option>
-                    ))}
-                 </select>
-              </div>
-           </div>
+      <div className="bs-add-grid">
+        <form
+          className="glass-card bs-add-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit(true);
+          }}
+        >
+          <div className="bs-add-section-title">
+            <PlusCircle size={20} />
+            <h3>Transaction Fundamentals</h3>
+          </div>
 
-           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-              <div>
-                 <label className="input-label">Source / Type*</label>
-                 <input 
-                   name="type" 
-                   type="text" 
-                   className="input-modern" 
-                   placeholder="e.g. Sales Revenue, Office Rent" 
-                   value={formData.type} 
-                   onChange={handleChange} 
-                 />
-              </div>
-              <div>
-                 <label className="input-label">Nominal Amount (₹)*</label>
-                 <div style={{ position: "relative" }}>
-                   <IndianRupee size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-                   <input 
-                     name="amount" 
-                     type="number" 
-                     className="input-modern" 
-                     placeholder="0.00" 
-                     style={{ paddingLeft: "40px" }} 
-                     value={formData.amount} 
-                     onChange={handleChange} 
-                   />
-                 </div>
-              </div>
-           </div>
+          <div className="bs-add-form-grid">
+            <div>
+              <label className="input-label">Balance Sheet Category*</label>
+              <select name="category" className="select-modern" value={formData.category} onChange={handleChange}>
+                <option value="">-- Select Classification --</option>
+                <option value="Income">Income</option>
+                <option value="Expense">Expense (Operational)</option>
+                <option value="Asset">Asset (Capex)</option>
+                <option value="Liability">Liability</option>
+              </select>
+            </div>
 
-           <div>
-              <label className="input-label">Date of Entry*</label>
-              <div style={{ position: "relative" }}>
-                <Calendar size={18} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-                <input 
-                  name="date" 
-                  type="date" 
-                  className="input-modern" 
-                  value={formData.date} 
-                  onChange={handleChange} 
+            <div>
+              <label className="input-label">Center Branch*</label>
+              <select name="branchId" className="select-modern" value={formData.branchId} onChange={handleChange}>
+                <option value="">{fetchingBranches ? "Loading branches..." : "-- Select Branch --"}</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.branchName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="input-label">Source / Type*</label>
+              <input
+                name="type"
+                type="text"
+                className="input-modern"
+                placeholder="e.g. Sales Revenue, Office Rent"
+                value={formData.type}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label className="input-label">Nominal Amount (INR)*</label>
+              <div className="bs-input-icon-wrap">
+                <IndianRupee size={18} className="bs-input-icon" />
+                <input
+                  name="amount"
+                  type="number"
+                  className="input-modern bs-input-pad"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  min={0}
+                  step="0.01"
                 />
               </div>
-           </div>
+            </div>
 
-           <div>
-              <label className="input-label">Payment Channel*</label>
-              <div style={{ display: "flex", gap: "16px" }}>
-                 {['Cash on Hand', 'Bank Transfer', 'UPI / Card'].map((mode, i) => (
-                    <label 
-                      key={i} 
-                      style={{ 
-                        flex: 1, 
-                        padding: "16px", 
-                        borderRadius: "12px", 
-                        border: formData.paymentMode === mode ? "1px solid var(--primary)" : "1px solid var(--border-light)", 
-                        background: formData.paymentMode === mode ? "var(--primary-light)" : "transparent",
-                        display: "flex", 
-                        alignItems: "center", 
-                        gap: "10px", 
-                        cursor: "pointer", 
-                        transition: "all 0.3s" 
-                      }} 
-                    >
-                       <input 
-                         type="radio" 
-                         name="paymentMode" 
-                         value={mode} 
-                         checked={formData.paymentMode === mode} 
-                         onChange={handleChange} 
-                       />
-                       <span style={{ fontSize: "13px", fontWeight: "600" }}>{mode}</span>
-                    </label>
-                 ))}
+            <div className="bs-add-form-full">
+              <label className="input-label">Date of Entry*</label>
+              <div className="bs-input-icon-wrap right">
+                <Calendar size={18} className="bs-input-icon" />
+                <input name="date" type="date" className="input-modern" value={formData.date} onChange={handleChange} />
               </div>
-           </div>
+            </div>
 
-           <div>
+            <div className="bs-add-form-full">
+              <label className="input-label">Payment Channel*</label>
+              <div className="bs-payment-grid">
+                {["Cash on Hand", "Bank Transfer", "UPI / Card"].map((mode) => (
+                  <label key={mode} className={`bs-payment-option ${formData.paymentMode === mode ? "is-active" : ""}`}>
+                    <input
+                      type="radio"
+                      name="paymentMode"
+                      value={mode}
+                      checked={formData.paymentMode === mode}
+                      onChange={handleChange}
+                    />
+                    <span>{mode}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="bs-add-form-full">
               <label className="input-label">Remark / Justification</label>
-              <textarea 
-                name="remark" 
-                className="input-modern" 
-                rows={3} 
-                placeholder="Provide a brief context for this entry..." 
-                style={{ resize: "none" }}
+              <textarea
+                name="remark"
+                className="input-modern bs-add-remark"
+                rows={3}
+                placeholder="Provide a brief context for this entry..."
                 value={formData.remark}
                 onChange={handleChange}
-              ></textarea>
-           </div>
-        </div>
+              />
+            </div>
+          </div>
 
-        {/* Documentation & Summary */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
-           <div className="glass-card">
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "var(--primary)" }}>
-                <UploadCloud size={20} />
-                <h3 style={{ fontSize: "16px" }}>Voucher & Evidence</h3>
-              </div>
-              <div style={{ border: "2px dashed #cbd5e1", borderRadius: "16px", padding: "40px", textAlign: "center", cursor: "pointer" }}>
-                 <UploadCloud size={32} color="var(--primary)" style={{ marginBottom: "12px" }} />
-                 <p style={{ fontWeight: "700" }}>Upload Invoice/Receipt</p>
-                 <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>PNG, JPG or PDF (Max 5MB)</p>
-              </div>
-           </div>
+          <div className="bs-add-actions">
+            <button
+              className="btn-secondary"
+              type="button"
+              onClick={() => {
+                clearForm();
+                toast.info("Form reset");
+              }}
+            >
+              <RefreshCw size={16} /> Reset
+            </button>
+            <button className="btn-secondary" type="button" onClick={handleSaveDraft}>
+              <Save size={16} /> Save Draft
+            </button>
+            <button className="btn-primary" type="button" onClick={() => handleSubmit(false)} disabled={submitting}>
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} Save & Add Next
+            </button>
+            <button className="btn-primary" type="submit" disabled={submitting}>
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Commit Transaction
+            </button>
+          </div>
+        </form>
 
-           <div className="glass-card" style={{ background: "rgba(79, 70, 229, 0.04)", border: "1px solid rgba(79, 70, 229, 0.1)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "var(--primary)" }}>
-                <AlertCircle size={18} />
-                <h3 style={{ fontSize: "16px" }}>Audit Compliance</h3>
+        <div className="bs-add-side">
+          <section className="glass-card bs-side-card">
+            <div className="bs-add-section-title compact">
+              <UploadCloud size={18} />
+              <h3>Voucher & Evidence</h3>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg,.pdf"
+              style={{ display: "none" }}
+              onChange={(event) => handleAttachmentSelect(event.target.files?.[0] ?? null)}
+            />
+
+            <div
+              className={`bs-upload-zone ${dragOver ? "is-drag" : ""}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setDragOver(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragOver(false);
+                handleAttachmentSelect(event.dataTransfer.files?.[0] ?? null);
+              }}
+            >
+              <UploadCloud size={30} />
+              <p>Upload Invoice / Receipt</p>
+              <small>PNG, JPG or PDF up to 5MB</small>
+            </div>
+
+            {attachment && (
+              <div className="bs-file-chip">
+                <FileText size={14} />
+                <span>{attachment.name}</span>
+                <button type="button" onClick={() => setAttachment(null)}>
+                  <X size={14} />
+                </button>
               </div>
-              <ul style={{ fontSize: "13px", color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: "12px" }}>
-                 <li style={{ display: "flex", gap: "8px" }}><div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--primary)", marginTop: "6px" }}></div> All entries tagged as 'Asset' will automatically appear in Depreciation reports.</li>
-                 <li style={{ display: "flex", gap: "8px" }}><div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--primary)", marginTop: "6px" }}></div> Link entries with cost-centers via 'Branch' for P&L segmentation.</li>
-              </ul>
-              <button 
-                className="btn btn-primary shadow-glow" 
-                style={{ width: "100%", marginTop: "32px", padding: "14px" }}
-                onClick={handleSubmit}
-                disabled={loading}
-              >
-                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                 {loading ? " Processing..." : " Commit Transaction"}
-              </button>
-           </div>
+            )}
+          </section>
+
+          <section className="glass-card bs-side-card bs-audit">
+            <div className="bs-add-section-title compact">
+              <ShieldCheck size={18} />
+              <h3>Audit Compliance</h3>
+            </div>
+            <ul>
+              <li>Asset entries are mapped into depreciation reports automatically.</li>
+              <li>Branch tagging supports cost-center analysis in P and L segmentation.</li>
+              <li>Attach vouchers for smoother internal and statutory audits.</li>
+            </ul>
+          </section>
+
+          <section className="glass-card bs-side-card bs-summary">
+            <div className="bs-add-section-title compact">
+              <AlertCircle size={18} />
+              <h3>Entry Snapshot</h3>
+            </div>
+            <div className="bs-summary-row">
+              <span>Category</span>
+              <strong>{formData.category || "Not selected"}</strong>
+            </div>
+            <div className="bs-summary-row">
+              <span>Branch</span>
+              <strong>{selectedBranchName}</strong>
+            </div>
+            <div className="bs-summary-row">
+              <span>Payment</span>
+              <strong>{formData.paymentMode}</strong>
+            </div>
+            <div className="bs-summary-row">
+              <span>Amount</span>
+              <strong>INR {amountLabel}</strong>
+            </div>
+          </section>
         </div>
       </div>
     </div>

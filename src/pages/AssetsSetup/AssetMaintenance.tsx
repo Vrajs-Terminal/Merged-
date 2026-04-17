@@ -7,6 +7,7 @@ import {
    DollarSign, Shield, X, Package
 } from 'lucide-react';
 import { toast } from '../../components/Toast';
+import './AssetReportsScrap.css';
 
 type MaintenanceTab = 'Upcoming' | 'Missing' | 'Completed';
 
@@ -89,128 +90,122 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
   const totalSpent = maintenance.reduce((acc, curr) => acc + (curr.amountSpent || 0), 0);
 
   return (
-    <div className="main-content animate-fade-in">
-      {/* Header Section */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px" }}>
+    <div className="main-content animate-fade-in asset-insights-page">
+      <div className="asset-page-header">
          <div>
-            <h1 className="page-title"><Package size={22} /> Infrastructure Health</h1>
-            <p className="page-subtitle">Preventive Engineering Control</p>
+            <h1 className="asset-page-title"><Package size={24} /> Infrastructure Health</h1>
+            <p className="asset-page-subtitle">Preventive Engineering Control</p>
          </div>
-         <div style={{ display: "flex", gap: "10px" }}>
+         <div className="asset-header-actions">
             {activeTab !== 'Completed' && (
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="btn btn-primary shadow-glow"
+                className="asset-btn primary"
               >
-                 <Plus size={18} /> Schedule
+                 <Plus size={16} /> Schedule
               </button>
             )}
-            <button onClick={fetchData} className="btn btn-secondary shadow-sm">
-               <RefreshCcw size={18} />
+            <button onClick={fetchData} className="asset-btn secondary icon-only" title="Refresh data">
+               <RefreshCcw size={16} />
             </button>
          </div>
       </div>
 
-      {/* Analytics Dashboard Strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginBottom: "32px" }}>
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(79, 70, 229, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <Clock size={24} color="var(--primary)" />
+      <div className="asset-kpi-grid">
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon primary">
+              <Clock size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Upcoming Cycle</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>{activeTab === 'Upcoming' ? maintenance.length : '--'}</h3>
+              <p className="asset-kpi-label">Upcoming Cycle</p>
+              <h3 className="asset-kpi-value">{activeTab === 'Upcoming' ? maintenance.length : '--'}</h3>
            </div>
         </div>
 
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(239, 68, 68, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <AlertTriangle size={24} color="#ef4444" />
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon danger">
+              <AlertTriangle size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Overdue Protocol</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>{activeTab === 'Missing' ? maintenance.length : '--'}</h3>
+              <p className="asset-kpi-label">Overdue Protocol</p>
+              <h3 className="asset-kpi-value">{activeTab === 'Missing' ? maintenance.length : '--'}</h3>
            </div>
         </div>
 
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <DollarSign size={24} color="#10b981" />
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon green">
+              <DollarSign size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Recovery/Spent (YTD)</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>₹ {totalSpent.toLocaleString() || 0}</h3>
+              <p className="asset-kpi-label">Recovery/Spent (YTD)</p>
+              <h3 className="asset-kpi-value">₹ {totalSpent.toLocaleString() || 0}</h3>
            </div>
         </div>
       </div>
 
-      {/* Main Content Card */}
-      <div className="glass-card" style={{ minHeight: "600px", padding: 0 }}>
-         {/* Navigation Tabs */}
-         <div className="tabs-underline-container">
+      <div className="asset-panel-card">
+         <div className="asset-maint-tabs">
             {(['Upcoming', 'Missing', 'Completed'] as const).map((tab) => (
                <button
                  key={tab}
-                 className={`tab-underline ${activeTab === tab ? "active" : ""}`}
+                 className={`asset-maint-tab ${activeTab === tab ? 'active' : ''}`}
                  onClick={() => setActiveTab(tab)}
                >
-                 {tab === 'Missing' ? <AlertTriangle size={16} color={activeTab === tab ? "#ef4444" : "var(--text-muted)"} /> : tab === 'Completed' ? <CheckCircle2 size={16} color={activeTab === tab ? "#10b981" : "var(--text-muted)"} /> : <CalendarRange size={16} />}
+                 {tab === 'Missing' ? <AlertTriangle size={14} /> : tab === 'Completed' ? <CheckCircle2 size={14} /> : <CalendarRange size={14} />}
                  {tab}
                </button>
             ))}
          </div>
 
-         <div style={{ padding: "24px" }}>
+         <div className="asset-maint-content">
             {loading ? (
-              <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Synchronizing health records...</div>
+              <div className="asset-empty-state compact">
+                <h4>Synchronizing health records...</h4>
+              </div>
             ) : maintenance.length === 0 ? (
-              <div style={{ padding: "80px", textAlign: "center" }}>
-                 <div style={{ background: "rgba(79, 70, 229, 0.04)", padding: "24px", borderRadius: "24px", display: "inline-block", marginBottom: "16px" }}>
-                    <Shield size={48} color="var(--text-muted)" />
-                 </div>
-                 <h3 style={{ fontSize: "20px", fontWeight: "700", color: "var(--text-main)" }}>System Integrity Verified</h3>
-                 <p style={{ fontSize: "14px", color: "var(--text-muted)" }}>No pending maintenance protocols for the current window.</p>
+              <div className="asset-empty-state compact">
+                 <Shield size={36} />
+                 <h4>System Integrity Verified</h4>
+                 <p>No pending maintenance protocols for the current window.</p>
               </div>
             ) : (
-               <table className="table-modern">
+               <div className="asset-table-wrap">
+               <table className="asset-ops-table">
                   <thead>
                      <tr>
                         <th>Unit Target</th>
                         <th>Protocol Type</th>
                         <th>Service Node</th>
                         <th>Execution Date</th>
-                        <th style={{ textAlign: "right" }}>Actions</th>
+                        <th>Actions</th>
                      </tr>
                   </thead>
                   <tbody>
                      {maintenance.map((m) => (
                         <tr key={m.id}>
-                           <td className="px-6 py-4">
-                              <div className="flex items-center gap-4">
-                                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-primary">
-                                    <Clock size={18} />
-                                 </div>
-                                 <div>
-                                    <div style={{ fontWeight: "700", fontSize: "14px" }}>{m.asset?.itemName}</div>
-                                    <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{m.asset?.assetCode}</div>
+                           <td>
+                              <div className="asset-custodian">
+                                 <span className="asset-avatar"><Clock size={14} /></span>
+                                 <div className="asset-cell-stack">
+                                   <span className="asset-cell-main">{m.asset?.itemName}</span>
+                                   <span className="asset-cell-sub">{m.asset?.assetCode}</span>
                                  </div>
                               </div>
                            </td>
-                           <td className="px-6 py-4">
-                              <span className="badge" style={{ background: "var(--primary-light)", color: "var(--primary)" }}>{m.maintenanceType}</span>
+                           <td>
+                              <span className="asset-pill">{m.maintenanceType}</span>
                            </td>
-                           <td className="px-6 py-4">
-                              <div style={{ fontSize: "13px", fontWeight: "600" }}>{m.vendorName || 'Internal Engineering'}</div>
+                           <td>
+                              <span className="asset-cell-main">{m.vendorName || 'Internal Engineering'}</span>
                            </td>
-                           <td className="px-6 py-4">
-                              <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>{new Date(m.nextMaintenanceDate).toLocaleDateString()}</div>
+                           <td>
+                              <span className="asset-cell-sub">{new Date(m.nextMaintenanceDate).toLocaleDateString()}</span>
                            </td>
-                           <td className="px-6 py-4 text-right">
+                           <td>
                               {m.status !== 'Completed' && (
                                  <button 
                                     onClick={() => { setSelectedMaint(m); setShowCompleteModal(true); }}
-                                    className="btn btn-primary"
-                                    style={{ padding: "8px 16px", fontSize: "12px" }}
+                                    className="asset-btn primary"
                                  >
                                     Finalize Cycle
                                  </button>
@@ -220,24 +215,24 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                      ))}
                   </tbody>
                </table>
+               </div>
             )}
          </div>
       </div>
 
-      {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div className="glass-card w-full max-w-2xl shadow-2xl animate-fade-in" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ padding: "24px", background: "var(--color-bg-secondary)", borderBottom: "1px solid var(--color-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                 <h2 style={{ fontSize: "20px", fontWeight: "800", color: "var(--text-main)" }}>Schedule Maintenance</h2>
-                 <button onClick={() => setShowAddModal(false)} style={{ padding: "8px", borderRadius: "8px", background: "white", border: "1px solid var(--color-border)" }}>
-                    <X size={20} />
+        <div className="asset-modal-overlay">
+           <div className="asset-modal">
+              <div className="asset-modal-head">
+                 <h2>Schedule Maintenance</h2>
+                 <button onClick={() => setShowAddModal(false)} className="scrap-modal-close">
+                    <X size={18} />
                  </button>
               </div>
-              <form onSubmit={handleSubmit} style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px" }}>
-                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-                    <div>
-                       <label className="label-modern">Unit Identification*</label>
+              <form onSubmit={handleSubmit} className="asset-modal-body">
+                 <div className="asset-form-grid">
+                    <div className="asset-form-field">
+                       <label>Unit Identification*</label>
                        <select 
                          required
                          value={formData.assetId}
@@ -248,8 +243,8 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                           {assets.map(a => <option key={a.id} value={a.id}>{a.itemName} ({a.assetCode})</option>)}
                        </select>
                     </div>
-                    <div>
-                       <label className="label-modern">Protocol Type</label>
+                    <div className="asset-form-field">
+                       <label>Protocol Type</label>
                        <select 
                           value={formData.maintenanceType}
                           onChange={(e) => setFormData({...formData, maintenanceType: e.target.value})}
@@ -262,9 +257,9 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                     </div>
                  </div>
 
-                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
-                    <div>
-                       <label className="label-modern">Frequency Sync</label>
+                 <div className="asset-form-grid">
+                    <div className="asset-form-field">
+                       <label>Frequency Sync</label>
                        <select 
                           value={formData.frequency}
                           onChange={(e) => setFormData({...formData, frequency: e.target.value})}
@@ -275,8 +270,8 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                           <option value="Yearly">Yearly</option>
                        </select>
                     </div>
-                    <div>
-                       <label className="label-modern">Scheduled Date*</label>
+                    <div className="asset-form-field">
+                       <label>Scheduled Date*</label>
                        <input 
                          required
                          type="date"
@@ -287,38 +282,36 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                     </div>
                  </div>
 
-                 <div>
-                    <label className="label-modern">Notes</label>
+                 <div className="asset-form-field">
+                    <label>Notes</label>
                     <textarea 
                       value={formData.notes}
                       onChange={(e) => setFormData({...formData, notes: e.target.value})}
                       className="input-modern"
-                      style={{ minHeight: "100px" }}
                     />
                  </div>
 
-                 <div style={{ display: "flex", gap: "12px" }}>
-                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Start Health Sequence</button>
-                    <button type="button" onClick={() => setShowAddModal(false)} className="btn btn-secondary">Discard</button>
+                 <div className="asset-form-actions">
+                    <button type="submit" className="asset-btn primary">Start Health Sequence</button>
+                    <button type="button" onClick={() => setShowAddModal(false)} className="asset-btn secondary">Discard</button>
                  </div>
               </form>
            </div>
         </div>
       )}
 
-      {/* Complete Modal */}
       {showCompleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-           <div className="glass-card w-full max-w-lg shadow-2xl animate-fade-in" style={{ padding: 0, overflow: "hidden" }}>
-              <div style={{ padding: "24px", background: "var(--color-bg-secondary)", borderBottom: "1px solid var(--color-border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                 <h2 style={{ fontSize: "20px", fontWeight: "800", color: "var(--text-main)" }}>Finalize Cycle</h2>
-                 <button onClick={() => setShowCompleteModal(false)} style={{ padding: "8px", borderRadius: "8px", background: "white", border: "1px solid var(--color-border)" }}>
-                    <X size={20} />
+        <div className="asset-modal-overlay">
+           <div className="asset-modal sm">
+              <div className="asset-modal-head">
+                 <h2>Finalize Cycle</h2>
+                 <button onClick={() => setShowCompleteModal(false)} className="scrap-modal-close">
+                    <X size={18} />
                  </button>
               </div>
-              <form onSubmit={handleComplete} style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px" }}>
-                 <div>
-                    <label className="label-modern">Actual Ledger Impact (₹)*</label>
+              <form onSubmit={handleComplete} className="asset-modal-body">
+                 <div className="asset-form-field">
+                    <label>Actual Ledger Impact (₹)*</label>
                     <input 
                       required
                       type="number"
@@ -326,21 +319,19 @@ const AssetMaintenance: React.FC<AssetMaintenanceProps> = ({ defaultTab = 'Upcom
                       value={completeData.amountSpent}
                       onChange={(e) => setCompleteData({ ...completeData, amountSpent: e.target.value })}
                       className="input-modern"
-                      style={{ fontSize: "24px", fontWeight: "700" }}
                     />
                  </div>
-                 <div>
-                    <label className="label-modern">Engineering Report</label>
+                 <div className="asset-form-field">
+                    <label>Engineering Report</label>
                     <textarea 
                       value={completeData.notes}
                       onChange={(e) => setCompleteData({ ...completeData, notes: e.target.value })}
                       className="input-modern"
-                      style={{ minHeight: "120px" }}
                     />
                  </div>
-                 <div style={{ display: "flex", gap: "12px" }}>
-                    <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Finalize & Sync Archive</button>
-                    <button type="button" onClick={() => setShowCompleteModal(false)} className="btn btn-secondary">Back</button>
+                 <div className="asset-form-actions">
+                    <button type="submit" className="asset-btn primary">Finalize and Sync Archive</button>
+                    <button type="button" onClick={() => setShowCompleteModal(false)} className="asset-btn secondary">Back</button>
                  </div>
               </form>
            </div>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Calendar, User, FileText, ShoppingCart, Percent, DollarSign, Save, Download, Mail, MessageCircle, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Edit2, Calendar, User, FileText, ShoppingCart, DollarSign, Save, Download, Mail, MessageCircle, CheckCircle2 } from "lucide-react";
 import { adminSettingsAPI, productAPI, retailerAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./Quotation.css";
 
 type RetailerRecord = {
    id: number;
@@ -71,30 +72,44 @@ const QuotationGenerate: React.FC = () => {
    const selectedRetailerRecord = retailers.find((retailer) => String(retailer.id) === selectedRetailer);
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
-        <div>
-          <h1 className="page-title"><FileText size={22} /> Generate Quotation</h1>
-          <p className="page-subtitle">Create and issue professional quotations with custom taxation and logic</p>
+      <div className="main-content animate-fade-in quotation-page-container qgen-page">
+         <div className="quotation-header qgen-header">
+            <div className="quotation-header-text">
+               <h1><FileText size={22} /> Generate Quotation</h1>
+               <p>Create and issue professional quotations with custom taxation and logic</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-           <button className="btn btn-secondary shadow-sm">
+            <div className="quotation-header-actions qgen-header-actions">
+               <button className="btn btn-secondary qgen-btn">
             <Save size={18} /> Save as Draft
           </button>
-           <button className="btn btn-primary shadow-glow">
+               <button className="btn btn-primary qgen-btn qgen-btn-primary">
             <FileText size={18} /> Finalize & Issue
           </button>
         </div>
       </div>
 
-       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
-        {/* Customer Information Card */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", color: "var(--primary)" }}>
+         <div className="qgen-summary-strip">
+            <div className="qgen-summary-pill">
+               <span>Selected Customer</span>
+               <strong>{selectedRetailerRecord?.name || "None"}</strong>
+            </div>
+            <div className="qgen-summary-pill">
+               <span>Template</span>
+               <strong>{templates.find((template) => String(template.id) === selectedTemplate)?.name || "Default Template"}</strong>
+            </div>
+            <div className="qgen-summary-pill is-success">
+               <CheckCircle2 size={14} />
+               <strong>Document ready workflow</strong>
+            </div>
+         </div>
+
+         <div className="qgen-top-grid">
+            <div className="glass-card qgen-form-card">
+               <div className="qgen-card-head">
               <User size={20} />
-              <h3 style={{ fontSize: "16px" }}>Customer Identity</h3>
-           </div>
-           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                     <h3>Customer Identity</h3>
+               </div>
+               <div className="qgen-form-grid">
               <div>
                 <label className="input-label">Select Customer / Retailer*</label>
                         <select className="select-modern" value={selectedRetailer} onChange={(e) => setSelectedRetailer(e.target.value)}>
@@ -116,20 +131,19 @@ const QuotationGenerate: React.FC = () => {
                            value={selectedRetailerRecord?.contactNumber || ""}
                         />
               </div>
-           </div>
-           <div>
+               </div>
+               <div>
               <label className="input-label">Email Address (Quotation Delivery)</label>
               <input type="email" className="input-modern" placeholder="E.g., accounts@retailers.com" />
-           </div>
+               </div>
         </div>
 
-        {/* Timeline Information Card */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", color: "var(--primary)" }}>
+            <div className="glass-card qgen-form-card">
+               <div className="qgen-card-head">
               <Calendar size={20} />
-              <h3 style={{ fontSize: "16px" }}>Validity Framework</h3>
-           </div>
-           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                     <h3>Validity Framework</h3>
+               </div>
+               <div className="qgen-form-grid">
               <div>
                 <label className="input-label">Quotation Date*</label>
                 <input type="date" className="input-modern" defaultValue="2024-03-31" />
@@ -138,8 +152,8 @@ const QuotationGenerate: React.FC = () => {
                 <label className="input-label">Validity (Valid Till)*</label>
                 <input type="date" className="input-modern" defaultValue="2024-04-15" />
               </div>
-           </div>
-            <div>
+               </div>
+               <div>
               <label className="input-label">Reference Template</label>
                      <select className="select-modern" value={selectedTemplate} onChange={(e) => setSelectedTemplate(e.target.value)}>
                         {templates.length === 0 && <option value="">Default Template</option>}
@@ -149,121 +163,123 @@ const QuotationGenerate: React.FC = () => {
                            </option>
                         ))}
               </select>
-           </div>
+               </div>
         </div>
       </div>
 
-      {/* Product Section Card */}
-      <div className="glass-card" style={{ marginBottom: "32px" }}>
-         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--primary)" }}>
+         <div className="glass-card qgen-line-items-card">
+            <div className="qgen-card-head qgen-card-head-spread">
+               <div className="qgen-card-head">
                <ShoppingCart size={20} />
-               <h3 style={{ fontSize: "16px" }}>Quoted Items Inventory</h3>
+                      <h3>Quoted Items Inventory</h3>
+               </div>
+               <button className="btn btn-secondary qgen-btn-sm">
+                  <Plus size={16} /> Add Product Line
+               </button>
             </div>
-            <button className="btn btn-secondary shadow-sm" style={{ padding: "8px 16px", fontSize: "13px" }}>
-              <Plus size={16} /> Add Product Line
+
+            <div className="qgen-table-wrap">
+               <table className="table-modern qgen-items-table">
+                  <thead>
+                     <tr>
+                        <th>#</th>
+                        <th>Product / Item Selection</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Discount %</th>
+                        <th>GST %</th>
+                        <th>Total Amount</th>
+                        <th>Action</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     <tr>
+                        <td><span className="qgen-index">1</span></td>
+                        <td>
+                           <select className="select-modern qgen-table-input" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
+                              {products.length === 0 && <option value="">No products available</option>}
+                              {products.map((product) => (
+                                 <option key={product.id} value={product.id}>
+                                    {product.name}
+                                 </option>
+                              ))}
+                           </select>
+                        </td>
+                        <td><input type="number" className="input-modern qgen-table-input" defaultValue={10} /></td>
+                        <td><input type="text" className="input-modern qgen-table-input" defaultValue="₹ 2,499" /></td>
+                        <td><input type="number" className="input-modern qgen-table-input" defaultValue={5} /></td>
+                        <td><input type="number" className="input-modern qgen-table-input" defaultValue={18} /></td>
+                        <td className="qgen-line-amount">₹ 24,990</td>
+                        <td>
+                           <button className="btn btn-danger qgen-icon-btn" aria-label="Remove item">
+                              <Trash2 size={14} />
+                           </button>
+                        </td>
+                     </tr>
+                  </tbody>
+               </table>
+            </div>
+         </div>
+
+         <div className="qgen-bottom-grid">
+            <div className="glass-card qgen-form-card">
+               <div className="qgen-card-head">
+                  <Edit2 size={20} />
+                  <h3>Additional Terms & Notes</h3>
+               </div>
+               <div className="qgen-notes-grid">
+                  <div>
+                     <label className="input-label">Public Notes (Visible to Customer)</label>
+                     <textarea className="input-modern" rows={3} placeholder="Thank you for your business!" />
+                  </div>
+                  <div>
+                     <label className="input-label">Standard Terms & Conditions</label>
+                     <textarea className="input-modern" rows={3} placeholder="1. Delivery within 7 business days..." />
+                  </div>
+               </div>
+            </div>
+
+            <div className="glass-card qgen-pricing-card">
+               <div className="qgen-card-head">
+                  <DollarSign size={20} />
+                  <h3>Quotation Final Pricing</h3>
+               </div>
+
+               <div className="qgen-pricing-lines">
+                  <div className="qgen-pricing-line">
+                     <span>Items Sub-total (Before Tax)</span>
+                     <strong>₹ 2,49,900.00</strong>
+                  </div>
+                  <div className="qgen-pricing-line">
+                     <span>Total Cash Discount (5%)</span>
+                     <strong className="is-negative">- ₹ 12,495.00</strong>
+                  </div>
+                  <div className="qgen-pricing-line">
+                     <span>Unified GST (18%)</span>
+                     <strong className="is-positive">+ ₹ 42,732.90</strong>
+                  </div>
+                  <div className="qgen-pricing-total">
+                     <span>Final Quotation Amt.</span>
+                     <strong>₹ 2,80,137.90</strong>
+                  </div>
+               </div>
+
+               <div className="qgen-cta-grid">
+                  <button className="btn btn-secondary qgen-btn-sm">
+                     <Download size={16} /> Export PDF
             </button>
-         </div>
-
-         <div style={{ overflowX: "auto" }}>
-            <table className="table-modern">
-               <thead>
-                  <tr>
-                     <th>#</th>
-                     <th>Product / Item Selection</th>
-                     <th>Qty</th>
-                     <th>Unit Price</th>
-                     <th>Discount %</th>
-                     <th>GST %</th>
-                     <th>Total Amount</th>
-                     <th>Action</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  <tr>
-                     <td>1</td>
-                     <td style={{ width: "300px" }}>
-                                    <select className="select-modern" style={{ height: "35px", padding: "2px 8px" }} value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                                       {products.length === 0 && <option value="">No products available</option>}
-                                       {products.map((product) => (
-                                          <option key={product.id} value={product.id}>
-                                             {product.name}
-                                          </option>
-                                       ))}
-                        </select>
-                     </td>
-                     <td><input type="number" className="input-modern" defaultValue={10} style={{ width: "70px", height: "35px", padding: "4px" }} /></td>
-                     <td><input type="text" className="input-modern" defaultValue="₹ 2,499" style={{ width: "100px", height: "35px", padding: "4px" }} /></td>
-                     <td><input type="number" className="input-modern" defaultValue={5} style={{ width: "60px", height: "35px", padding: "4px" }} /></td>
-                     <td><input type="number" className="input-modern" defaultValue={18} style={{ width: "60px", height: "35px", padding: "4px" }} /></td>
-                     <td style={{ fontWeight: "700", color: "var(--primary)" }}>₹ 24,990</td>
-                     <td><button className="btn btn-danger" style={{ padding: "6px" }}><Trash2 size={14} /></button></td>
-                  </tr>
-               </tbody>
-            </table>
-         </div>
-      </div>
-
-       {/* Detailed Summary Footer */}
-       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "24px" }}>
-          <div className="glass-card">
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "var(--primary)" }}>
-                <Edit2 size={20} />
-                <h3 style={{ fontSize: "16px" }}>Additional Terms & Notes</h3>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div>
-                  <label className="input-label">Public Notes (Visible to Customer)</label>
-                  <textarea className="input-modern" rows={3} placeholder="Thank you for your business!"></textarea>
-                </div>
-                 <div>
-                  <label className="input-label">Standard Terms & Conditions</label>
-                  <textarea className="input-modern" rows={3} placeholder="1. Delivery within 7 business days..."></textarea>
-                </div>
-              </div>
-          </div>
-
-          <div className="glass-card" style={{ background: "rgba(79, 70, 229, 0.03)", border: "1px solid rgba(79, 70, 229, 0.1)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "24px", color: "var(--primary)" }}>
-                <DollarSign size={20} />
-                <h3 style={{ fontSize: "16px" }}>Quotation Final Pricing</h3>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Items Sub-total (Before Tax)</span>
-                    <span style={{ fontWeight: "700" }}>₹ 2,49,900.00</span>
-                 </div>
-                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Total Cash Discount (5%)</span>
-                    <span style={{ fontWeight: "700", color: "var(--danger)" }}>- ₹ 12,495.00</span>
-                 </div>
-                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                    <span style={{ color: "var(--text-muted)" }}>Unified GST (18%)</span>
-                    <span style={{ fontWeight: "700", color: "var(--success)" }}>+ ₹ 42,732.90</span>
-                 </div>
-                 <div style={{ height: "1px", background: "rgba(0,0,0,0.1)", margin: "8px 0" }}></div>
-                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "20px", fontWeight: "900" }}>
-                    <span style={{ color: "var(--primary)" }}>Final Quotation Amt.</span>
-                    <span style={{ color: "var(--primary)" }}>₹ 2,80,137.90</span>
-                 </div>
-              </div>
-
-               <div style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <button className="btn btn-secondary shadow-sm hover:translate-y-[-2px]" style={{ fontSize: "12px" }}>
-                    <Download size={16} color="#475569" /> Export PDF
+                  <button className="btn btn-success qgen-btn-sm">
+                     <MessageCircle size={16} /> WhatsApp Quote
                   </button>
-                  <button className="btn btn-success shadow-sm hover:translate-y-[-2px]" style={{ background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)", color: "white", fontSize: "12px" }}>
-                    <MessageCircle size={16} /> WhatsApp Quote
+                  <button className="btn btn-secondary qgen-btn-sm">
+                     <Mail size={16} /> Email Quote
                   </button>
-                  <button className="btn btn-secondary shadow-sm hover:translate-y-[-2px]" style={{ fontSize: "12px" }}>
-                    <Mail size={16} color="#4f46e5" /> Email Quote
-                  </button>
-                  <button className="btn btn-primary" style={{ fontSize: "12px" }}>
-                    <ShoppingCart size={16} /> Direct Order
+                  <button className="btn btn-primary qgen-btn-sm qgen-btn-primary">
+                     <ShoppingCart size={16} /> Direct Order
                   </button>
                </div>
-          </div>
-       </div>
+            </div>
+         </div>
     </div>
   );
 };

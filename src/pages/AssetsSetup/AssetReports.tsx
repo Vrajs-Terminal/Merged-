@@ -5,9 +5,10 @@ import {
   PieChart, TrendingUp,
   Printer, Package, User,
   RefreshCcw,
-  ArrowRight, Shield
+  Shield
 } from 'lucide-react';
 import { toast } from '../../components/Toast';
+import './AssetReportsScrap.css';
 
 const AssetReports: React.FC = () => {
   const [assets, setAssets] = useState<any[]>([]);
@@ -61,179 +62,196 @@ const AssetReports: React.FC = () => {
     toast.success('Matrix exported for forensic analysis');
   };
 
+  const getStatusClass = (status: string) => {
+    const normalized = (status || '').toLowerCase();
+    if (normalized === 'active') return 'active';
+    if (normalized === 'undermaintenance') return 'undermaintenance';
+    if (normalized === 'scrapped') return 'scrapped';
+    if (normalized === 'returned') return 'returned';
+    return 'default';
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'UnderMaintenance') return 'Under Maintenance';
+    return status || 'Unknown';
+  };
+
   return (
-    <div className="main-content animate-fade-in">
-      {/* Header Section */}
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
+    <div className="main-content animate-fade-in asset-insights-page">
+      <div className="asset-page-header">
         <div>
-           <h1 className="page-title"><Package size={22} /> Asset Intelligence Matrix</h1>
-           <p className="page-subtitle">Infrastructure Audit & Extraction Hub</p>
+           <h1 className="asset-page-title"><Package size={24} /> Asset Intelligence Matrix</h1>
+           <p className="asset-page-subtitle">Infrastructure Audit & Extraction Hub</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="asset-header-actions">
            <button 
              onClick={exportToExcel}
-             className="btn btn-primary shadow-glow"
+             className="asset-btn primary"
            >
-              <Download size={18} style={{ marginRight: '8px' }} /> Export CSV
+              <Download size={16} /> Export CSV
            </button>
            <button 
               onClick={() => window.print()}
-              className="btn btn-secondary shadow-sm"
+              className="asset-btn secondary icon-only"
+              title="Print report"
            >
-             <Printer size={18} />
+             <Printer size={16} />
            </button>
         </div>
       </div>
 
-      {/* Analytics Cards Grid */}
-      {/* Stats Cards Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginBottom: "32px" }}>
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(16, 185, 129, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <TrendingUp size={24} color="#10b981" />
+      <div className="asset-kpi-grid">
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon green">
+              <TrendingUp size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Asset Valuation (Net)</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>₹ {(stats?.totalValue || 0).toLocaleString()}</h3>
+              <p className="asset-kpi-label">Asset Valuation (Net)</p>
+              <h3 className="asset-kpi-value">₹ {(stats?.totalValue || 0).toLocaleString()}</h3>
            </div>
         </div>
 
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(79, 70, 229, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <Package size={24} color="var(--primary)" />
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon primary">
+              <Package size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Inventory Units</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>{stats?.total || 0}</h3>
+              <p className="asset-kpi-label">Inventory Units</p>
+              <h3 className="asset-kpi-value">{stats?.total || 0}</h3>
            </div>
         </div>
 
-        <div className="glass-card" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "20px" }}>
-           <div style={{ background: "rgba(14, 165, 233, 0.08)", padding: "12px", borderRadius: "12px" }}>
-              <RefreshCcw size={24} color="#0ea5e9" />
+        <div className="asset-kpi-card">
+           <div className="asset-kpi-icon info">
+              <RefreshCcw size={20} />
            </div>
            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600" }}>Upcoming Pulse</p>
-              <h3 style={{ fontSize: "24px", fontWeight: "700" }}>{stats?.upcomingMaint || 0}</h3>
+              <p className="asset-kpi-label">Upcoming Pulse</p>
+              <h3 className="asset-kpi-value">{stats?.upcomingMaint || 0}</h3>
            </div>
         </div>
       </div>
 
-      {/* Logic Filter Strip */}
-      {/* Filters Section */}
-      <div className="glass-card" style={{ marginBottom: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "16px" }}>
-          <select 
-            value={filters.branchId}
-            onChange={(e) => setFilters({ ...filters, branchId: e.target.value })}
-            className="select-modern"
-          >
-            <option value="">Global Branch Protocol</option>
-            {branches.map(b => <option key={b.id} value={b.id}>{b.branchName}</option>)}
-          </select>
-          <select 
-            value={filters.categoryId}
-            onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
-            className="select-modern"
-          >
-            <option value="">All Classification Units</option>
-            {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
-          </select>
-          <select 
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="select-modern"
-          >
-            <option value="">Full Maintenance Scope</option>
-            <option value="Active">Operational Status</option>
-            <option value="UnderMaintenance">Under Maintenance</option>
-            <option value="Scrapped">Decommissioned / Scrap</option>
-            <option value="Returned">Returned to Base</option>
-          </select>
+      <div className="asset-panel-card">
+        <div className="asset-filter-row">
+          <div className="asset-select-wrap">
+            <label>Branch</label>
+            <select 
+              value={filters.branchId}
+              onChange={(e) => setFilters({ ...filters, branchId: e.target.value })}
+              className="select-modern"
+            >
+              <option value="">Global Branch Protocol</option>
+              {branches.map(b => <option key={b.id} value={b.id}>{b.branchName}</option>)}
+            </select>
+          </div>
+          <div className="asset-select-wrap">
+            <label>Category</label>
+            <select 
+              value={filters.categoryId}
+              onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
+              className="select-modern"
+            >
+              <option value="">All Classification Units</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.code})</option>)}
+            </select>
+          </div>
+          <div className="asset-select-wrap">
+            <label>Status</label>
+            <select 
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="select-modern"
+            >
+              <option value="">Full Maintenance Scope</option>
+              <option value="Active">Operational Status</option>
+              <option value="UnderMaintenance">Under Maintenance</option>
+              <option value="Scrapped">Decommissioned / Scrap</option>
+              <option value="Returned">Returned to Base</option>
+            </select>
+          </div>
           <button 
             onClick={() => setFilters({ branchId: '', status: '', categoryId: '' })}
-            className="btn btn-secondary"
+            className="asset-btn secondary"
           >
             Reset
           </button>
         </div>
       </div>
 
-      {/* Matrix Table Card */}
-      <div className="glass-card flex flex-col group" style={{ minHeight: "500px", padding: 0 }}>
-         <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white group-hover:bg-gray-50 transition-colors">
-            <h3 className="text-xl font-bold text-gray-900 uppercase  tracking-tighter">Inventory Pulse Matrix</h3>
-            <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full uppercase tracking-[0.2em] ">Live Real-time Extraction</div>
+      <div className="asset-panel-card">
+         <div className="asset-panel-head">
+            <div>
+              <h3>Inventory Pulse Matrix</h3>
+              <p>Live real-time extraction with branch and classification filters.</p>
+            </div>
+            <div className="asset-pill">Real Time</div>
          </div>
-         <div className="flex-1 overflow-x-auto relative">
-           <table className="table-modern">
+         <div className="asset-table-wrap">
+           <table className="asset-ops-table">
              <thead>
-               <tr className="bg-gray-50 text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] border-b border-gray-100 ">
-                 <th className="px-6 py-4">System UID</th>
-                 <th className="px-6 py-4">Hardware Item</th>
-                 <th className="px-6 py-4">Custodianship</th>
-                 <th className="px-6 py-4">Valuation</th>
-                 <th className="px-6 py-4">Protocol</th>
-                 <th className="px-6 py-4 text-right">Integrate Date</th>
+               <tr>
+                 <th>System UID</th>
+                 <th>Hardware Item</th>
+                 <th>Custodianship</th>
+                 <th>Valuation</th>
+                 <th>Protocol</th>
+                 <th>Integrate Date</th>
                </tr>
              </thead>
-             <tbody className="divide-y divide-slate-50">
+             <tbody>
                {loading ? (
-                 Array.from({ length: 10 }).map((_, i) => (
-                   <tr key={i} className="animate-pulse h-24 opacity-30">
-                      <td colSpan={6} className="px-6 py-4"><div className="h-12 bg-gray-50 rounded-xl"></div></td>
+                 Array.from({ length: 6 }).map((_, i) => (
+                   <tr key={i} className="asset-skeleton-row">
+                      <td colSpan={6}><div className="asset-skeleton"></div></td>
                    </tr>
                  ))
                ) : assets.length === 0 ? (
                  <tr>
-                    <td colSpan={6} className="py-24 text-center">
-                       <h3 className="text-3xl font-bold text-slate-100 uppercase  tracking-tighter">Matrix Vacuum</h3>
-                       <p className="text-slate-200 font-bold uppercase text-[10px] tracking-[0.2em] mt-1 ">No records match the requested protocol filters</p>
+                    <td colSpan={6}>
+                      <div className="asset-empty-state compact">
+                        <Package size={36} />
+                        <h4>Matrix Vacuum</h4>
+                        <p>No records match the requested protocol filters.</p>
+                      </div>
                     </td>
                  </tr>
                ) : assets.map((a) => (
-                 <tr key={a.id} className="hover:bg-gray-50/50 transition-all group relative overflow-hidden">
-                   <td className="px-6 py-4 relative">
-                     <div className="text-gray-900 font-bold  text-xs  uppercase group-hover:text-indigo-600 transition-colors decoration-indigo-500/20 underline underline-offset-4 decoration-2">{a.assetCode || 'UNTITLED'}</div>
-                     <div className="text-[9px] text-gray-400 uppercase  font-bold mt-2  flex items-center gap-1.5 leading-none px-2 py-1 bg-gray-100/50 rounded-lg w-fit">{a.category?.name || 'Unclassified'}</div>
+                 <tr key={a.id}>
+                   <td>
+                     <div className="asset-cell-stack">
+                       <span className="asset-cell-main">{a.assetCode || 'UNTITLED'}</span>
+                       <span className="asset-cell-sub">{a.category?.name || 'Unclassified'}</span>
+                     </div>
                    </td>
-                   <td className="px-6 py-4 max-w-[250px]">
-                     <div className="text-gray-800 font-bold uppercase truncate  tracking-tighter text-sm group-hover:translate-x-1 transition-transform">{a.itemName || 'Untitled Unit'}</div>
-                     <div className="text-gray-400 text-[10px] font-bold uppercase  mt-1 opacity-60 ">{a.brand || 'Unbranded Protocol'}</div>
+                   <td>
+                     <div className="asset-cell-stack">
+                       <span className="asset-cell-main">{a.itemName || 'Untitled Unit'}</span>
+                       <span className="asset-cell-sub">{a.brand || 'Unbranded Protocol'}</span>
+                     </div>
                    </td>
-                   <td className="px-6 py-4">
-                     <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center border border-indigo-100 group-hover:scale-110 transition-transform">
-                           <User className="w-5 h-5 text-indigo-600" />
+                   <td>
+                     <div className="asset-custodian">
+                        <span className="asset-avatar">
+                           <User size={16} />
+                        </span>
+                        <div className="asset-cell-stack">
+                          <span className="asset-cell-main">{a.custodian?.firstName || 'ROOT INVENTORY'}</span>
+                          <span className="asset-cell-sub">{a.branch?.branchName || 'GLOBAL BASE'}</span>
                         </div>
-                        <div className="min-w-0">
-                           <div className="text-gray-900 font-bold uppercase  tracking-tighter text-[11px] truncate">{a.custodian?.firstName || 'ROOT INVENTORY'}</div>
-                           <div className="text-gray-400 text-[9px] uppercase font-bold  mt-0.5 opacity-60 ">{a.branch?.branchName || 'GLOBAL BASE'}</div>
-                        </div>
                      </div>
                    </td>
-                   <td className="px-6 py-4">
-                     <div className="flex flex-col">
-                        <span className="text-emerald-700 font-bold text-lg  tracking-tighter leading-none">$ {a.price?.toLocaleString() || 0}</span>
-                        <span className="text-gray-400 text-[8px] font-bold uppercase  mt-1 ">Net Value Sync</span>
+                   <td>
+                     <div className="asset-cell-stack">
+                        <span className="asset-cell-main">₹ {a.price?.toLocaleString() || 0}</span>
+                        <span className="asset-cell-sub">Net Value Sync</span>
                      </div>
                    </td>
-                   <td className="px-6 py-4">
-                     <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          a.status === 'Active' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/5' :
-                          a.status === 'UnderMaintenance' ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)] ring-4 ring-indigo-500/5' :
-                          a.status === 'Scrapped' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)] ring-4 ring-red-500/5' :
-                          'bg-slate-400'
-                        }`}></div>
-                        <span className="text-[10px] text-gray-500 font-bold uppercase   group-hover:text-gray-900 transition-colors">{a.status}</span>
-                     </div>
+                   <td>
+                     <span className={`asset-status ${getStatusClass(a.status)}`}>{getStatusLabel(a.status)}</span>
                    </td>
-                   <td className="px-6 py-4 text-right relative">
-                     <div className="text-gray-500 font-bold text-xs uppercase  tracking-tight group-hover:text-gray-900 transition-colors">
-                        {a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString() : 'N/A PROTOCOL'}
-                     </div>
-                     <ArrowRight className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-200 opacity-0 group-hover:opacity-100 group-hover:translate-x-[-10px] transition-all" />
+                   <td>
+                     <span className="asset-cell-sub">{a.purchaseDate ? new Date(a.purchaseDate).toLocaleDateString() : 'N/A PROTOCOL'}</span>
                    </td>
                  </tr>
                ))}
@@ -242,20 +260,23 @@ const AssetReports: React.FC = () => {
          </div>
       </div>
 
-      {/* Floating Info Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 opacity-50 hover:opacity-100 transition-opacity">
-         <div className="glass-card flex items-center gap-6" style={{ padding: "32px", background: "var(--color-bg-secondary)" }}>
-            <PieChart className="w-12 h-12 text-indigo-400" />
+      <div className="asset-note-grid">
+         <div className="asset-note-card">
+            <span className="asset-note-icon">
+              <PieChart size={22} />
+            </span>
             <div>
-               <h4 className="text-[10px] font-bold uppercase  text-gray-400">Inventory Distribution</h4>
-               <p className="text-xs text-gray-500  mt-1 leading-relaxed">System generates heatmaps based on departmental asset density and financial depreciation curves.</p>
+               <h4>Inventory Distribution</h4>
+               <p>System generates heatmaps based on departmental asset density and financial depreciation curves.</p>
             </div>
          </div>
-         <div className="glass-card flex items-center gap-6" style={{ padding: "32px", background: "var(--color-bg-secondary)" }}>
-            <Shield className="w-12 h-12 text-emerald-400" />
+         <div className="asset-note-card">
+            <span className="asset-note-icon">
+              <Shield size={22} />
+            </span>
             <div>
-               <h4 className="text-[10px] font-bold uppercase  text-gray-400">Immutable Audit Ready</h4>
-               <p className="text-xs text-gray-500  mt-1 leading-relaxed">All exported data contains cryptographically linked UID references for sovereign corporate auditing.</p>
+               <h4>Immutable Audit Ready</h4>
+               <p>All exported data contains linked UID references for strong internal auditing and compliance workflows.</p>
             </div>
          </div>
       </div>

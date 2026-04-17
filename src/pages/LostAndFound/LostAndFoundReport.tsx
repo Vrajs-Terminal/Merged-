@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { BarChart2, Search, RefreshCcw, TrendingUp, Package, CheckCircle, AlertTriangle, User, ArrowRight, Shield, Info } from "lucide-react";
 import { toast } from "../../components/Toast";
 import { lostAndFoundAPI } from "../../services/apiService";
-import PageTitle from "../../components/PageTitle";
 
 export default function LostAndFoundReport() {
   const [items, setItems] = useState<any[]>([]);
@@ -39,13 +38,13 @@ export default function LostAndFoundReport() {
       {/* Header Section */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px" }}>
         <div>
-           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-              <div style={{ padding: "8px", background: "rgba(79, 70, 229, 0.1)", borderRadius: "10px" }}>
+           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
                  <BarChart2 size={24} color="var(--primary)" />
+                 <h1 className="page-title" style={{ margin: 0 }}>Lost And Found Report</h1>
               </div>
-              <PageTitle title="Anomalous Data Analytics" />
+              <p className="page-subtitle" style={{ margin: 0 }}>Infrastructure recovery statistics and trend matrix</p>
            </div>
-           <p className="page-subtitle">Infrastructure recovery statistics and trend matrix</p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
            <button onClick={fetchData} className="btn btn-secondary shadow-sm">

@@ -8,7 +8,10 @@ import {
   X,
   ArrowRight,
     Clock,
-    Scan
+    Scan,
+    RefreshCw,
+    Shield,
+    CalendarClock
 } from "lucide-react";
 import { faceXAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
@@ -21,23 +24,34 @@ interface FaceChangeRequestProps {
 const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) => {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [statusFilter, setStatusFilter] = useState("Pending");
+    const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
-    const fetchRequests = async () => {
+    const fetchRequests = async (silent = false) => {
         try {
-            setLoading(true);
+            if (silent) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
             const res = await faceXAPI.getChangeRequests({ status: statusFilter });
-            setRequests(res.data);
+            setRequests(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             toast.error("Failed to load face change requests");
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
     useEffect(() => {
         fetchRequests();
     }, [statusFilter]);
+
+    useEffect(() => {
+        void setActivePage;
+    }, [setActivePage]);
 
     const handleAction = async (id: number, status: "Approved" | "Rejected") => {
         let reason = "";
@@ -54,7 +68,7 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
         try {
             await faceXAPI.handleChangeRequest(id, { status, rejectionReason: reason });
             toast.success(`Request ${status} successfully`);
-            fetchRequests();
+            fetchRequests(true);
         } catch (error) {
             toast.error("Process failed");
         }
@@ -67,52 +81,62 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
         total: requests.length
     };
 
+    const getEmployeeName = (req: any) => `${req.employee?.firstName || ""} ${req.employee?.lastName || ""}`.trim() || "Unknown Employee";
+
     return (
         <div className="main-content animate-fade-in fx-change-page">
-            <div className="page-header fx-page-header">
-                <div>
-                    <h1 className="page-title"><Scan size={22} /> Approval Workflow</h1>
-                    <p className="page-subtitle">Security approval workflow for biometric face signature update requests</p>
+            <div className="fx-page-header">
+                <div className="fx-title-block">
+                    <div className="fx-title-row">
+                        <Scan size={24} className="fx-title-icon" />
+                        <h1 className="page-title">Biometric Approval Workflow Center</h1>
+                    </div>
+                    <p className="page-subtitle">Security approval workflow for biometric face signature update requests.</p>
+                </div>
+                <button className="btn-secondary fx-refresh-btn" onClick={() => fetchRequests(true)} disabled={loading || refreshing}>
+                    <RefreshCw size={16} className={refreshing ? "spin" : ""} />
+                    {refreshing ? "Refreshing..." : "Refresh"}
+                </button>
+            </div>
+
+            <div className="fx-stats-grid">
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Requests</span>
+                        <span className="fx-stat-icon orange"><Clock size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.pending}</strong>
+                    <span className="fx-stat-note">Pending Review</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Verified</span>
+                        <span className="fx-stat-icon green"><Check size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.approved}</strong>
+                    <span className="fx-stat-note">Total Approved</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">Dismissed</span>
+                        <span className="fx-stat-icon red"><X size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.rejected}</strong>
+                    <span className="fx-stat-note">Total Rejected</span>
+                </div>
+                <div className="fx-stat-card">
+                    <div className="fx-stat-head">
+                        <span className="fx-stat-title">All Requests</span>
+                        <span className="fx-stat-icon purple"><Shield size={16} /></span>
+                    </div>
+                    <strong className="fx-stat-value">{stats.total}</strong>
+                    <span className="fx-stat-note">Current Dataset</span>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="main-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "30px" }}>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.1s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-orange"><Clock size={16} /></div>
-                        <div className="ns-change positive">Requests</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.pending}</div>
-                        <div className="ns-title">Pending Review</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.2s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-green"><Check size={16} /></div>
-                        <div className="ns-change positive">Verified</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.approved}</div>
-                        <div className="ns-title">Total Approved</div>
-                    </div>
-                </div>
-                <div className="new-stat-card animate-slide-in" style={{ animationDelay: "0.3s" }}>
-                    <div className="ns-header">
-                        <div className="ns-icon ns-red"><X size={16} /></div>
-                        <div className="ns-change negative">Dismissed</div>
-                    </div>
-                    <div className="ns-body">
-                        <div className="ns-value">{stats.rejected}</div>
-                        <div className="ns-title">Total Rejected</div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="glass-card">
-                <div className="table-header" style={{ display: "flex", justifyContent: "space-between", padding: "20px", alignItems: "center" }}>
-                    <div className="tabs-underline-container" style={{ gap: "0", flex: 1 }}>
+            <div className="glass-card fx-table-card">
+                <div className="fx-table-header">
+                    <div className="tabs-underline-container fx-tabs-wrap">
                         {["Pending", "Approved", "Rejected", ""].map(status => (
                             <button 
                                 key={status}
@@ -123,6 +147,10 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                             </button>
                         ))}
                     </div>
+                    <span className="fx-chip">{statusFilter || "All"} • {requests.length}</span>
+                </div>
+                <div className="fx-table-subhead">
+                    <span>Filter requests by status and review biometric signature changes with one-click actions.</span>
                 </div>
 
                 <div className="table-responsive">
@@ -142,8 +170,11 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                         <tbody>
                              {loading ? (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: "center", padding: "80px" }}>
-                                        <Loader2 className="animate-spin" size={40} style={{ margin: "0 auto" }} />
+                                    <td colSpan={8} className="fx-empty-row">
+                                        <div className="fx-empty-content">
+                                            <Loader2 className="spin" size={22} />
+                                            <span>Loading change requests...</span>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : requests.length > 0 ? (
@@ -152,7 +183,7 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                                         <td>{idx + 1}</td>
                                         <td>
                                             {req.status === "Pending" ? (
-                                                <div style={{ display: "flex", gap: "8px" }}>
+                                                <div className="fx-actions">
                                                     <button className="btn-icon color-success" title="Approve" onClick={() => handleAction(req.id, "Approved")}>
                                                         <Check size={18} />
                                                     </button>
@@ -161,35 +192,39 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <button className="btn-icon" title="View Request Details">
+                                                <button className="btn-icon" title="View Request Details" onClick={() => setSelectedRequest(req)}>
                                                     <Eye size={16} />
                                                 </button>
                                             )}
                                         </td>
                                         <td>
-                                            <div style={{ fontWeight: "700" }}>{req.employee?.firstName} {req.employee?.lastName}</div>
-                                            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{req.employee?.designation}</div>
+                                            <div className="fx-employee-cell">
+                                                <strong>{getEmployeeName(req)}</strong>
+                                                <span>{req.employee?.designation}</span>
+                                            </div>
                                         </td>
                                         <td>
-                                            <div style={{ fontSize: "12px" }}>{req.employee?.branch}</div>
-                                            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{req.employee?.department}</div>
+                                            <div className="fx-branch-cell">
+                                                <strong>{req.employee?.branch}</strong>
+                                                <span>{req.employee?.department}</span>
+                                            </div>
                                         </td>
-                                        <td>{new Date(req.createdAt).toLocaleString()}</td>
+                                        <td><span className="fx-time-text">{new Date(req.createdAt).toLocaleString()}</span></td>
                                         <td>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                                <div style={{ textAlign: "center" }}>
-                                                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `url(${req.oldPhotoUrl || 'https://via.placeholder.com/40x40?text=Old'})`, backgroundSize: "cover" }}></div>
-                                                    <div style={{ fontSize: "9px" }}>Old signature</div>
+                                            <div className="fx-compare-wrap">
+                                                <div className="fx-compare-photo-group">
+                                                    <div className="fx-compare-photo" style={{ backgroundImage: `url(${req.oldPhotoUrl || 'https://via.placeholder.com/40x40?text=Old'})` }} />
+                                                    <div className="fx-compare-label">Old signature</div>
                                                 </div>
-                                                <ArrowRight size={14} color="var(--text-muted)" />
-                                                <div style={{ textAlign: "center" }}>
-                                                    <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `url(${req.newPhotoUrl})`, backgroundSize: "cover", border: "2px solid var(--primary-light)" }}></div>
-                                                    <div style={{ fontSize: "9px", fontWeight: "700" }}>New request</div>
+                                                <ArrowRight size={14} color="var(--color-text-muted)" />
+                                                <div className="fx-compare-photo-group">
+                                                    <div className="fx-compare-photo new" style={{ backgroundImage: `url(${req.newPhotoUrl || 'https://via.placeholder.com/40x40?text=New'})` }} />
+                                                    <div className="fx-compare-label emphasis">New request</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px" }}>
+                                            <div className="fx-device-used">
                                                 <Smartphone size={14} color="var(--primary)" />
                                                 {req.device?.deviceModel || "Mobile App"}
                                             </div>
@@ -203,7 +238,7 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                                                 {req.status}
                                             </span>
                                             {req.status === "Rejected" && req.rejectionReason && (
-                                                <div style={{ fontSize: "10px", color: "var(--danger)", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                <div className="fx-reject-reason">
                                                     Reason: {req.rejectionReason}
                                                 </div>
                                             )}
@@ -212,9 +247,11 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: "center", padding: "100px", opacity: 0.5 }}>
-                                        <AlertCircle size={48} style={{ margin: "0 auto 16px" }} />
-                                        <h3>No {statusFilter.toLowerCase()} update requests found.</h3>
+                                    <td colSpan={8} className="fx-empty-row">
+                                        <div className="fx-empty-content">
+                                            <AlertCircle size={22} />
+                                            <span>No {(statusFilter || "pending").toLowerCase()} update requests found.</span>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -222,6 +259,57 @@ const FaceChangeRequest: React.FC<FaceChangeRequestProps> = ({ setActivePage }) 
                     </table>
                 </div>
             </div>
+
+            {selectedRequest && (
+                <div className="fx-modal-overlay" onClick={() => setSelectedRequest(null)}>
+                    <div className="fx-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="fx-modal-head">
+                            <div className="fx-modal-title-row">
+                                <Eye size={18} />
+                                <h4>Request Detail</h4>
+                            </div>
+                            <button className="btn-icon" onClick={() => setSelectedRequest(null)}>
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="fx-modal-grid">
+                            <div>
+                                <label>Employee</label>
+                                <p>{getEmployeeName(selectedRequest)}</p>
+                            </div>
+                            <div>
+                                <label>Status</label>
+                                <p><span className={`badge ${selectedRequest.status === "Approved" ? "badge-success" : selectedRequest.status === "Rejected" ? "badge-danger" : "badge-warning"}`}>{selectedRequest.status}</span></p>
+                            </div>
+                            <div>
+                                <label>Branch</label>
+                                <p>{selectedRequest.employee?.branch || "-"}</p>
+                            </div>
+                            <div>
+                                <label>Department</label>
+                                <p>{selectedRequest.employee?.department || "-"}</p>
+                            </div>
+                            <div>
+                                <label>Requested On</label>
+                                <p><CalendarClock size={14} /> {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : "-"}</p>
+                            </div>
+                            <div>
+                                <label>Device</label>
+                                <p>{selectedRequest.device?.deviceModel || "Mobile App"}</p>
+                            </div>
+                            {selectedRequest.rejectionReason && (
+                                <div className="fx-modal-wide">
+                                    <label>Rejection Reason</label>
+                                    <p>{selectedRequest.rejectionReason}</p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="fx-modal-actions">
+                            <button className="btn-secondary" onClick={() => setSelectedRequest(null)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { DollarSign } from "lucide-react";
+import { CalendarDays, Building2, Layers3, Sparkles, IndianRupee, Users, Landmark, ChartPie, RotateCcw, Activity, BarChart3 } from "lucide-react";
 import API_BASE from "../api";
 import "./financedashboard.css";
 import Chart from "chart.js/auto";
 import PageTitle from "../../components/PageTitle";
+
 const FinanceDashboard = () => {
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [branch, setBranch] = useState("all");
+  const [department, setDepartment] = useState("all");
+  const [month, setMonth] = useState("January");
+  const [year, setYear] = useState("2026");
 
   const financeChartRef = useRef<HTMLCanvasElement | null>(null);
   const yearlyRef = useRef<HTMLCanvasElement | null>(null);
@@ -178,17 +183,98 @@ const FinanceDashboard = () => {
   }, []);
 
   return (
-    <div className="finance-page">
+    <div className="main-content animate-fade-in finance-page">
 
       <PageTitle title="Finance Dashboard" subtitle="Financial operations and analytics overview" />
 
       {/* FILTERS */}
       <div className="finance-filters">
-        <select><option>Select Branch</option></select>
-        <select><option>Select Department</option></select>
-        <select><option>January</option></select>
-        <select><option>2026</option></select>
-        <button>Generate</button>
+        <div className="finance-filter-field">
+          <label>Branch</label>
+          <div className="finance-select-wrap">
+            <Building2 size={15} />
+            <select value={branch} onChange={(e) => setBranch(e.target.value)}>
+              <option value="all">All Branches</option>
+              <option value="ahmedabad">Ahmedabad</option>
+              <option value="jaipur">Jaipur</option>
+              <option value="surat">Surat</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="finance-filter-field">
+          <label>Department</label>
+          <div className="finance-select-wrap">
+            <Layers3 size={15} />
+            <select value={department} onChange={(e) => setDepartment(e.target.value)}>
+              <option value="all">All Departments</option>
+              <option value="hr">HR</option>
+              <option value="sales">Sales</option>
+              <option value="support">Support</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="finance-filter-field">
+          <label>Month</label>
+          <div className="finance-select-wrap">
+            <CalendarDays size={15} />
+            <select value={month} onChange={(e) => setMonth(e.target.value)}>
+              {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="finance-filter-field">
+          <label>Year</label>
+          <div className="finance-select-wrap">
+            <Sparkles size={15} />
+            <select value={year} onChange={(e) => setYear(e.target.value)}>
+              {["2024", "2025", "2026", "2027"].map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="finance-filter-actions">
+          <button className="btn btn-secondary finance-btn-secondary" type="button" onClick={() => {
+            setBranch("all");
+            setDepartment("all");
+            setMonth("January");
+            setYear("2026");
+          }}>
+            <RotateCcw size={15} /> Reset
+          </button>
+          <button className="btn btn-primary finance-btn-primary" type="button">Generate</button>
+        </div>
+      </div>
+
+      <div className="finance-overview-strip">
+        <div className="finance-overview-pill">
+          <span>Branch Scope</span>
+          <strong>{branch === "all" ? "All Branches" : branch}</strong>
+        </div>
+        <div className="finance-overview-pill">
+          <span>Department Scope</span>
+          <strong>{department === "all" ? "All Departments" : department}</strong>
+        </div>
+        <div className="finance-overview-pill">
+          <span>Period</span>
+          <strong>{month} {year}</strong>
+        </div>
+        <div className="finance-overview-pill is-highlight">
+          <Activity size={14} />
+          <strong>Live Financial Snapshot</strong>
+        </div>
+      </div>
+
+      <div className="finance-section-heading">
+        <h2><BarChart3 size={18} /> Core Analytics</h2>
+        <p>Track expenses, distributions, and yearly momentum in one place.</p>
       </div>
 
       {/* TOP CARDS + DONUT */}
@@ -196,24 +282,28 @@ const FinanceDashboard = () => {
         <div className="finance-left">
           <div className="finance-cards">
             <div className="f-card purple">
-              <h4>💰</h4>
+              <span className="f-card-icon"><IndianRupee size={16} /></span>
               <h4>Salary Expenses</h4>
               <p>₹ {totalExpenses.toLocaleString("en-IN")}</p>
+              <small className="f-card-note">Auto aggregated from finance ledger</small>
             </div>
             <div className="f-card orange">
-              <h4>👥</h4>
+              <span className="f-card-icon"><Users size={16} /></span>
               <h4>Employee Expenses</h4>
               <p>₹ 4,38,46,229</p>
+              <small className="f-card-note">Cross-branch payroll and allowances</small>
             </div>
             <div className="f-card green">
-              <h4>🏦</h4>
+              <span className="f-card-icon"><Landmark size={16} /></span>
               <h4>Loan Expenses</h4>
               <p>₹ 5,30,000</p>
+              <small className="f-card-note">Issued employee loans and support funds</small>
             </div>
             <div className="f-card red">
-              <h4>📊</h4>
+              <span className="f-card-icon"><ChartPie size={16} /></span>
               <h4>Total Expenses</h4>
               <p>₹ {totalExpenses.toLocaleString("en-IN")}</p>
+              <small className="f-card-note">Consolidated operational outflow</small>
             </div>
           </div>
         </div>
@@ -238,17 +328,26 @@ const FinanceDashboard = () => {
       </div>
 
       {/* FULL WIDTH STACK */}
+      <div className="finance-section-heading">
+        <h2><ChartPie size={18} /> Deep Insights</h2>
+        <p>Analyze category concentration and branch-wise spend impact.</p>
+      </div>
+
       <div className="top-stack">
 
         <div className="full-width-card">
-          <h3>Expense Category Overview</h3>
-          <span className="section-total">Total: ₹ 43,84,622</span>
+          <div className="section-header">
+            <h3>Expense Category Overview</h3>
+            <span className="section-total">Total: ₹ 43,84,622</span>
+          </div>
           <canvas ref={categoryRef}></canvas>
         </div>
 
         <div className="full-width-card">
-          <h3>Branch Performance Split</h3>
-          <span className="section-total">Total: ₹ 43,84,622</span>
+          <div className="section-header">
+            <h3>Branch Performance Split</h3>
+            <span className="section-total">Total: ₹ 43,84,622</span>
+          </div>
           <canvas ref={branchRef}></canvas>
         </div>
 
