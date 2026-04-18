@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { User, CheckCircle2, Clock, BarChart3, Star, TrendingUp, CheckSquare } from "lucide-react";
 import { taskAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./TaskSheet.css";
 
 const EmployeeTaskSheetReport: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -49,26 +50,28 @@ const EmployeeTaskSheetReport: React.FC = () => {
   }, [tasks]);
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title"><CheckSquare size={22} /> Employee Task Sheet Report</h1>
-        <p className="page-subtitle">Track individual employee performance and efficiency metrics</p>
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
+          <h1 className="page-title"><CheckSquare size={22} /> Employee Task Sheet Report</h1>
+          <p className="page-subtitle">Track individual employee performance and efficiency metrics</p>
+        </div>
       </div>
 
-      <div className="glass-card" style={{ marginBottom: "32px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="glass-card tasksheet-main-card" style={{ marginBottom: "32px" }}>
+        <div className="tasksheet-list-toolbar">
+          <div className="tasksheet-name-cell">
             <Star size={20} color="var(--warning)" fill="var(--warning)" />
-            <h3 style={{ fontSize: "18px" }}>Top Performers</h3>
+            <h3>Top Performers</h3>
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="tasksheet-actions">
             <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--success)" }}></div> Exceptional</span>
             <span style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}><div style={{ width: "10px", height: "10px", borderRadius: "2px", background: "var(--primary)" }}></div> Efficient</span>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px" }}>
+        <div className="tasksheet-grid-fit">
           {employees.slice(0, 3).map((e, idx) => (
-            <div key={idx} style={{ background: "#f8fafc", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "16px" }}>
+            <div key={idx} className="tasksheet-report-card" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "700", fontSize: "16px" }}>
                 {e.name.split(' ').map((n: string) => n[0]).join('')}
               </div>
@@ -83,13 +86,13 @@ const EmployeeTaskSheetReport: React.FC = () => {
             </div>
           ))}
           {employees.length === 0 && (
-            <div style={{ color: "var(--text-muted)" }}>No employee task data found.</div>
+            <div className="tasksheet-muted">No employee task data found.</div>
           )}
         </div>
       </div>
 
-      <div className="glass-card">
-        <div style={{ overflowX: "auto" }}>
+      <div className="glass-card tasksheet-main-card">
+        <div className="tasksheet-table-wrap">
           <table className="table-modern">
             <thead>
               <tr>
@@ -105,9 +108,9 @@ const EmployeeTaskSheetReport: React.FC = () => {
               {employees.map((e, idx) => (
                 <tr key={idx}>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div className="tasksheet-name-cell">
                       <User size={16} color="var(--primary)" />
-                      <span style={{ fontWeight: "600" }}>{e.name}</span>
+                      <strong>{e.name}</strong>
                     </div>
                   </td>
                   <td>{e.tasks}</td>
@@ -128,7 +131,7 @@ const EmployeeTaskSheetReport: React.FC = () => {
               ))}
               {employees.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>No employee report rows available.</td>
+                  <td colSpan={6} className="tasksheet-empty">No employee report rows available.</td>
                 </tr>
               )}
             </tbody>

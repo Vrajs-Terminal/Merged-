@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Layout, CheckCircle2, Clock, BarChart3, TrendingUp, CheckSquare } from "lucide-react";
 import { taskAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./TaskSheet.css";
 
 const ProjectWiseTaskSheetReport: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -45,15 +46,17 @@ const ProjectWiseTaskSheetReport: React.FC = () => {
   }, [tasks]);
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title"><CheckSquare size={22} /> Project Wise Task Sheet Report</h1>
-        <p className="page-subtitle">Analyze performance and progress benchmarks for major projects</p>
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
+          <h1 className="page-title"><CheckSquare size={22} /> Project Wise Task Sheet Report</h1>
+          <p className="page-subtitle">Analyze performance and progress benchmarks for major projects</p>
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "24px", marginBottom: "32px" }}>
+      <div className="tasksheet-grid-fit" style={{ marginBottom: "32px" }}>
         {projects.map((p, idx) => (
-          <div key={idx} className="glass-card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div key={idx} className="glass-card tasksheet-main-card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ background: "var(--primary-light)", padding: "10px", borderRadius: "10px" }}>
                 <Layout size={20} color="var(--primary)" />
@@ -63,8 +66,8 @@ const ProjectWiseTaskSheetReport: React.FC = () => {
               </div>
             </div>
             <div>
-              <h3 style={{ fontSize: "18px", marginBottom: "4px" }}>{p.name}</h3>
-              <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>{p.tasks} Tasks Tracked</p>
+                <h3 style={{ fontSize: "18px", marginBottom: "4px" }}>{p.name}</h3>
+                <p className="tasksheet-muted">{p.tasks} Tasks Tracked</p>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px" }}>
@@ -79,16 +82,18 @@ const ProjectWiseTaskSheetReport: React.FC = () => {
           </div>
         ))}
         {projects.length === 0 && (
-          <div className="glass-card" style={{ padding: "20px", color: "var(--text-muted)" }}>No project task data found.</div>
+          <div className="glass-card tasksheet-main-card" style={{ padding: "20px", color: "var(--text-muted)" }}>No project task data found.</div>
         )}
       </div>
 
-      <div className="glass-card">
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-           <BarChart3 size={20} color="var(--primary)" />
-           <h3 style={{ fontSize: "18px" }}>Project Performance Comparison</h3>
+      <div className="glass-card tasksheet-main-card">
+        <div className="tasksheet-card-heading">
+          <div className="tasksheet-card-heading-icon">
+            <BarChart3 size={18} />
+          </div>
+          <h3>Project Performance Overview</h3>
         </div>
-        <div style={{ overflowX: "auto" }}>
+        <div className="tasksheet-table-wrap">
           <table className="table-modern">
             <thead>
               <tr>
@@ -102,7 +107,7 @@ const ProjectWiseTaskSheetReport: React.FC = () => {
             <tbody>
               {projects.map((p, idx) => (
                 <tr key={idx}>
-                  <td style={{ fontWeight: "700" }}>{p.name}</td>
+                  <td><strong>{p.name}</strong></td>
                   <td>{p.tasks}</td>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -124,7 +129,7 @@ const ProjectWiseTaskSheetReport: React.FC = () => {
               ))}
               {projects.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>No project report rows available.</td>
+                  <td colSpan={5} className="tasksheet-empty">No project report rows available.</td>
                 </tr>
               )}
             </tbody>

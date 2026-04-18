@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { UserPlus, Tag, Trash2, Edit2, ShieldCheck, Search, CheckSquare } from "lucide-react";
 import { taskAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./TaskSheet.css";
 
 const TaskCategoryAssign: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -54,20 +55,20 @@ const TaskCategoryAssign: React.FC = () => {
   const individualCount = data.filter((item) => item.type === "Employee").length;
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
-        <div>
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
           <h1 className="page-title"><CheckSquare size={22} /> Task Category Assign</h1>
           <p className="page-subtitle">Control category access for individuals or departments</p>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "24px", marginBottom: "32px" }}>
+      <div className="tasksheet-grid-2">
         {/* Form Card */}
-        <div className="glass-card">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "var(--primary)" }}>
-            <UserPlus size={20} />
-            <h3 style={{ fontSize: "18px" }}>Assign New</h3>
+        <div className="glass-card tasksheet-main-card">
+          <div className="tasksheet-card-heading">
+            <span className="tasksheet-card-heading-icon"><UserPlus size={18} /></span>
+            <h3>Assign New</h3>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
@@ -103,36 +104,34 @@ const TaskCategoryAssign: React.FC = () => {
         </div>
 
         {/* Search & Stats Card */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="glass-card tasksheet-main-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-              <Search size={20} color="var(--primary)" />
-              <h3 style={{ fontSize: "18px" }}>Quick Search</h3>
+            <div className="tasksheet-card-heading">
+              <span className="tasksheet-card-heading-icon"><Search size={18} /></span>
+              <h3>Quick Search</h3>
             </div>
             <input type="text" className="input-modern" placeholder="Filter by category or name..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div style={{ background: "var(--primary-light)", padding: "16px", borderRadius: "12px", display: "flex", justifyContent: "space-around", marginTop: "20px" }}>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: "var(--primary)", fontWeight: "700", fontSize: "20px" }}>{data.length}</p>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Total Assigns</p>
+          <div className="tasksheet-info-strip tasksheet-grid-3" style={{ marginTop: "20px" }}>
+            <div className="tasksheet-stat-mini">
+              <strong>{data.length}</strong>
+              <span>Total Assigns</span>
             </div>
-            <div style={{ width: "1px", background: "rgba(79, 70, 229, 0.2)" }}></div>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: "var(--primary)", fontWeight: "700", fontSize: "20px" }}>{departmentCount}</p>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Depts</p>
+            <div className="tasksheet-stat-mini">
+              <strong>{departmentCount}</strong>
+              <span>Depts</span>
             </div>
-            <div style={{ width: "1px", background: "rgba(79, 70, 229, 0.2)" }}></div>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: "var(--primary)", fontWeight: "700", fontSize: "20px" }}>{individualCount}</p>
-              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>Individs</p>
+            <div className="tasksheet-stat-mini">
+              <strong>{individualCount}</strong>
+              <span>Individs</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Table Card */}
-      <div className="glass-card">
-        <div style={{ overflowX: "auto" }}>
+      <div className="glass-card tasksheet-main-card">
+        <div className="tasksheet-table-wrap">
           <table className="table-modern">
             <thead>
               <tr>
@@ -148,32 +147,32 @@ const TaskCategoryAssign: React.FC = () => {
                 <tr key={item.id}>
                   <td>{idx + 1}</td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div className="tasksheet-name-cell">
                       <Tag size={16} color="var(--primary)" />
-                      <span style={{ fontWeight: "600" }}>{item.category}</span>
+                      <strong>{item.category}</strong>
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div className="tasksheet-name-cell">
                       <ShieldCheck size={16} color={item.type === "Department" ? "var(--success)" : "#6366f1"} />
                       <span>{item.assignedTo}</span>
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)", background: "#f1f5f9", padding: "2px 6px", borderRadius: "4px" }}>
+                      <span className="tasksheet-chip">
                         {item.type}
                       </span>
                     </div>
                   </td>
                   <td><span className="badge badge-success">Full Access</span></td>
                   <td>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button className="btn btn-secondary" style={{ padding: "6px" }}><Edit2 size={14} /></button>
-                      <button className="btn btn-secondary" style={{ padding: "6px", color: "var(--danger)" }}><Trash2 size={14} /></button>
+                    <div className="tasksheet-row-actions">
+                      <button className="btn btn-secondary tasksheet-icon-btn"><Edit2 size={14} /></button>
+                      <button className="btn btn-secondary tasksheet-icon-btn" style={{ color: "var(--danger)" }}><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>No category assignments found.</td>
+                  <td colSpan={5} className="tasksheet-empty">No category assignments found.</td>
                 </tr>
               )}
             </tbody>

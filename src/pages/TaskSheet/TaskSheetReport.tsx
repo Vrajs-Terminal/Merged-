@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Clock, User, Calendar, TrendingUp, Search, CheckSquare } from "lucide-react";
 import { taskAPI, employeeAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./TaskSheet.css";
 
 const TaskSheetReport: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -43,25 +44,27 @@ const TaskSheetReport: React.FC = () => {
   });
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title"><CheckSquare size={22} /> Task Sheet Report</h1>
-        <p className="page-subtitle">Detailed tracking of individual tasks and time consumption</p>
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
+          <h1 className="page-title"><CheckSquare size={22} /> Task Sheet Report</h1>
+          <p className="page-subtitle">Detailed tracking of individual tasks and time consumption</p>
+        </div>
       </div>
 
-      <div className="glass-card">
-         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <div style={{ position: "relative", width: "400px" }}>
-            <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-            <input type="text" className="input-modern" placeholder="Search tasks, employees..." style={{ paddingLeft: "40px" }} />
+      <div className="glass-card tasksheet-main-card">
+         <div className="tasksheet-list-toolbar">
+          <div className="tasksheet-search-wrap">
+            <Search size={18} className="tasksheet-search-icon" />
+            <input type="text" className="input-modern" placeholder="Search tasks, employees..." />
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div className="tasksheet-actions">
             <button className="btn btn-secondary">Weekly</button>
             <button className="btn btn-secondary">Monthly</button>
           </div>
         </div>
 
-        <div style={{ overflowX: "auto" }}>
+        <div className="tasksheet-table-wrap">
           <table className="table-modern">
             <thead>
               <tr>
@@ -75,15 +78,15 @@ const TaskSheetReport: React.FC = () => {
             <tbody>
               {resolvedRows.map((item, idx) => (
                 <tr key={idx}>
-                  <td style={{ fontWeight: "700" }}>{item.task}</td>
+                  <td><strong>{item.task}</strong></td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div className="tasksheet-name-cell">
                       <User size={14} color="var(--primary)" />
                       {item.employee}
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <div className="tasksheet-name-cell">
                       <Calendar size={14} color="var(--text-muted)" />
                       {item.date}
                     </div>

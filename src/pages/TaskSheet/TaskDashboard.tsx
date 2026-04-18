@@ -8,13 +8,12 @@ import {
   Filter, 
   Calendar, 
   Users, 
-  Briefcase, 
   Tag, 
-  BarChart3, 
-  TrendingUp 
+  Sparkles 
 } from "lucide-react";
 import { taskAPI } from "../../services/apiService";
 import PageTitle from "../../components/PageTitle";
+import "./TaskSheet.css";
 
 const TaskDashboard: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -37,11 +36,11 @@ const TaskDashboard: React.FC = () => {
   }, []);
 
   const metrics = [
-    { label: "Total Tasks", value: tasks.length, icon: LayoutDashboard, color: "var(--primary)", bg: "#eef2ff" },
-    { label: "Completed Tasks", value: tasks.filter(t => t.status === "Completed").length, icon: CheckCircle2, color: "var(--success)", bg: "#ecfdf5" },
-    { label: "Pending Tasks", value: tasks.filter(t => t.status === "Pending").length, icon: Clock, color: "var(--warning)", bg: "#fffbeb" },
-    { label: "Overdue Tasks", value: tasks.filter(t => t.status === "Overdue" || (t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Completed")).length, icon: AlertCircle, color: "var(--danger)", bg: "#fef2f2" },
-    { label: "In Progress", value: tasks.filter(t => t.status === "In Progress").length, icon: Loader2, color: "#6366f1", bg: "#f5f3ff" },
+    { label: "Total Tasks", value: tasks.length, icon: LayoutDashboard, color: "var(--color-primary-700)", bg: "#eef2ff", tone: "primary" },
+    { label: "Completed Tasks", value: tasks.filter(t => t.status === "Completed").length, icon: CheckCircle2, color: "var(--color-success-700)", bg: "#ecfdf5", tone: "success" },
+    { label: "Pending Tasks", value: tasks.filter(t => t.status === "Pending").length, icon: Clock, color: "var(--color-warning-700)", bg: "#fffbeb", tone: "warning" },
+    { label: "Overdue Tasks", value: tasks.filter(t => t.status === "Overdue" || (t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Completed")).length, icon: AlertCircle, color: "var(--color-danger-700)", bg: "#fef2f2", tone: "danger" },
+    { label: "In Progress", value: tasks.filter(t => t.status === "In Progress").length, icon: Loader2, color: "var(--color-primary-700)", bg: "#f5f3ff", tone: "indigo" },
   ];
 
   // Group by employee for the summary table
@@ -57,10 +56,17 @@ const TaskDashboard: React.FC = () => {
   }, {});
 
   const statsArray = Object.values(employeeStats);
+  const avgEfficiency = statsArray.length
+    ? Math.round(
+        statsArray.reduce((acc: number, stat: any) => {
+          return acc + (stat.total ? (stat.completed / stat.total) * 100 : 0);
+        }, 0) / statsArray.length,
+      )
+    : 0;
 
   if (loading) {
     return (
-      <div className="main-content" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "80vh" }}>
+      <div className="main-content tasksheet-page-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "80vh" }}>
         <Loader2 className="animate-spin" size={48} color="var(--primary)" />
         <p style={{ marginTop: "16px", color: "var(--text-muted)" }}>Loading task analytics...</p>
       </div>
@@ -68,70 +74,86 @@ const TaskDashboard: React.FC = () => {
   }
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header">
-        <PageTitle title="Task Dashboard" subtitle="Real-time task monitoring and productivity tracking" />
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
+          <PageTitle title="Task Dashboard" subtitle="Real-time task monitoring and productivity tracking" />
+        </div>
       </div>
 
       {/* Metrics Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "32px" }}>
+      <div className="taskdash-kpi-grid">
         {metrics.map((metric, index) => (
-          <div key={index} className="glass-card" style={{ padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ 
-              background: metric.bg, 
-              padding: "12px", 
-              borderRadius: "12px", 
-              display: "flex", 
-              alignItems: "center", 
-              justifyContent: "center" 
-            }}>
-              <metric.icon size={24} color={metric.color} />
+          <div key={index} className={`taskdash-kpi-card is-${metric.tone}`}>
+            <div className="taskdash-kpi-head">
+              <div
+                className="taskdash-kpi-icon"
+                style={{
+                  background: metric.bg,
+                  color: metric.color,
+                }}
+              >
+                <metric.icon size={18} />
+              </div>
+              <span className="taskdash-kpi-tag">Live</span>
             </div>
-            <div>
-              <p style={{ color: "var(--text-muted)", fontSize: "14px", fontWeight: "500" }}>{metric.label}</p>
-              <h3 style={{ fontSize: "24px", margin: "4px 0 0 0" }}>{metric.value}</h3>
+            <div className="taskdash-kpi-copy">
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
             </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="glass-card" style={{ marginBottom: "32px", padding: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-          <Filter size={20} color="var(--primary)" />
-          <h3 style={{ fontSize: "18px" }}>Quick Filters</h3>
+      <div className="glass-card tasksheet-main-card taskdash-filter-card">
+        <div className="taskdash-section-head">
+          <div className="taskdash-section-title">
+            <Filter size={18} />
+            <h3>Quick Filters</h3>
+          </div>
+          <span className="taskdash-section-note">Narrow down task performance instantly</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-          <div>
-            <label className="input-label"><Users size={14} style={{ marginRight: "4px" }} /> Employee</label>
+        <div className="taskdash-filter-grid">
+          <div className="taskdash-filter-item">
+            <label className="taskdash-field-label"><Users size={14} /> Employee</label>
             <select className="select-modern">
                <option>All Employees</option>
             </select>
           </div>
-          <div>
-            <label className="input-label"><Calendar size={14} style={{ marginRight: "4px" }} /> Date Range</label>
+          <div className="taskdash-filter-item">
+            <label className="taskdash-field-label"><Calendar size={14} /> Date Range</label>
             <select className="select-modern">
               <option>All Time</option>
               <option>This Month</option>
               <option>Today</option>
             </select>
           </div>
-          <div>
-            <label className="input-label"><Tag size={14} style={{ marginRight: "4px" }} /> Task Category</label>
+          <div className="taskdash-filter-item">
+            <label className="taskdash-field-label"><Tag size={14} /> Task Category</label>
             <select className="select-modern">
                <option>All Categories</option>
             </select>
           </div>
+          <button className="btn btn-primary taskdash-filter-cta" type="button">
+            <Sparkles size={16} /> Apply Filters
+          </button>
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginTop: "32px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-          <Users size={20} color="var(--primary)" />
-          <h3 style={{ fontSize: "18px" }}>Task Summary (Employee-wise)</h3>
+      <div className="glass-card tasksheet-main-card taskdash-summary-card">
+        <div className="taskdash-section-head is-summary">
+          <div className="taskdash-section-title">
+            <Users size={18} />
+            <h3>Task Summary (Employee-wise)</h3>
+          </div>
+          <div className="taskdash-summary-meta">
+            <span>{statsArray.length} Employees</span>
+            <span>{avgEfficiency}% Avg Efficiency</span>
+          </div>
         </div>
-        <div style={{ overflowX: "auto" }}>
-          <table className="table-modern">
+        <div className="tasksheet-table-wrap">
+          <table className="table-modern taskdash-summary-table">
             <thead>
               <tr>
                 <th>Employee</th>
@@ -145,8 +167,8 @@ const TaskDashboard: React.FC = () => {
               {statsArray.map((stat: any, idx) => (
                 <tr key={idx}>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--primary-light)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "600", fontSize: "12px" }}>
+                    <div className="tasksheet-name-cell">
+                      <div className="taskdash-avatar">
                         {stat.name.split(' ').map((n:any)=>n[0]).join('')}
                       </div>
                       <span>{stat.name}</span>
@@ -160,18 +182,18 @@ const TaskDashboard: React.FC = () => {
                     <span className="badge badge-warning">{stat.pending}</span>
                   </td>
                   <td>
-                    <div style={{ width: "100%", background: "#f1f5f9", height: "6px", borderRadius: "3px", overflow: "hidden" }}>
-                      <div style={{ width: `${(stat.completed / stat.total) * 100}%`, background: "var(--success)", height: "100%" }}></div>
+                    <div className="tasksheet-progress">
+                      <span style={{ width: `${stat.total ? (stat.completed / stat.total) * 100 : 0}%` }}></span>
                     </div>
-                    <span style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>
-                      {Math.round((stat.completed / stat.total) * 100)}%
+                    <span className="tasksheet-muted" style={{ marginTop: "4px", display: "block" }}>
+                      {Math.round(stat.total ? (stat.completed / stat.total) * 100 : 0)}%
                     </span>
                   </td>
                 </tr>
               ))}
               {statsArray.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>No task data available.</td>
+                  <td colSpan={5} className="tasksheet-empty">No task data available.</td>
                 </tr>
               )}
             </tbody>

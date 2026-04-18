@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Filter, FileSpreadsheet, FileText, Clock, User, CheckCircle2, AlertCircle, CheckSquare } from "lucide-react";
 import { taskAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./TaskSheet.css";
 
 const TaskReport: React.FC = () => {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -59,13 +60,13 @@ const TaskReport: React.FC = () => {
   }, [filteredTasks]);
 
   return (
-    <div className="main-content animate-fade-in">
-      <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px" }}>
-        <div>
+    <div className="main-content animate-fade-in tasksheet-page-container">
+      <div className="tasksheet-header">
+        <div className="tasksheet-header-text">
           <h1 className="page-title"><CheckSquare size={22} /> Task Report</h1>
           <p className="page-subtitle">Visualize overall task performance and completion metrics</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="tasksheet-actions">
           <button className="btn btn-secondary">
             <FileSpreadsheet size={18} color="#16a34a" /> Excel
           </button>
@@ -75,8 +76,8 @@ const TaskReport: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass-card" style={{ marginBottom: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      <div className="glass-card tasksheet-main-card" style={{ marginBottom: "24px" }}>
+        <div className="tasksheet-grid-fit">
           <div>
             <label className="input-label">Select Employee</label>
             <select className="select-modern" value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)}>
@@ -99,7 +100,7 @@ const TaskReport: React.FC = () => {
                <option>Overdue</option>
             </select>
           </div>
-          <div style={{ alignSelf: "flex-end" }}>
+          <div>
             <button className="btn btn-primary" style={{ width: "100%" }}>
               <Filter size={18} /> Apply Filter
             </button>
@@ -107,8 +108,8 @@ const TaskReport: React.FC = () => {
         </div>
       </div>
 
-      <div className="glass-card">
-        <div style={{ overflowX: "auto" }}>
+      <div className="glass-card tasksheet-main-card">
+        <div className="tasksheet-table-wrap">
           <table className="table-modern">
             <thead>
               <tr>
@@ -123,10 +124,10 @@ const TaskReport: React.FC = () => {
             <tbody>
               {data.map((item, idx) => (
                 <tr key={idx}>
-                  <td style={{ fontWeight: "600" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <td>
+                    <div className="tasksheet-name-cell">
                       <User size={16} color="var(--primary)" />
-                      {item.employee}
+                      <strong>{item.employee}</strong>
                     </div>
                   </td>
                   <td>{item.total}</td>
@@ -143,7 +144,7 @@ const TaskReport: React.FC = () => {
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>No report data found.</td>
+                  <td colSpan={6} className="tasksheet-empty">No report data found.</td>
                 </tr>
               )}
             </tbody>

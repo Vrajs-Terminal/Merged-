@@ -105,7 +105,13 @@ export const dashboardAPI = {
 export const taskAPI = {
     ...createCrudApi(routeBase.tasks),
     getCategories: () => api.get(`${routeBase.tasks}/categories`),
+    createCategory: (data: unknown) => api.post(`${routeBase.tasks}/categories`, data),
+    updateCategory: (id: string | number, data: unknown) => api.put(`${routeBase.tasks}/categories/${id}`, data),
+    deleteCategory: (id: string | number) => api.delete(`${routeBase.tasks}/categories/${id}`),
     getPriorities: () => api.get(`${routeBase.tasks}/priorities`),
+    createPriority: (data: unknown) => api.post(`${routeBase.tasks}/priorities`, data),
+    updatePriority: (id: string | number, data: unknown) => api.put(`${routeBase.tasks}/priorities/${id}`, data),
+    deletePriority: (id: string | number) => api.delete(`${routeBase.tasks}/priorities/${id}`),
 };
 
 export const pollAPI = createCrudApi(routeBase.polls);
