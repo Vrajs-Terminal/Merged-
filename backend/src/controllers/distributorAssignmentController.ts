@@ -81,3 +81,15 @@ export const deleteDistributorAssignment = async (req: Request, res: Response) =
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const deleteDistributorAssignmentsByEmployee = async (req: Request, res: Response) => {
+  try {
+    const { employeeId } = req.params;
+    await prisma.distributorAssignment.deleteMany({
+      where: { employeeId: Number(employeeId) },
+    });
+    res.status(200).json({ message: "Employee assignments deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

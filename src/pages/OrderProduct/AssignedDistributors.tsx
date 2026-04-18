@@ -1,8 +1,16 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
-  Plus, Trash2, Filter, Search, Save, CheckCircle, AlertCircle, Users2
+  AlertCircle,
+  CheckCircle,
+  Filter,
+  Plus,
+  Search,
+  Save,
+  Trash2,
+  Users2,
 } from "lucide-react";
+import "./AssignedDistributors.css";
 
 interface Employee { id: number; firstName?: string; lastName?: string; employeeId: string; branch?: string; department?: { departmentName?: string } }
 interface Distributor { id: number; companyName: string }
@@ -27,7 +35,9 @@ export default function AssignedDistributors() {
 
   const itemsPerPage = 25;
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const fetchAll = async () => {
     try {
@@ -44,18 +54,36 @@ export default function AssignedDistributors() {
     }
   };
 
-  const filteredRows = assignments.filter(row => {
-    const empName = `${row.employee?.firstName || ''} ${row.employee?.lastName || ''}`.toLowerCase();
-    const empId = row.employee?.employeeId || '';
-    return empName.includes(searchTerm.toLowerCase()) || empId.includes(searchTerm);
-  });
+  const filteredRows = useMemo(() => {
+    const query = searchTerm.toLowerCase();
+    return assignments.filter(row => {
+      const empName = `${row.employee?.firstName || ''} ${row.employee?.lastName || ''}`.toLowerCase();
+      const empId = row.employee?.employeeId || '';
+      const branch = row.employee?.branch || '';
+      const department = row.employee?.department?.departmentName || '';
+      const distributorsText = row.distributors?.map(item => item.companyName).join(" ").toLowerCase() || "";
+      return (
+        empName.includes(query) ||
+        empId.toLowerCase().includes(query) ||
+        branch.toLowerCase().includes(query) ||
+        department.toLowerCase().includes(query) ||
+        distributorsText.includes(query)
+      );
+    });
+  }, [assignments, searchTerm]);
 
   const paginatedRows = filteredRows.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredRows.length / itemsPerPage);
 
+  const selectedCount = checkedRows.length;
+  const assignedDistributorCount = assignments.reduce((sum, row) => sum + (row.distributors?.length || 0), 0);
+  const selectedDistributorCount = filteredRows
+    .filter(row => checkedRows.includes(row.id))
+    .reduce((sum, row) => sum + (row.distributors?.length || 0), 0);
+
   const handleAssign = async () => {
     if (!formData.employeeId || formData.distributorIds.length === 0) {
-      alert("Select employee and at least one distributor!");
+      setMsg({ type: "error", text: "Select an employee and at least one distributor." });
       return;
     }
     setLoading(true);
@@ -76,12 +104,66 @@ export default function AssignedDistributors() {
     }));
   };
 
+  const handleBulkDelete = async () => {
+    if (checkedRows.length === 0) {
+      return;
+    }
+
+    if (!window.confirm(`Delete assignments for ${checkedRows.length} employee(s)?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await Promise.all(
+        checkedRows.map(employeeId => axios.delete(`/api/distributor-assignments/employee/${employeeId}`))
+      );
+      setCheckedRows([]);
+      await fetchAll();
+      setMsg({ type: "success", text: "Selected assignments removed successfully." });
+    } catch (err: any) {
+      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to delete selected assignments." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: number) => {
+    if (!window.confirm("Remove this employee's distributor assignments?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/distributor-assignments/employee/${employeeId}`);
+      setCheckedRows(rows => rows.filter(id => id !== employeeId));
+      await fetchAll();
+      setMsg({ type: "success", text: "Assignment removed successfully." });
+    } catch (err: any) {
+      setMsg({ type: "error", text: err?.response?.data?.message || "Failed to remove assignment." });
+    }
+  };
+
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
-          <h2 className="lm-page-title"><Users2 size={22} /> Assigned Distributors</h2>
-          <p className="lm-page-subtitle">Assign distributors to employees for controlled order access — Live DB</p>
+    <div className="lm-container lm-fade assigned-distributors-page">
+      <div className="assigned-distributors-hero lm-card">
+        <div className="assigned-distributors-hero-copy">
+          <div className="assigned-distributors-kicker"><Users2 size={16} /> Distributor access control</div>
+          <h2>Assigned Distributors</h2>
+          <p>Assign distributor visibility to employees, search the current mapping, and keep access clean with one-click removals.</p>
+        </div>
+        <div className="assigned-distributors-stats">
+          <div className="assigned-distributors-stat">
+            <span>Total employees</span>
+            <strong>{assignments.length}</strong>
+          </div>
+          <div className="assigned-distributors-stat">
+            <span>Assigned distributors</span>
+            <strong>{assignedDistributorCount}</strong>
+          </div>
+          <div className="assigned-distributors-stat">
+            <span>Selected rows</span>
+            <strong>{selectedCount}</strong>
+          </div>
         </div>
       </div>
 
@@ -92,39 +174,45 @@ export default function AssignedDistributors() {
         </div>
       )}
 
-      {/* Filter/search bar */}
-      <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Search</div>
-        <div className="lm-form-grid">
-          <div className="lm-field lm-col-2" style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-            <input type="text" className="lm-input" placeholder="Search employee name or ID…"
-              value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ paddingLeft: "2.5rem" }} />
+      <div className="assigned-distributors-toolbar lm-card">
+        <div className="assigned-distributors-search">
+          <Filter size={18} />
+          <div>
+            <span>Search mapping</span>
+            <input
+              type="text"
+              className="lm-input"
+              placeholder="Search employee name, ID, branch, department, or distributor"
+              value={searchTerm}
+              onChange={e => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
-      </div>
-
-      {/* Action Bar */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button className="lm-btn-primary" onClick={() => setShowForm(!showForm)}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem" }}>
-          <Plus size={16} /> Assign Distributor
-        </button>
-        {checkedRows.length > 0 && (
-          <button style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", backgroundColor: "#fee2e2", border: "1px solid #fecaca", borderRadius: "0.375rem", cursor: "pointer" }}>
-            <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+        <div className="assigned-distributors-toolbar-actions">
+          <button className="assigned-btn assigned-btn-primary" onClick={() => setShowForm(!showForm)}>
+            <Plus size={16} /> {showForm ? "Hide Assign Form" : "Assign Distributor"}
           </button>
-        )}
+          <button className="assigned-btn assigned-btn-danger" onClick={handleBulkDelete} disabled={selectedCount === 0 || loading}>
+            <Trash2 size={16} /> Delete Selected ({selectedCount})
+          </button>
+        </div>
       </div>
 
       {/* Assignment Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">Assign Distributor to Employee</div>
+        <div className="lm-card assigned-distributors-form-card">
+          <div className="lm-card-title">Assign distributor to employee</div>
           <div className="lm-form-grid">
             <div className="lm-field lm-col-2">
               <label className="lm-label">Employee*</label>
-              <select className="lm-select" value={formData.employeeId} onChange={e => setFormData({ ...formData, employeeId: Number(e.target.value) })}>
+              <select
+                className="lm-select"
+                value={formData.employeeId}
+                onChange={e => setFormData({ ...formData, employeeId: Number(e.target.value) })}
+              >
                 <option value={0}>-- Select Employee --</option>
                 {employees.map(e => (
                   <option key={e.id} value={e.id}>{e.firstName} {e.lastName} ({e.employeeId})</option>
@@ -133,36 +221,47 @@ export default function AssignedDistributors() {
             </div>
             <div className="lm-field lm-col-2">
               <label className="lm-label">Distributor(s)*</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", padding: "0.5rem", border: "1px solid #e2e8f0", borderRadius: "0.375rem", maxHeight: "150px", overflowY: "auto" }}>
+              <div className="assigned-distributors-chip-grid">
                 {distributors.map(d => (
-                  <label key={d.id} style={{ display: "flex", alignItems: "center", gap: "0.4rem", cursor: "pointer", padding: "0.25rem 0.5rem", borderRadius: "0.25rem", backgroundColor: formData.distributorIds.includes(d.id) ? "#dbeafe" : "#f8fafc", fontSize: "0.875rem" }}>
+                  <label key={d.id} className={`assigned-distributor-chip ${formData.distributorIds.includes(d.id) ? "is-selected" : ""}`}>
                     <input type="checkbox" checked={formData.distributorIds.includes(d.id)} onChange={() => toggleDistributor(d.id)} />
                     {d.companyName}
                   </label>
                 ))}
-                {distributors.length === 0 && <span style={{ color: "#94a3b8", fontSize: "0.875rem" }}>No distributors found — add distributors first</span>}
+                {distributors.length === 0 && <span className="assigned-distributors-empty-chip">No distributors found. Add distributors first.</span>}
               </div>
             </div>
-            <div className="lm-form-footer lm-col-4" style={{ display: "flex", gap: "1rem" }}>
-              <button className="lm-btn-primary" onClick={handleAssign} disabled={loading} style={{ flex: 1, padding: "0.7rem 1rem" }}>
+            <div className="assigned-distributors-form-actions lm-col-4">
+              <button className="assigned-btn assigned-btn-primary" onClick={handleAssign} disabled={loading}>
                 <Save size={14} /> {loading ? "Saving..." : "Assign"}
               </button>
-              <button className="lm-btn-secondary" onClick={() => setShowForm(false)} style={{ flex: 1, padding: "0.7rem 1rem" }}>Cancel</button>
+              <button className="assigned-btn assigned-btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Employee–Distributor Assignments ({filteredRows.length} employees — Live DB)</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card assigned-distributors-table-card">
+        <div className="assigned-distributors-table-head">
+          <div>
+            <h3>Employee distributor assignments</h3>
+            <p>{filteredRows.length} employee record(s) in the current view</p>
+          </div>
+          <div className="assigned-distributors-table-meta">
+            <span>{selectedDistributorCount} distributor(s) selected for removal</span>
+          </div>
+        </div>
+
+        <div className="lm-table-wrap assigned-distributors-table-wrap">
+          <table className="lm-table assigned-distributors-table">
             <thead>
               <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                 <th style={{ padding: "1rem", textAlign: "center", width: "50px" }}>
-                  <input type="checkbox" onChange={e => setCheckedRows(e.target.checked ? filteredRows.map(a => a.id) : [])}
-                    checked={checkedRows.length === filteredRows.length && filteredRows.length > 0} />
+                  <input
+                    type="checkbox"
+                    onChange={e => setCheckedRows(e.target.checked ? filteredRows.map(a => a.id) : [])}
+                    checked={filteredRows.length > 0 && checkedRows.length === filteredRows.length}
+                  />
                 </th>
                 <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Sr. No</th>
                 <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Emp. ID</th>
@@ -170,26 +269,33 @@ export default function AssignedDistributors() {
                 <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Branch</th>
                 <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Department</th>
                 <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Assigned Distributors</th>
+                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedRows.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No distributor assignments found</td></tr>
+                <tr><td colSpan={8} className="assigned-distributors-empty-state">No distributor assignments found</td></tr>
               ) : paginatedRows.map((row, idx) => (
-                <tr key={row.id} style={{ borderBottom: "1px solid #e2e8f0" }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f1f5f9"}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = ""}>
+                <tr key={row.id}>
                   <td style={{ padding: "1rem", textAlign: "center" }}>
-                    <input type="checkbox" checked={checkedRows.includes(row.id)}
-                      onChange={e => setCheckedRows(e.target.checked ? [...checkedRows, row.id] : checkedRows.filter(id => id !== row.id))} />
+                    <input
+                      type="checkbox"
+                      checked={checkedRows.includes(row.id)}
+                      onChange={e => setCheckedRows(e.target.checked ? [...checkedRows, row.id] : checkedRows.filter(id => id !== row.id))}
+                    />
                   </td>
                   <td style={{ padding: "1rem", color: "#475569" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontWeight: 500 }}>{row.employee?.employeeId || '—'}</td>
-                  <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{row.employee?.firstName} {row.employee?.lastName}</td>
+                  <td style={{ padding: "1rem", color: "#475569", fontWeight: 600 }}>{row.employee?.employeeId || '—'}</td>
+                  <td style={{ padding: "1rem", fontWeight: 700, color: "#1f2937" }}>{row.employee?.firstName} {row.employee?.lastName}</td>
                   <td style={{ padding: "1rem", color: "#475569" }}>{row.employee?.branch || '—'}</td>
                   <td style={{ padding: "1rem", color: "#475569" }}>{row.employee?.department?.departmentName || '—'}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>
-                    {row.distributors?.length ? row.distributors.map(d => d.companyName).join(", ") : <span style={{ color: "#94a3b8", fontStyle: "italic" }}>None assigned</span>}
+                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.92rem" }}>
+                    {row.distributors?.length ? row.distributors.map(d => d.companyName).join(", ") : <span className="assigned-distributors-none">None assigned</span>}
+                  </td>
+                  <td style={{ padding: "1rem", textAlign: "right" }}>
+                    <button className="assigned-row-remove-btn" onClick={() => handleDeleteEmployee(row.id)}>
+                      <Trash2 size={14} /> Remove
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -199,11 +305,13 @@ export default function AssignedDistributors() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
-            <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredRows.length)} of {filteredRows.length}</span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "0.5rem 1rem", opacity: currentPage === 1 ? 0.5 : 1 }}>Previous</button>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: "0.5rem 1rem", opacity: currentPage === totalPages ? 0.5 : 1 }}>Next</button>
+          <div className="assigned-distributors-pagination">
+            <span>
+              Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredRows.length)} of {filteredRows.length}
+            </span>
+            <div>
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
             </div>
           </div>
         )}

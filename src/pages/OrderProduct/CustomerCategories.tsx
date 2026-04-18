@@ -1,6 +1,19 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Eye, CheckCircle, AlertCircle, Search, Tags } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Plus,
+  RefreshCcw,
+  Search,
+  Tags,
+  Trash2
+} from "lucide-react";
 import { customerCategoryAPI } from "../../services/apiService";
+import "./OrderProductWorkspace.css";
+import { buildSearchText, extractApiList } from "./orderProductWorkspaceHelpers";
 
 interface CustomerCategory {
   id: number;
@@ -9,161 +22,311 @@ interface CustomerCategory {
   status?: "Active" | "Inactive";
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function CustomerCategories() {
   const [categories, setCategories] = useState<CustomerCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: ""
-  });
+  const [formData, setFormData] = useState({ name: "", description: "" });
 
   useEffect(() => {
-    fetchData();
-  }, [currentPage]);
+    void fetchCategories();
+  }, []);
 
-  const fetchData = async () => {
+  const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await customerCategoryAPI.getAll(currentPage, itemsPerPage);
-      setCategories(response.data || []);
-      setLoading(false);
+      const response = await customerCategoryAPI.getAll(1, 1000);
+      const { rows } = extractApiList<CustomerCategory>(response.data);
+      setCategories(rows);
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to fetch categories" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to load customer categories." });
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleAdd = async () => {
+  const filteredCategories = useMemo(
+    () => categories.filter((category) =>
+      buildSearchText(category.name, category.description, category.status).includes(searchTerm.toLowerCase())
+    ),
+    [categories, searchTerm]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedCategories = useMemo(
+    () => filteredCategories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredCategories]
+  );
+
+  const describedCount = categories.filter((category) => category.description?.trim()).length;
+  const activeCount = categories.filter((category) => category.status === "Active").length;
+  const visibleStart = filteredCategories.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredCategories.length);
+
+  const resetForm = () => {
+    setFormData({ name: "", description: "" });
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
     if (!formData.name.trim()) {
-      setMsg({ type: "error", text: "Category name is required" });
+      setMsg({ type: "error", text: "Category name is required." });
       return;
     }
 
     try {
       if (editingId) {
         await customerCategoryAPI.update(editingId, formData);
-        setMsg({ type: "success", text: "Category updated successfully" });
+        setMsg({ type: "success", text: "Customer category updated successfully." });
       } else {
         await customerCategoryAPI.create(formData);
-        setMsg({ type: "success", text: "Category added successfully" });
+        setMsg({ type: "success", text: "Customer category created successfully." });
       }
-      fetchData();
+
+      await fetchCategories();
+      resetForm();
       setShowForm(false);
-      setEditingId(null);
-      setFormData({ name: "", description: "" });
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save category" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save customer category." });
     }
   };
 
-  const handleEdit = (cat: CustomerCategory) => {
-    setEditingId(cat.id);
-    setFormData({ name: cat.name, description: cat.description || "" });
+  const handleEdit = (category: CustomerCategory) => {
+    setEditingId(category.id);
+    setFormData({
+      name: category.name,
+      description: category.description || ""
+    });
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Delete this customer category?")) {
+      return;
+    }
+
     try {
       await customerCategoryAPI.delete(id);
-      fetchData();
-      setMsg({ type: "success", text: "Category deleted successfully" });
+      setMsg({ type: "success", text: "Customer category deleted successfully." });
+      await fetchCategories();
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete category" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete customer category." });
     }
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><Tags size={14} /> Customer grouping</span>
           <h2 className="lm-page-title"><Tags size={22} /> Customer Categories</h2>
-          <p className="lm-page-subtitle">Group retailers into different customer categories</p>
+          <p className="lm-page-subtitle">
+            Group retailers into cleaner business segments with a more professional classification workspace and clearer maintenance flow.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Segment structure</span>
+            <span className="opw-hero-pill">Fast search</span>
+            <span className="opw-hero-pill">Focused CRUD</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Total Categories</span>
+            <strong>{categories.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Visible</span>
+            <strong>{filteredCategories.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Active</span>
+            <strong>{activeCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Described</span>
+            <strong>{describedCount}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Plus size={16} /> Add
-        </button>
-        <button style={{ padding: "0.75rem 1.5rem", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Trash2 size={16} /> Delete
-        </button>
-      </div>
+      <div className="lm-card opw-panel">
+        <div className="opw-toolbar">
+          <div className="opw-search">
+            <Search size={16} />
+            <div>
+              <label htmlFor="customer-category-search">Search customer categories</label>
+              <input
+                id="customer-category-search"
+                type="text"
+                className="lm-input"
+                placeholder="Search by category name, description, or status"
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
 
-      {/* Search Bar */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <div className="lm-field" style={{ flex: 1 }}>
-          <div style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-            <input type="text" className="lm-input" placeholder="Search categories..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ paddingLeft: "2.5rem" }} />
+          <div className="opw-toolbar-actions">
+            <button type="button" className="opw-primary-btn" onClick={() => setShowForm((value) => !value)}>
+              <Plus size={16} />
+              {showForm ? "Hide Form" : "Add Category"}
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={() => void fetchCategories()} disabled={loading}>
+              <RefreshCcw size={16} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Add Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit" : "Add"} Category</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <Plus size={18} />
+              <div>
+                <h3>{editingId ? "Edit Customer Category" : "Create Customer Category"}</h3>
+                <p>Define clean customer segments so retailer mapping and planning stay understandable.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="opw-form-grid">
             <div className="lm-field">
               <label className="lm-label">Category Name</label>
-              <input type="text" className="lm-input" placeholder="Enter category name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter customer category name"
+                value={formData.name}
+                onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
+              />
             </div>
-            <div className="lm-field">
+            <div className="lm-field opw-form-span-2">
               <label className="lm-label">Description</label>
-              <textarea className="lm-input" placeholder="Enter description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={{ minHeight: "80px" }}></textarea>
+              <textarea
+                className="lm-input"
+                rows={4}
+                placeholder="Add a short business description"
+                value={formData.description}
+                onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))}
+              />
             </div>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button onClick={handleAdd} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>{editingId ? "Update" : "Add"} Category</button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setFormData({ name: "", description: "" }); }} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#e2e8f0", color: "#475569", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <div className="opw-form-actions">
+              <button type="button" className="opw-primary-btn" onClick={() => void handleSave()}>
+                {editingId ? "Update Category" : "Save Category"}
+              </button>
+              <button
+                type="button"
+                className="opw-secondary-btn"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Categories ({categories.length} total) {loading && <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Loading...</span>}</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Tags size={18} />
+            <div>
+              <h3>Category Directory</h3>
+              <p>Maintain retailer segmentation with a cleaner list, stronger scanning, and direct row-level editing.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{filteredCategories.length} visible</span>
+        </div>
+
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredCategories.length} categories</span>
+          <span>{describedCount} with descriptions</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table opw-admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center", width: "40px" }}>No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Category</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Description</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Action</th>
+              <tr>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {categories.map((cat, idx) => (
-                <tr key={cat.id} style={{ borderBottom: "1px solid #e2e8f0" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#64748b", fontSize: "0.875rem" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 600 }}>{cat.name}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{cat.description || "—"}</td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem", display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(cat)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#0c4a6e" }}>
-                      <Edit2 size={12} /> Edit
-                    </button>
-                    <button onClick={() => handleDelete(cat.id)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#7f1d1d" }}>
-                      <Trash2 size={12} /> Del
-                    </button>
-                    <button style={{ padding: "0.4rem 0.8rem", backgroundColor: "#e0e7ff", border: "1px solid #6366f1", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#4f46e5" }}>
-                      <Eye size={12} /> View
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={4}>
+                    <div className="opw-empty">
+                      <h4>Loading customer categories</h4>
+                      <p>Pulling the latest customer segmentation records.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={4}>
+                    <div className="opw-empty">
+                      <h4>No categories match this view</h4>
+                      <p>Try a broader search or create a new customer category to start grouping retailers.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedCategories.map((category) => (
+                <tr key={category.id}>
+                  <td>
+                    <div className="opw-entity">
+                      <strong>{category.name}</strong>
+                      <small>Category #{category.id}</small>
+                    </div>
+                  </td>
+                  <td>{category.description || "No description added yet."}</td>
+                  <td>
+                    <span className={`opw-status-badge ${category.status === "Active" ? "is-success" : "is-neutral"}`}>
+                      {category.status || "Not set"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="opw-row-actions">
+                      <button type="button" className="opw-row-btn is-info" onClick={() => handleEdit(category)}>
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                      <button type="button" className="opw-row-btn is-danger" onClick={() => void handleDelete(category.id)}>
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -171,16 +334,31 @@ export default function CustomerCategories() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
-          <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === 1 ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === 1 ? "default" : "pointer" }}>Prev</button>
-          {Array.from({ length: Math.ceil(categories.length / itemsPerPage) }, (_, i) => (
-            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === i + 1 ? "#6366f1" : "#f1f5f9", color: currentPage === i + 1 ? "white" : "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: "pointer" }}>
-              {i + 1}
-            </button>
-          ))}
-          <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === Math.ceil(categories.length / itemsPerPage)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === Math.ceil(categories.length / itemsPerPage) ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === Math.ceil(categories.length / itemsPerPage) ? "default" : "pointer" }}>Next</button>
-        </div>
+        {filteredCategories.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

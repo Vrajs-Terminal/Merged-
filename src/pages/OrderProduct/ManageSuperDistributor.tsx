@@ -1,24 +1,37 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, CheckCircle, AlertCircle, Search, ToggleLeft, ToggleRight, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Plus,
+  RefreshCcw,
+  Trash2,
+  Truck
+} from "lucide-react";
 import { superDistributorAPI } from "../../services/apiService";
+import "./OrderProductWorkspace.css";
+import { buildSearchText, extractApiList, getStatusTone } from "./orderProductWorkspaceHelpers";
 
-interface SuperDistributor {
+interface SuperDistributorRecord {
   id: number;
   name: string;
   contactPerson: string;
   contactNumber: string;
   orderEmail: string;
   photo?: string;
-  status: "Active" | "Inactive";
+  status?: "Active" | "Inactive";
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function ManageSuperDistributor() {
-  const [superDistributors, setSuperDistributors] = useState<SuperDistributor[]>([]);
+  const [superDistributors, setSuperDistributors] = useState<SuperDistributorRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ country: "" });
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -31,190 +44,396 @@ export default function ManageSuperDistributor() {
   });
 
   useEffect(() => {
-    fetchData();
-  }, [currentPage]);
+    void fetchSuperDistributors();
+  }, []);
 
-  const fetchData = async () => {
+  const fetchSuperDistributors = async () => {
     try {
       setLoading(true);
-      const response = await superDistributorAPI.getAll(currentPage, itemsPerPage);
-      setSuperDistributors(response.data || []);
-      setLoading(false);
+      const response = await superDistributorAPI.getAll(1, 1000);
+      const { rows } = extractApiList<SuperDistributorRecord>(response.data);
+      setSuperDistributors(rows);
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to fetch super distributors" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to load super distributors." });
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleAdd = async () => {
+  const filteredSuperDistributors = useMemo(
+    () => superDistributors.filter((distributor) =>
+      (!statusFilter || distributor.status === statusFilter) &&
+      buildSearchText(
+        distributor.name,
+        distributor.contactPerson,
+        distributor.contactNumber,
+        distributor.orderEmail,
+        distributor.status
+      ).includes(searchTerm.toLowerCase())
+    ),
+    [searchTerm, statusFilter, superDistributors]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredSuperDistributors.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedSuperDistributors = useMemo(
+    () => filteredSuperDistributors.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredSuperDistributors]
+  );
+
+  const activeCount = superDistributors.filter((distributor) => distributor.status === "Active").length;
+  const photoCount = superDistributors.filter((distributor) => distributor.photo?.trim()).length;
+  const emailCount = superDistributors.filter((distributor) => distributor.orderEmail?.trim()).length;
+  const visibleStart = filteredSuperDistributors.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredSuperDistributors.length);
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      contactPerson: "",
+      contactNumber: "",
+      orderEmail: "",
+      photo: ""
+    });
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
     if (!formData.name.trim() || !formData.contactPerson.trim() || !formData.contactNumber.trim() || !formData.orderEmail.trim()) {
-      setMsg({ type: "error", text: "All fields are required" });
+      setMsg({ type: "error", text: "Name, contact person, contact number, and order email are required." });
       return;
     }
 
     try {
       if (editingId) {
         await superDistributorAPI.update(editingId, formData);
-        setMsg({ type: "success", text: "Super distributor updated successfully" });
+        setMsg({ type: "success", text: "Super distributor updated successfully." });
       } else {
         await superDistributorAPI.create(formData);
-        setMsg({ type: "success", text: "Super distributor added successfully" });
+        setMsg({ type: "success", text: "Super distributor created successfully." });
       }
-      fetchData();
+
+      await fetchSuperDistributors();
+      resetForm();
       setShowForm(false);
-      setEditingId(null);
-      setFormData({ name: "", contactPerson: "", contactNumber: "", orderEmail: "", photo: "" });
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save super distributor" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save super distributor." });
     }
   };
 
-  const handleEdit = (dist: SuperDistributor) => {
-    setEditingId(dist.id);
-    setFormData({ name: dist.name, contactPerson: dist.contactPerson, contactNumber: dist.contactNumber, orderEmail: dist.orderEmail, photo: dist.photo || "" });
+  const handleEdit = (distributor: SuperDistributorRecord) => {
+    setEditingId(distributor.id);
+    setFormData({
+      name: distributor.name,
+      contactPerson: distributor.contactPerson,
+      contactNumber: distributor.contactNumber,
+      orderEmail: distributor.orderEmail,
+      photo: distributor.photo || ""
+    });
     setShowForm(true);
   };
 
   const handleToggleStatus = async (id: number) => {
     try {
       await superDistributorAPI.toggleStatus(id);
-      fetchData();
-      setMsg({ type: "success", text: "Status updated successfully" });
+      setMsg({ type: "success", text: "Super distributor status updated successfully." });
+      await fetchSuperDistributors();
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to update status" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to update super distributor status." });
     }
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Delete this super distributor?")) {
+      return;
+    }
+
     try {
       await superDistributorAPI.delete(id);
-      fetchData();
-      setMsg({ type: "success", text: "Super distributor deleted successfully" });
+      setMsg({ type: "success", text: "Super distributor deleted successfully." });
+      await fetchSuperDistributors();
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete super distributor" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete super distributor." });
     }
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><Truck size={14} /> Top-tier supply</span>
           <h2 className="lm-page-title"><Truck size={22} /> Manage Super Distributors</h2>
-          <p className="lm-page-subtitle">Add and manage super distributor accounts</p>
+          <p className="lm-page-subtitle">
+            Maintain super distributor accounts with a cleaner operational layout, proper status handling, and no placeholder upload actions.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Account visibility</span>
+            <span className="opw-hero-pill">Contact readiness</span>
+            <span className="opw-hero-pill">Status control</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Total Accounts</span>
+            <strong>{superDistributors.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Active</span>
+            <strong>{activeCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Order Emails</span>
+            <strong>{emailCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Photo Linked</span>
+            <strong>{photoCount}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-        <div className="lm-field" style={{ maxWidth: "200px" }}>
-          <label className="lm-label">Country</label>
-          <select className="lm-select" value={filters.country} onChange={e => setFilters({ ...filters, country: e.target.value })}>
-            <option value="">All Countries</option>
-            <option value="India">India</option>
-          </select>
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Truck size={18} />
+            <div>
+              <h3>Browse Super Distributors</h3>
+              <p>Search across account and contact details, or use one status filter when you need a tighter operational view.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{filteredSuperDistributors.length} visible</span>
         </div>
-      </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Plus size={16} /> Add
-        </button>
-        <button style={{ padding: "0.75rem 1.5rem", backgroundColor: "#3b82f6", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Plus size={16} /> Bulk Upload
-        </button>
-        <button style={{ padding: "0.75rem 1.5rem", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Trash2 size={16} /> Delete
-        </button>
-      </div>
-
-      {/* Search Bar */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <div className="lm-field" style={{ flex: 1 }}>
-          <div style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-            <input type="text" className="lm-input" placeholder="Search by name, contact..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ paddingLeft: "2.5rem" }} />
+        <div className="opw-form-grid">
+          <div className="lm-field opw-form-span-2">
+            <label className="lm-label">Search</label>
+            <input
+              type="text"
+              className="lm-input"
+              placeholder="Search by account, contact, email, or status"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="lm-field">
+            <label className="lm-label">Status</label>
+            <select
+              className="lm-select"
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div className="opw-form-actions">
+            <button type="button" className="opw-primary-btn" onClick={() => setShowForm((value) => !value)}>
+              <Plus size={16} />
+              {showForm ? "Hide Form" : "Add Super Distributor"}
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={() => void fetchSuperDistributors()} disabled={loading}>
+              <RefreshCcw size={16} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              type="button"
+              className="opw-secondary-btn"
+              onClick={() => {
+                setSearchTerm("");
+                setStatusFilter("");
+                setCurrentPage(1);
+              }}
+            >
+              Clear
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Add Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit" : "Add"} Super Distributor</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <Plus size={18} />
+              <div>
+                <h3>{editingId ? "Edit Super Distributor" : "Create Super Distributor"}</h3>
+                <p>Capture the account owner, contact line, commercial email, and optional photo URL in one cleaner form.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="opw-form-grid">
             <div className="lm-field">
               <label className="lm-label">Super Distributor Name</label>
-              <input type="text" className="lm-input" placeholder="Enter name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter super distributor name"
+                value={formData.name}
+                onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">Contact Person</label>
-              <input type="text" className="lm-input" placeholder="Enter name" value={formData.contactPerson} onChange={e => setFormData({ ...formData, contactPerson: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter contact person"
+                value={formData.contactPerson}
+                onChange={(event) => setFormData((current) => ({ ...current, contactPerson: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">Contact Number</label>
-              <input type="text" className="lm-input" placeholder="Enter number" value={formData.contactNumber} onChange={e => setFormData({ ...formData, contactNumber: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter contact number"
+                value={formData.contactNumber}
+                onChange={(event) => setFormData((current) => ({ ...current, contactNumber: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">Order Email</label>
-              <input type="email" className="lm-input" placeholder="Enter email" value={formData.orderEmail} onChange={e => setFormData({ ...formData, orderEmail: e.target.value })} />
+              <input
+                type="email"
+                className="lm-input"
+                placeholder="Enter order email"
+                value={formData.orderEmail}
+                onChange={(event) => setFormData((current) => ({ ...current, orderEmail: event.target.value }))}
+              />
             </div>
-            <div className="lm-field">
-              <label className="lm-label">Photo Upload</label>
-              <input type="file" className="lm-input" accept="image/*" />
+            <div className="lm-field opw-form-span-2">
+              <label className="lm-label">Photo URL</label>
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Paste an optional photo URL"
+                value={formData.photo}
+                onChange={(event) => setFormData((current) => ({ ...current, photo: event.target.value }))}
+              />
             </div>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button onClick={handleAdd} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>{editingId ? "Update" : "Add"} Super Distributor</button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setFormData({ name: "", contactPerson: "", contactNumber: "", orderEmail: "", photo: "" }); }} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#e2e8f0", color: "#475569", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <div className="opw-form-actions">
+              <button type="button" className="opw-primary-btn" onClick={() => void handleSave()}>
+                {editingId ? "Update Account" : "Save Account"}
+              </button>
+              <button
+                type="button"
+                className="opw-secondary-btn"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Super Distributors ({superDistributors.length} total) {loading && <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Loading...</span>}</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Truck size={18} />
+            <div>
+              <h3>Super Distributor Directory</h3>
+              <p>Review master accounts, commercial contacts, and current account status from a clearer operational table.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{loading ? "Loading..." : "Live Accounts"}</span>
+        </div>
+
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredSuperDistributors.length} accounts</span>
+          <span>{emailCount} order emails configured</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table opw-admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center", width: "40px" }}>#</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Action</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Super Distributor Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Contact Person</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Contact Number</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Order Email</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Status</th>
+              <tr>
+                <th>Account</th>
+                <th>Contact Person</th>
+                <th>Contact Number</th>
+                <th>Order Email</th>
+                <th>Photo</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {superDistributors.map((dist, idx) => (
-                <tr key={dist.id} style={{ borderBottom: "1px solid #e2e8f0" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#64748b", fontSize: "0.875rem" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem", display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(dist)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#0c4a6e" }}>
-                      <Edit2 size={12} /> Edit
-                    </button>
-                    <button onClick={() => handleDelete(dist.id)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#7f1d1d" }}>
-                      <Trash2 size={12} /> Del
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="opw-empty">
+                      <h4>Loading super distributors</h4>
+                      <p>Pulling the latest super distributor account list.</p>
+                    </div>
                   </td>
-                  <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 600 }}>{dist.name}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{dist.contactPerson || "—"}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem", fontFamily: "monospace" }}>{dist.contactNumber || "—"}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis" }}>{dist.orderEmail || "—"}</td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem" }}>
-                    <button onClick={() => handleToggleStatus(dist.id)} style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "none", border: "none", cursor: "pointer" }}>
-                      {dist.status === "Active" ? <ToggleRight size={18} color="#22c55e" /> : <ToggleLeft size={18} color="#94a3b8" />}
-                      <span style={{ color: dist.status === "Active" ? "#166534" : "#64748b", fontWeight: 600, fontSize: "0.75rem" }}>{dist.status}</span>
-                    </button>
+                </tr>
+              ) : paginatedSuperDistributors.length === 0 ? (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="opw-empty">
+                      <h4>No super distributors match this view</h4>
+                      <p>Adjust the search or filters, or create a new account to expand the supply network.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedSuperDistributors.map((distributor) => (
+                <tr key={distributor.id}>
+                  <td>
+                    <div className="opw-entity">
+                      <strong>{distributor.name}</strong>
+                      <small>Account #{distributor.id}</small>
+                    </div>
+                  </td>
+                  <td>{distributor.contactPerson || "—"}</td>
+                  <td>{distributor.contactNumber || "—"}</td>
+                  <td>{distributor.orderEmail || "—"}</td>
+                  <td>{distributor.photo ? "Photo linked" : "No photo"}</td>
+                  <td>
+                    <span className={`opw-status-badge ${getStatusTone(distributor.status)}`}>
+                      {distributor.status || "Unknown"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="opw-row-actions">
+                      <button type="button" className="opw-row-btn is-info" onClick={() => handleEdit(distributor)}>
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                      <button type="button" className="opw-row-btn is-muted" onClick={() => void handleToggleStatus(distributor.id)}>
+                        {distributor.status === "Active" ? "Deactivate" : "Activate"}
+                      </button>
+                      <button type="button" className="opw-row-btn is-danger" onClick={() => void handleDelete(distributor.id)}>
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -222,16 +441,31 @@ export default function ManageSuperDistributor() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
-          <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === 1 ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === 1 ? "default" : "pointer" }}>Prev</button>
-          {Array.from({ length: Math.ceil(superDistributors.length / itemsPerPage) }, (_, i) => (
-            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === i + 1 ? "#6366f1" : "#f1f5f9", color: currentPage === i + 1 ? "white" : "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: "pointer" }}>
-              {i + 1}
-            </button>
-          ))}
-          <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === Math.ceil(superDistributors.length / itemsPerPage)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === Math.ceil(superDistributors.length / itemsPerPage) ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === Math.ceil(superDistributors.length / itemsPerPage) ? "default" : "pointer" }}>Next</button>
-        </div>
+        {filteredSuperDistributors.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

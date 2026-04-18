@@ -1,27 +1,41 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Eye, CheckCircle, AlertCircle, Search, ToggleLeft, ToggleRight, Tag } from "lucide-react";
-import { customerSubCategoryAPI, customerCategoryAPI } from "../../services/apiService";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Plus,
+  RefreshCcw,
+  Tag,
+  Trash2
+} from "lucide-react";
+import { customerCategoryAPI, customerSubCategoryAPI } from "../../services/apiService";
+import "./OrderProductWorkspace.css";
+import { buildSearchText, extractApiList, getStatusTone } from "./orderProductWorkspaceHelpers";
 
-interface CustomerSubCategory {
+interface CustomerSubCategoryRecord {
   id: number;
   categoryId: number;
   name: string;
   description?: string;
-  status: "Active" | "Inactive";
+  status?: "Active" | "Inactive";
 }
 
-interface Category {
+interface CategoryOption {
   id: number;
   name: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function CustomerSubCategory() {
-  const [subCategories, setSubCategories] = useState<CustomerSubCategory[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<CustomerSubCategoryRecord[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25;
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -32,183 +46,392 @@ export default function CustomerSubCategory() {
   });
 
   useEffect(() => {
-    fetchCategories();
-    fetchData();
-  }, [currentPage]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await customerCategoryAPI.getAll(1, 1000);
-      setCategories(response.data || []);
-    } catch (error: any) {
-      console.error("Failed to fetch categories:", error);
-    }
-  };
+    void fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await customerSubCategoryAPI.getAll(currentPage, itemsPerPage);
-      setSubCategories(response.data || []);
-      setLoading(false);
+      const [subCategoryResponse, categoryResponse] = await Promise.all([
+        customerSubCategoryAPI.getAll(1, 1000),
+        customerCategoryAPI.getAll(1, 1000)
+      ]);
+
+      setSubCategories(extractApiList<CustomerSubCategoryRecord>(subCategoryResponse.data).rows);
+      setCategories(extractApiList<CategoryOption>(categoryResponse.data).rows);
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to fetch sub categories" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to load customer sub categories." });
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleAdd = async () => {
+  const categoryMap = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  );
+
+  const filteredSubCategories = useMemo(
+    () => subCategories.filter((subCategory) => {
+      const matchesCategory = !categoryFilter || String(subCategory.categoryId) === categoryFilter;
+      const matchesSearch = buildSearchText(
+        subCategory.name,
+        subCategory.description,
+        categoryMap.get(subCategory.categoryId),
+        subCategory.status
+      ).includes(searchTerm.toLowerCase());
+
+      return matchesCategory && matchesSearch;
+    }),
+    [categoryFilter, categoryMap, searchTerm, subCategories]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubCategories.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedSubCategories = useMemo(
+    () => filteredSubCategories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredSubCategories]
+  );
+
+  const activeCount = subCategories.filter((subCategory) => subCategory.status === "Active").length;
+  const linkedCategoryCount = new Set(subCategories.map((subCategory) => subCategory.categoryId)).size;
+  const describedCount = subCategories.filter((subCategory) => subCategory.description?.trim()).length;
+  const visibleStart = filteredSubCategories.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredSubCategories.length);
+
+  const resetForm = () => {
+    setFormData({
+      categoryId: "",
+      name: "",
+      description: ""
+    });
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
     if (!formData.categoryId || !formData.name.trim()) {
-      setMsg({ type: "error", text: "Category and name are required" });
+      setMsg({ type: "error", text: "Category and sub category name are required." });
       return;
     }
 
+    const payload = {
+      categoryId: Number(formData.categoryId),
+      name: formData.name,
+      description: formData.description
+    };
+
     try {
-      const submitData = { ...formData, categoryId: parseInt(formData.categoryId) };
       if (editingId) {
-        await customerSubCategoryAPI.update(editingId, submitData);
-        setMsg({ type: "success", text: "Sub category updated successfully" });
+        await customerSubCategoryAPI.update(editingId, payload);
+        setMsg({ type: "success", text: "Customer sub category updated successfully." });
       } else {
-        await customerSubCategoryAPI.create(submitData);
-        setMsg({ type: "success", text: "Sub category added successfully" });
+        await customerSubCategoryAPI.create(payload);
+        setMsg({ type: "success", text: "Customer sub category created successfully." });
       }
-      fetchData();
+
+      await fetchData();
+      resetForm();
       setShowForm(false);
-      setEditingId(null);
-      setFormData({ categoryId: "", name: "", description: "" });
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save sub category" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save customer sub category." });
     }
   };
 
-  const handleEdit = (sub: CustomerSubCategory) => {
-    setEditingId(sub.id);
-    setFormData({ categoryId: sub.categoryId.toString(), name: sub.name, description: sub.description || "" });
+  const handleEdit = (subCategory: CustomerSubCategoryRecord) => {
+    setEditingId(subCategory.id);
+    setFormData({
+      categoryId: String(subCategory.categoryId),
+      name: subCategory.name,
+      description: subCategory.description || ""
+    });
     setShowForm(true);
   };
 
   const handleToggleStatus = async (id: number) => {
     try {
       await customerSubCategoryAPI.toggleStatus(id);
-      fetchData();
-      setMsg({ type: "success", text: "Status updated successfully" });
+      setMsg({ type: "success", text: "Customer sub category status updated successfully." });
+      await fetchData();
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to update status" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to update customer sub category status." });
     }
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Delete this customer sub category?")) {
+      return;
+    }
+
     try {
       await customerSubCategoryAPI.delete(id);
-      fetchData();
-      setMsg({ type: "success", text: "Sub category deleted successfully" });
+      setMsg({ type: "success", text: "Customer sub category deleted successfully." });
+      await fetchData();
     } catch (error: any) {
-      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete sub category" });
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete customer sub category." });
     }
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><Tag size={14} /> Retailer segmentation</span>
           <h2 className="lm-page-title"><Tag size={22} /> Customer Sub Categories</h2>
-          <p className="lm-page-subtitle">Further classify retailers under main customer categories</p>
+          <p className="lm-page-subtitle">
+            Build cleaner second-level customer segmentation with proper category linking, clearer browsing, and reliable row actions.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Parent category mapping</span>
+            <span className="opw-hero-pill">Slim filtering</span>
+            <span className="opw-hero-pill">Status control</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Total Sub Categories</span>
+            <strong>{subCategories.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Active</span>
+            <strong>{activeCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Linked Categories</span>
+            <strong>{linkedCategoryCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Described</span>
+            <strong>{describedCount}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Plus size={16} /> Add
-        </button>
-        <button style={{ padding: "0.75rem 1.5rem", backgroundColor: "#ef4444", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Trash2 size={16} /> Delete
-        </button>
-      </div>
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Tag size={18} />
+            <div>
+              <h3>Browse Sub Categories</h3>
+              <p>Search the segment tree or narrow the view to one customer category when you need faster review.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{filteredSubCategories.length} visible</span>
+        </div>
 
-      {/* Search Bar */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <div className="lm-field" style={{ flex: 1 }}>
-          <div style={{ position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-            <input type="text" className="lm-input" placeholder="Search sub categories..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ paddingLeft: "2.5rem" }} />
+        <div className="opw-form-grid">
+          <div className="lm-field opw-form-span-2">
+            <label className="lm-label">Search</label>
+            <input
+              type="text"
+              className="lm-input"
+              placeholder="Search by sub category, description, category, or status"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <div className="lm-field">
+            <label className="lm-label">Category Filter</label>
+            <select
+              className="lm-select"
+              value={categoryFilter}
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="opw-form-actions">
+            <button type="button" className="opw-primary-btn" onClick={() => setShowForm((value) => !value)}>
+              <Plus size={16} />
+              {showForm ? "Hide Form" : "Add Sub Category"}
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={() => void fetchData()} disabled={loading}>
+              <RefreshCcw size={16} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              type="button"
+              className="opw-secondary-btn"
+              onClick={() => {
+                setSearchTerm("");
+                setCategoryFilter("");
+                setCurrentPage(1);
+              }}
+            >
+              Clear
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Add Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit" : "Add"} Sub Category</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <Plus size={18} />
+              <div>
+                <h3>{editingId ? "Edit Customer Sub Category" : "Create Customer Sub Category"}</h3>
+                <p>Keep retailer segments structured by linking each sub category back to a clear customer category.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="opw-form-grid">
             <div className="lm-field">
-              <label className="lm-label">Category (linked with Customer Categories)</label>
-              <select className="lm-select" value={formData.categoryId} onChange={e => setFormData({ ...formData, categoryId: e.target.value })}>
-                <option value="">Select Category</option>
-                {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+              <label className="lm-label">Parent Category</label>
+              <select
+                className="lm-select"
+                value={formData.categoryId}
+                onChange={(event) => setFormData((current) => ({ ...current, categoryId: event.target.value }))}
+              >
+                <option value="">Select category</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="lm-field">
               <label className="lm-label">Sub Category Name</label>
-              <input type="text" className="lm-input" placeholder="Enter sub category name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter customer sub category name"
+                value={formData.name}
+                onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
+              />
             </div>
-            <div className="lm-field" style={{ gridColumn: "1 / -1" }}>
+            <div className="lm-field opw-form-span-2">
               <label className="lm-label">Description</label>
-              <textarea className="lm-input" placeholder="Enter description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} style={{ minHeight: "80px" }}></textarea>
+              <textarea
+                className="lm-input"
+                rows={4}
+                placeholder="Add a short description"
+                value={formData.description}
+                onChange={(event) => setFormData((current) => ({ ...current, description: event.target.value }))}
+              />
             </div>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button onClick={handleAdd} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>{editingId ? "Update" : "Add"} Sub Category</button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setFormData({ categoryId: "", name: "", description: "" }); }} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#e2e8f0", color: "#475569", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <div className="opw-form-actions">
+              <button type="button" className="opw-primary-btn" onClick={() => void handleSave()}>
+                {editingId ? "Update Sub Category" : "Save Sub Category"}
+              </button>
+              <button
+                type="button"
+                className="opw-secondary-btn"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Sub Categories ({subCategories.length} total) {loading && <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Loading...</span>}</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Tag size={18} />
+            <div>
+              <h3>Sub Category Directory</h3>
+              <p>Review the full customer segmentation tree with direct visibility into parent categories and current status.</p>
+            </div>
+          </div>
+          <span className={`opw-panel-badge ${activeCount > 0 ? "is-success" : ""}`}>{loading ? "Loading..." : "Live Data"}</span>
+        </div>
+
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredSubCategories.length} sub categories</span>
+          <span>{linkedCategoryCount} linked categories</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table opw-admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center", width: "40px" }}>No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Category</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Sub Category</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Description</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Action</th>
+              <tr>
+                <th>Category</th>
+                <th>Sub Category</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {subCategories.map((sub, idx) => (
-                <tr key={sub.id} style={{ borderBottom: "1px solid #e2e8f0" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#64748b", fontSize: "0.875rem" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 600 }}>{categories.find(c => c.id === sub.categoryId)?.name || "—"}</td>
-                  <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 600 }}>{sub.name}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{sub.description || "—"}</td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem" }}>
-                    <button onClick={() => handleToggleStatus(sub.id)} style={{ display: "flex", alignItems: "center", gap: "0.5rem", background: "none", border: "none", cursor: "pointer" }}>
-                      {sub.status === "Active" ? <ToggleRight size={18} color="#22c55e" /> : <ToggleLeft size={18} color="#94a3b8" />}
-                      <span style={{ color: sub.status === "Active" ? "#166534" : "#64748b", fontWeight: 600, fontSize: "0.75rem" }}>{sub.status}</span>
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="opw-empty">
+                      <h4>Loading customer sub categories</h4>
+                      <p>Pulling the latest segmentation records.</p>
+                    </div>
                   </td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem", display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(sub)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#0c4a6e" }}>
-                      <Edit2 size={12} /> Edit
-                    </button>
-                    <button onClick={() => handleDelete(sub.id)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#7f1d1d" }}>
-                      <Trash2 size={12} /> Del
-                    </button>
-                    <button style={{ padding: "0.4rem 0.8rem", backgroundColor: "#e0e7ff", border: "1px solid #6366f1", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#4f46e5" }}>
-                      <Eye size={12} /> View
-                    </button>
+                </tr>
+              ) : paginatedSubCategories.length === 0 ? (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="opw-empty">
+                      <h4>No customer sub categories match this view</h4>
+                      <p>Clear the search or create a new sub category to expand your customer segmentation.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedSubCategories.map((subCategory) => (
+                <tr key={subCategory.id}>
+                  <td>{categoryMap.get(subCategory.categoryId) || "Unlinked"}</td>
+                  <td>
+                    <div className="opw-entity">
+                      <strong>{subCategory.name}</strong>
+                      <small>Sub category #{subCategory.id}</small>
+                    </div>
+                  </td>
+                  <td>{subCategory.description || "No description added yet."}</td>
+                  <td>
+                    <span className={`opw-status-badge ${getStatusTone(subCategory.status)}`}>
+                      {subCategory.status || "Unknown"}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="opw-row-actions">
+                      <button type="button" className="opw-row-btn is-info" onClick={() => handleEdit(subCategory)}>
+                        <Edit2 size={14} />
+                        Edit
+                      </button>
+                      <button type="button" className="opw-row-btn is-muted" onClick={() => void handleToggleStatus(subCategory.id)}>
+                        {subCategory.status === "Active" ? "Deactivate" : "Activate"}
+                      </button>
+                      <button type="button" className="opw-row-btn is-danger" onClick={() => void handleDelete(subCategory.id)}>
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -216,16 +439,31 @@ export default function CustomerSubCategory() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
-          <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === 1 ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === 1 ? "default" : "pointer" }}>Prev</button>
-          {Array.from({ length: Math.ceil(subCategories.length / itemsPerPage) }, (_, i) => (
-            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === i + 1 ? "#6366f1" : "#f1f5f9", color: currentPage === i + 1 ? "white" : "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: "pointer" }}>
-              {i + 1}
-            </button>
-          ))}
-          <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === Math.ceil(subCategories.length / itemsPerPage)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === Math.ceil(subCategories.length / itemsPerPage) ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === Math.ceil(subCategories.length / itemsPerPage) ? "default" : "pointer" }}>Next</button>
-        </div>
+        {filteredSubCategories.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

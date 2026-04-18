@@ -1,17 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
-  Plus,
-  Minus,
-  Search,
-  Save,
-  CheckCircle,
   AlertCircle,
-  History,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   Filter,
-  Package
+  History,
+  Minus,
+  Package,
+  Plus,
+  RefreshCcw,
+  Save,
+  Search,
+  X
 } from "lucide-react";
 import API_BASE from "../api";
+import "./ManageProductStock.css";
 
 interface ProductVariant {
   id: number;
@@ -54,46 +59,105 @@ interface StockHistory {
   distributor: { name: string } | null;
 }
 
+interface StockTableRow {
+  stockId: number;
+  productId: number;
+  variantId: number;
+  distributorId: number | null;
+  productName: string;
+  variantName: string;
+  distributorName: string;
+  availableStocks: number;
+  sku: string;
+  category: string;
+  bulkType: string;
+  perBoxPiece: number;
+  retailerSellingPrice: number;
+  mrp: number;
+  manufacturingCost: number;
+  unit: string;
+}
+
+const ITEMS_PER_PAGE = 25;
+
+const INITIAL_STOCK_FORM = {
+  productId: 0,
+  variantId: 0,
+  distributorId: 0,
+  quantity: "",
+  changeType: "Add" as "Add" | "Less"
+};
+
+const getStockTone = (quantity: number) => {
+  if (quantity <= 0) {
+    return "empty";
+  }
+
+  if (quantity < 10) {
+    return "low";
+  }
+
+  return "healthy";
+};
+
+const getStockLabel = (quantity: number) => {
+  if (quantity <= 0) {
+    return "Out of stock";
+  }
+
+  if (quantity < 10) {
+    return "Low stock";
+  }
+
+  return "Healthy";
+};
+
+const formatHistoryDate = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  })}`;
+};
+
 export default function ManageProductStock() {
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [stocks, setStocks] = useState<ProductStock[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
   const [stockHistory, setStockHistory] = useState<StockHistory[]>([]);
 
-  const [filters, setFilters] = useState({ distributor: "", variantType: "" });
+  const [filters, setFilters] = useState({ distributor: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showStockForm, setShowStockForm] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-
-  const [loading, setLoading] = useState(false);
-
-  // New toggle for "Add New Distributor Stock"
   const [showInitForm, setShowInitForm] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isSavingStock, setIsSavingStock] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
-  const [stockFormData, setStockFormData] = useState({
-    productId: 0,
-    variantId: 0,
-    distributorId: 0,
-    quantity: "",
-    changeType: "Add" as "Add" | "Less",
-    remark: ""
-  });
-
-  const itemsPerPage = 25;
+  const [stockFormData, setStockFormData] = useState(INITIAL_STOCK_FORM);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, []);
 
   const fetchData = async () => {
+    setIsFetching(true);
+
     try {
       const [variantsRes, stocksRes, distRes] = await Promise.all([
         axios.get(`${API_BASE}/product-variants`),
         axios.get(`${API_BASE}/product-stock`),
         axios.get(`${API_BASE}/distributors`)
       ]);
+
       const variantRows = Array.isArray(variantsRes.data) ? variantsRes.data : (variantsRes.data?.data || []);
       const stockRows = Array.isArray(stocksRes.data) ? stocksRes.data : (stocksRes.data?.data || []);
       const distributorRows = Array.isArray(distRes.data) ? distRes.data : (distRes.data?.data || []);
@@ -104,214 +168,502 @@ export default function ManageProductStock() {
       })));
       setStocks(stockRows);
       setDistributors(distributorRows);
+      setMsg((current) => current?.type === "error" ? null : current);
     } catch (err: any) {
       setMsg({ type: "error", text: "Failed to fetch stock data: " + err.message });
+    } finally {
+      setIsFetching(false);
     }
   };
 
   const fetchHistory = async () => {
+    setHistoryLoading(true);
+
     try {
       const res = await axios.get(`${API_BASE}/product-stock/logs`);
-      setStockHistory(res.data);
+      const historyRows = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setStockHistory(historyRows);
     } catch {
       setMsg({ type: "error", text: "Failed to fetch history." });
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
-  // Build the unified table data integrating known stocks
-  const tableData = stocks.map(st => ({
-    stockId: st.id,
-    productId: st.productId,
-    variantId: st.variantId,
-    distributorId: st.distributorId,
-    productName: st.variant?.product?.name || "Unknown",
-    variantName: st.variant?.variantName || "Unknown",
-    distributorName: st.distributor?.name || "No Distributor",
-    availableStocks: st.availableStocks,
-    sku: st.variant?.sku || "",
-    category: st.variant?.product?.category?.name || "",
-    bulkType: st.variant?.bulkType || "",
-    perBoxPiece: st.variant?.perBoxPiece || 0,
-    retailerSellingPrice: st.variant?.retailerSellingPrice || 0,
-    mrp: st.variant?.mrp || 0,
-    manufacturingCost: st.variant?.manufacturingCost || 0,
-    unit: st.variant?.unit || ""
-  }));
+  const tableData = useMemo<StockTableRow[]>(
+    () => stocks.map((stock) => ({
+      stockId: stock.id,
+      productId: stock.productId,
+      variantId: stock.variantId,
+      distributorId: stock.distributorId,
+      productName: stock.variant?.product?.name || "Unknown Product",
+      variantName: stock.variant?.variantName || "Unknown Variant",
+      distributorName: stock.distributor?.name || "Main Warehouse",
+      availableStocks: stock.availableStocks,
+      sku: stock.variant?.sku || "",
+      category: stock.variant?.product?.category?.name || "",
+      bulkType: stock.variant?.bulkType || "",
+      perBoxPiece: stock.variant?.perBoxPiece || 0,
+      retailerSellingPrice: stock.variant?.retailerSellingPrice || 0,
+      mrp: stock.variant?.mrp || 0,
+      manufacturingCost: stock.variant?.manufacturingCost || 0,
+      unit: stock.variant?.unit || ""
+    })),
+    [stocks]
+  );
 
-  const filteredData = tableData.filter(prod => {
-    const matchFilters = (!filters.distributor || prod.distributorId?.toString() === filters.distributor) &&
-      (!filters.variantType || filters.variantType === "All");
-    const matchSearch = prod.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prod.variantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      prod.sku.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchFilters && matchSearch;
-  });
+  const filteredData = useMemo(
+    () => tableData.filter((item) => {
+      const matchesDistributor = !filters.distributor
+        || (filters.distributor === "warehouse"
+          ? !item.distributorId
+          : item.distributorId?.toString() === filters.distributor);
+      const query = searchTerm.trim().toLowerCase();
+      const matchesSearch = !query || [
+        item.productName,
+        item.variantName,
+        item.sku,
+        item.distributorName,
+        item.category
+      ].some((value) => value.toLowerCase().includes(query));
 
-  const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+      return matchesDistributor && matchesSearch;
+    }),
+    [filters.distributor, searchTerm, tableData]
+  );
 
-  const handleOpenStockForm = (item: any, type: "Add" | "Less") => {
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedData = useMemo(
+    () => filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredData]
+  );
+
+  const totalUnitsOnHand = useMemo(
+    () => tableData.reduce((sum, item) => sum + item.availableStocks, 0),
+    [tableData]
+  );
+
+  const lowStockCount = useMemo(
+    () => tableData.filter((item) => item.availableStocks < 10).length,
+    [tableData]
+  );
+
+  const historyInCount = useMemo(
+    () => stockHistory.filter((entry) => entry.type === "Stock In").length,
+    [stockHistory]
+  );
+
+  const historyOutCount = useMemo(
+    () => stockHistory.filter((entry) => entry.type === "Stock Out").length,
+    [stockHistory]
+  );
+
+  const distributorLabel = useMemo(() => {
+    if (!filters.distributor) {
+      return "All distributors";
+    }
+
+    if (filters.distributor === "warehouse") {
+      return "Main Warehouse";
+    }
+
+    return distributors.find((item) => item.id === Number(filters.distributor))?.name || "Selected distributor";
+  }, [distributors, filters.distributor]);
+
+  const selectedVariant = useMemo(
+    () => variants.find((item) => item.id === stockFormData.variantId) || null,
+    [stockFormData.variantId, variants]
+  );
+
+  const selectedDistributor = useMemo(
+    () => distributors.find((item) => item.id === stockFormData.distributorId) || null,
+    [distributors, stockFormData.distributorId]
+  );
+
+  const stockContext = useMemo(
+    () => tableData.find((item) =>
+      item.variantId === stockFormData.variantId &&
+      (item.distributorId || 0) === stockFormData.distributorId
+    ) || null,
+    [stockFormData.distributorId, stockFormData.variantId, tableData]
+  );
+
+  const visibleStart = filteredData.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length);
+
+  const resetStockForm = () => {
+    setStockFormData(INITIAL_STOCK_FORM);
+  };
+
+  const closeStockEditor = () => {
+    setShowStockForm(false);
+    setShowInitForm(false);
+    resetStockForm();
+  };
+
+  const openInitForm = () => {
+    resetStockForm();
+    setShowStockForm(false);
+    setShowInitForm(true);
+  };
+
+  const handleOpenStockForm = (item: StockTableRow, type: "Add" | "Less") => {
     setStockFormData({
       productId: item.productId,
       variantId: item.variantId,
       distributorId: item.distributorId || 0,
       quantity: "",
-      changeType: type,
-      remark: ""
+      changeType: type
     });
     setShowStockForm(true);
     setShowInitForm(false);
   };
 
   const handleSaveStock = async () => {
-    if (!stockFormData.quantity || Number(stockFormData.quantity) <= 0) {
-      alert("Please enter a valid quantity!");
+    const quantity = Number(stockFormData.quantity);
+
+    if (showInitForm && !stockFormData.variantId) {
+      setMsg({ type: "error", text: "Select a variant before initializing stock." });
       return;
     }
 
-    setLoading(true);
+    if (!quantity || quantity <= 0) {
+      setMsg({ type: "error", text: "Enter a valid quantity greater than zero." });
+      return;
+    }
+
+    setIsSavingStock(true);
+
     try {
       await axios.post(`${API_BASE}/product-stock/logs`, {
         type: stockFormData.changeType === "Add" ? "Stock In" : "Stock Out",
-        quantity: stockFormData.quantity,
-        performBy: "Admin", // Should be derived from logged in user ideally
+        quantity,
+        performBy: "Admin",
         productId: stockFormData.productId,
         variantId: stockFormData.variantId,
         distributorId: stockFormData.distributorId || null,
         stockDate: new Date().toISOString()
       });
 
-      setMsg({ type: "success", text: `Stock updated successfully!` });
-      setShowStockForm(false);
-      setShowInitForm(false);
-      fetchData(); // Refresh grid
+      setMsg({
+        type: "success",
+        text: showInitForm ? "Stock initialized successfully." : "Stock updated successfully."
+      });
+      closeStockEditor();
+      await fetchData();
     } catch (err: any) {
       setMsg({ type: "error", text: "Failed to update stock: " + err.message });
     } finally {
-      setLoading(false);
+      setIsSavingStock(false);
     }
   };
 
   const handleViewHistory = async () => {
-    await fetchHistory();
     setShowHistoryModal(true);
+    await fetchHistory();
+  };
+
+  const clearFilters = () => {
+    setFilters({ distributor: "" });
+    setSearchTerm("");
+    setCurrentPage(1);
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade manage-product-stock-page">
+      <div className="mps-hero lm-card">
+        <div className="mps-hero-copy">
+          <div className="mps-kicker">
+            <Package size={16} />
+            Inventory command center
+          </div>
           <h2 className="lm-page-title"><Package size={22} /> Manage Product Stock & Variants</h2>
-          <p className="lm-page-subtitle">Update live inventory via API dynamically integrated with TiDB</p>
+          <p className="lm-page-subtitle">
+            Control warehouse and distributor inventory from one polished workspace with faster search,
+            clearer actions, and easier daily stock operations.
+          </p>
+          <div className="mps-hero-pills">
+            <span className="mps-hero-pill">Live stock visibility</span>
+            <span className="mps-hero-pill">Distributor filtering</span>
+            <span className="mps-hero-pill">Global audit logs</span>
+          </div>
         </div>
-      </div>
 
-      {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Filters</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-          <div className="lm-field">
-            <label className="lm-label">Distributor*</label>
-            <select className="lm-select" value={filters.distributor} onChange={e => setFilters({ ...filters, distributor: e.target.value })}>
-              <option value="">All Distributors</option>
-              {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-            </select>
+        <div className="mps-stats">
+          <div className="mps-stat-card">
+            <span>Live records</span>
+            <strong>{tableData.length.toLocaleString()}</strong>
+          </div>
+          <div className="mps-stat-card">
+            <span>Units on hand</span>
+            <strong>{totalUnitsOnHand.toLocaleString()}</strong>
+          </div>
+          <div className="mps-stat-card">
+            <span>Low stock</span>
+            <strong>{lowStockCount.toLocaleString()}</strong>
+          </div>
+          <div className="mps-stat-card">
+            <span>Distributors</span>
+            <strong>{distributors.length.toLocaleString()}</strong>
           </div>
         </div>
       </div>
 
-      {/* Top Buttons and Search */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button
-          className="lm-btn-primary"
-          onClick={() => { setShowInitForm(true); setShowStockForm(false); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", transition: "all 0.3s ease" }}
-        >
-          <Plus size={16} /> Initialize New Stock
-        </button>
-        <button
-          className="lm-btn-secondary"
-          onClick={handleViewHistory}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", backgroundColor: "#e2e8f0" }}
-        >
-          <History size={16} /> Global Stock Logs
-        </button>
+      {msg && (
+        <div className={`lm-alert mps-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="mps-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
-        <div style={{ marginLeft: "auto", position: "relative", minWidth: "250px" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input
-            type="text"
-            className="lm-input"
-            placeholder="Search SKUs or variants..."
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ paddingLeft: "2.5rem" }}
-          />
+      <div className="mps-control-grid">
+        <div className="mps-filter-card lm-card">
+          <div className="mps-card-head">
+            <div className="mps-card-title">
+              <Filter size={18} />
+              <div>
+                <h3>Filter Inventory</h3>
+                <p>Focus on one distributor or keep the full network in view.</p>
+              </div>
+            </div>
+            <span className="mps-card-badge">{distributorLabel}</span>
+          </div>
+
+          <div className="mps-filter-grid">
+            <div className="lm-field">
+              <label className="lm-label">Distributor</label>
+              <select
+                className="lm-select"
+                value={filters.distributor}
+                onChange={(event) => {
+                  setFilters({ distributor: event.target.value });
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Distributors</option>
+                <option value="warehouse">Main Warehouse</option>
+                {distributors.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="mps-toolbar-card lm-card">
+          <div className="mps-card-head">
+            <div className="mps-card-title">
+              <Search size={18} />
+              <div>
+                <h3>Search & Actions</h3>
+                <p>Search by product, variant, distributor, category, or SKU.</p>
+              </div>
+            </div>
+            <span className="mps-card-badge">{filteredData.length} visible</span>
+          </div>
+
+          <div className="mps-toolbar">
+            <div className="mps-search">
+              <Search size={16} />
+              <div>
+                <span>Search inventory</span>
+                <input
+                  type="text"
+                  className="lm-input"
+                  placeholder="Search product, variant, distributor, or SKU"
+                  value={searchTerm}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mps-toolbar-actions">
+              <button
+                type="button"
+                className="mps-secondary-btn"
+                onClick={() => void fetchData()}
+                disabled={isFetching}
+              >
+                <RefreshCcw size={16} className={isFetching ? "mps-spin" : ""} />
+                {isFetching ? "Refreshing..." : "Refresh"}
+              </button>
+              <button
+                type="button"
+                className="mps-secondary-btn"
+                onClick={() => void handleViewHistory()}
+                disabled={historyLoading}
+              >
+                <History size={16} />
+                {historyLoading && !showHistoryModal ? "Loading..." : "Stock Logs"}
+              </button>
+              <button type="button" className="mps-primary-btn" onClick={openInitForm}>
+                <Plus size={16} />
+                Initialize Stock
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Init Form / Add Stock Modal */}
       {(showStockForm || showInitForm) && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{showInitForm ? "Initialize New Variant Stock" : (stockFormData.changeType === "Add" ? "Add Stock" : "Reduce Stock")}</div>
-          <div className="lm-form-grid">
-            
-            {showInitForm && (
+        <div className="mps-editor-card lm-card">
+          <div className="mps-card-head">
+            <div className="mps-card-title">
+              {showInitForm ? <Plus size={18} /> : stockFormData.changeType === "Add" ? <Plus size={18} /> : <Minus size={18} />}
+              <div>
+                <h3>
+                  {showInitForm
+                    ? "Initialize New Stock Position"
+                    : stockFormData.changeType === "Add"
+                      ? "Add Inventory"
+                      : "Reduce Inventory"}
+                </h3>
+                <p>
+                  {showInitForm
+                    ? "Create a warehouse or distributor stock position for a product variant."
+                    : "Update the selected stock record with a cleaner, more controlled inventory action."}
+                </p>
+              </div>
+            </div>
+
+            <button type="button" className="mps-icon-btn" onClick={closeStockEditor} aria-label="Close stock editor">
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="mps-editor-summary">
+            <div className="mps-summary-pill">
+              <span>Mode</span>
+              <strong>
+                {showInitForm
+                  ? "New stock"
+                  : stockFormData.changeType === "Add"
+                    ? "Stock in"
+                    : "Stock out"}
+              </strong>
+            </div>
+            <div className="mps-summary-pill">
+              <span>Variant</span>
+              <strong>{selectedVariant?.variantName || stockContext?.variantName || "Choose variant"}</strong>
+            </div>
+            <div className="mps-summary-pill">
+              <span>Location</span>
+              <strong>{selectedDistributor?.name || stockContext?.distributorName || "Main Warehouse"}</strong>
+            </div>
+            <div className="mps-summary-pill">
+              <span>Current balance</span>
+              <strong>{stockContext ? `${stockContext.availableStocks} ${stockContext.unit}` : "New position"}</strong>
+            </div>
+          </div>
+
+          <div className="mps-form-grid">
+            {showInitForm ? (
               <>
-                <div className="lm-field lm-col-2">
-                  <label className="lm-label">Select Variant</label>
-                  <select 
-                    className="lm-select" 
-                    onChange={e => {
-                        const variant = variants.find(v => v.id === Number(e.target.value));
-                        setStockFormData({ ...stockFormData, variantId: variant?.id || 0, productId: variant?.productId || 0, changeType: "Add" });
+                <div className="lm-field">
+                  <label className="lm-label">Variant*</label>
+                  <select
+                    className="lm-select"
+                    value={stockFormData.variantId || ""}
+                    onChange={(event) => {
+                      const variant = variants.find((item) => item.id === Number(event.target.value));
+                      setStockFormData((current) => ({
+                        ...current,
+                        variantId: variant?.id || 0,
+                        productId: variant?.productId || 0,
+                        changeType: "Add"
+                      }));
                     }}
                   >
-                    <option value="">-- Choose Variant --</option>
-                    {variants.map(v => <option key={v.id} value={v.id}>{v.variantName} (SKU: {v.sku})</option>)}
+                    <option value="">Choose Variant</option>
+                    {variants.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.variantName} ({item.sku || "No SKU"})
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div className="lm-field lm-col-2">
-                  <label className="lm-label">Select Distributor</label>
-                  <select 
-                    className="lm-select" 
-                    onChange={e => setStockFormData({ ...stockFormData, distributorId: Number(e.target.value) })}
+
+                <div className="lm-field">
+                  <label className="lm-label">Distributor</label>
+                  <select
+                    className="lm-select"
+                    value={stockFormData.distributorId || ""}
+                    onChange={(event) => setStockFormData((current) => ({
+                      ...current,
+                      distributorId: Number(event.target.value) || 0
+                    }))}
                   >
-                    <option value="">-- Main Warehouse (None) --</option>
-                    {distributors.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                    <option value="">Main Warehouse</option>
+                    {distributors.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </>
-            )}
+            ) : (
+              <>
+                <div className="lm-field">
+                  <label className="lm-label">Product / Variant</label>
+                  <input
+                    className="lm-input"
+                    value={`${stockContext?.productName || selectedVariant?.product?.name || "Product"} / ${stockContext?.variantName || selectedVariant?.variantName || "Variant"}`}
+                    readOnly
+                  />
+                </div>
 
-            {!showInitForm && (
-              <div className="lm-field lm-col-4" style={{ marginBottom: "1rem" }}>
-                <p style={{ fontWeight: 600 }}>Modifying Stock For: <span style={{ color: "#6366f1" }}>Variant ID #{stockFormData.variantId}</span> at <span style={{ color: "#6366f1" }}>Distributor #{stockFormData.distributorId}</span></p>
-              </div>
+                <div className="lm-field">
+                  <label className="lm-label">Location</label>
+                  <input
+                    className="lm-input"
+                    value={stockContext?.distributorName || selectedDistributor?.name || "Main Warehouse"}
+                    readOnly
+                  />
+                </div>
+              </>
             )}
 
             <div className="lm-field">
               <label className="lm-label">Quantity*</label>
               <input
                 type="number"
+                min="1"
                 className="lm-input"
-                placeholder="amount"
+                placeholder="Enter quantity"
                 value={stockFormData.quantity}
-                onChange={e => setStockFormData({ ...stockFormData, quantity: e.target.value })}
+                onChange={(event) => setStockFormData((current) => ({ ...current, quantity: event.target.value }))}
               />
             </div>
-            
-            <div className="lm-form-footer lm-col-4" style={{ display: "flex", gap: "1rem" }}>
-              <button className="lm-btn-primary" onClick={handleSaveStock} disabled={loading} style={{ flex: 1 }}>
-                <Save size={14} /> {loading ? "Processing..." : "Confirm & Save"}
+
+            <div className="lm-field">
+              <label className="lm-label">Movement</label>
+              <input
+                className="lm-input"
+                value={showInitForm ? "Stock In" : stockFormData.changeType === "Add" ? "Stock In" : "Stock Out"}
+                readOnly
+              />
+            </div>
+
+            <div className="mps-form-actions">
+              <button type="button" className="mps-primary-btn" onClick={handleSaveStock} disabled={isSavingStock}>
+                <Save size={14} />
+                {isSavingStock ? "Saving..." : "Confirm & Save"}
               </button>
-              <button className="lm-btn-secondary" onClick={() => { setShowStockForm(false); setShowInitForm(false); }} style={{ flex: 1 }}>
+              <button type="button" className="mps-secondary-btn" onClick={closeStockEditor}>
                 Cancel
               </button>
             </div>
@@ -319,86 +671,251 @@ export default function ManageProductStock() {
         </div>
       )}
 
-      {/* Stock History Modal */}
-      {showHistoryModal && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #10b981", backgroundColor: "#f0fdf4" }}>
-          <div className="lm-card-title"><History size={18} /> Global Stock History</div>
-          <div className="lm-table-wrap" style={{ overflowX: "auto", maxHeight: "400px", overflowY: "auto" }}>
-            <table className="lm-table">
-              <thead>
-                <tr style={{ backgroundColor: "#dcfce7", borderBottom: "2px solid #86efac" }}>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Date</th>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Type</th>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Quantity</th>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Product/Variant</th>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Distributor</th>
-                  <th style={{ padding: "1rem", fontWeight: 600, color: "#166534" }}>Performed By</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stockHistory.length === 0 && <tr><td colSpan={6} style={{ textAlign: "center", padding: "1rem" }}>No history found</td></tr>}
-                {stockHistory.map(entry => (
-                  <tr key={entry.id} style={{ backgroundColor: "white", borderBottom: "1px solid #dbeafe" }}>
-                    <td style={{ padding: "1rem" }}>{new Date(entry.stockDate).toLocaleDateString()}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span style={{
-                        padding: "0.2rem 0.6rem", borderRadius: "0.25rem",
-                        backgroundColor: entry.type === "Stock In" ? "#d1fae5" : "#fee2e2",
-                        color: entry.type === "Stock In" ? "#065f46" : "#991b1b"
-                      }}>
-                        {entry.type}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem", fontWeight: 600 }}>{entry.quantity}</td>
-                    <td style={{ padding: "1rem" }}>{entry.product?.name} ({entry.variant?.variantName})</td>
-                    <td style={{ padding: "1rem" }}>{entry.distributor?.name || "Main Warehouse"}</td>
-                    <td style={{ padding: "1rem" }}>{entry.performBy}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="mps-inventory-card lm-card">
+        <div className="mps-card-head">
+          <div className="mps-card-title">
+            <Package size={18} />
+            <div>
+              <h3>Live Dynamic Inventory</h3>
+              <p>Review every stock position, spot low inventory, and update balances in place.</p>
+            </div>
           </div>
-          <button className="lm-btn-secondary" onClick={() => setShowHistoryModal(false)} style={{ marginTop: "1rem", padding: "0.7rem 1.5rem" }}>Close</button>
-        </div>
-      )}
 
-      {/* Grid */}
-      <div className="lm-card">
-        <div className="lm-card-title">Live Dynamic Inventory</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+          <div className="mps-card-badges">
+            <span className="mps-card-badge">{filteredData.length} records</span>
+            <span className="mps-card-badge is-warning">{lowStockCount} low stock</span>
+          </div>
+        </div>
+
+        <div className="mps-table-summary">
+          <span>
+            Showing {visibleStart}-{visibleEnd} of {filteredData.length}
+          </span>
+          <span>{distributorLabel}</span>
+        </div>
+
+        <div className="lm-table-wrap mps-table-wrap">
+          <table className="lm-table mps-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", textAlign: "left", width: "120px" }}>Action</th>
-                <th style={{ padding: "1rem", textAlign: "left" }}>Product / Variant</th>
-                <th style={{ padding: "1rem", textAlign: "left" }}>Distributor</th>
-                <th style={{ padding: "1rem", textAlign: "right" }}>Available Stocks</th>
-                <th style={{ padding: "1rem", textAlign: "left" }}>SKU</th>
+              <tr>
+                <th>Product / Variant</th>
+                <th>Location</th>
+                <th>SKU / Packaging</th>
+                <th className="mps-stock-column">Available Stock</th>
+                <th className="mps-action-column">Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.length === 0 ? (
-                <tr><td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No live stocks setup yet. Click Initialize!</td></tr>
+                <tr>
+                  <td colSpan={5}>
+                    <div className="mps-empty-state">
+                      <h4>
+                        {isFetching && tableData.length === 0
+                          ? "Loading inventory"
+                          : tableData.length === 0
+                            ? "No stock records yet"
+                            : "No records match these filters"}
+                      </h4>
+                      <p>
+                        {isFetching && tableData.length === 0
+                          ? "Fetching live stock records from the server."
+                          : tableData.length === 0
+                            ? "Start by initializing a stock position for a variant and distributor."
+                            : "Try another distributor selection or clear the search to broaden the result set."}
+                      </p>
+                      {isFetching && tableData.length === 0 ? null : tableData.length === 0 ? (
+                        <button type="button" className="mps-primary-btn" onClick={openInitForm}>
+                          <Plus size={16} />
+                          Initialize Stock
+                        </button>
+                      ) : (
+                        <button type="button" className="mps-secondary-btn" onClick={clearFilters}>
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               ) : (
-                paginatedData.map((item) => (
-                  <tr key={item.stockId} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ display: "flex", gap: "0.4rem" }}>
-                        <button className="lm-btn-primary" onClick={() => handleOpenStockForm(item, "Add")} style={{ padding: "0.3rem 0.5rem", fontSize: "0.7rem", backgroundColor: "#10b981", border: "none" }}><Plus size={12}/> In</button>
-                        <button className="lm-btn-secondary" onClick={() => handleOpenStockForm(item, "Less")} style={{ padding: "0.3rem 0.5rem", fontSize: "0.7rem", backgroundColor: "#ef4444", color: "white", border: "none" }}><Minus size={12}/> Out</button>
-                      </div>
-                    </td>
-                    <td style={{ padding: "1rem", fontWeight: 600 }}>{item.productName} ({item.variantName})</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{item.distributorName}</td>
-                    <td style={{ padding: "1rem", textAlign: "right", fontWeight: 600, color: item.availableStocks < 10 ? "#dc2626" : "#16a34a" }}>{item.availableStocks} {item.unit}</td>
-                    <td style={{ padding: "1rem", color: "#64748b" }}>{item.sku}</td>
-                  </tr>
-                ))
+                paginatedData.map((item) => {
+                  const stockTone = getStockTone(item.availableStocks);
+                  const packagingText = item.bulkType
+                    ? `${item.bulkType}${item.perBoxPiece ? ` • ${item.perBoxPiece}/box` : ""}`
+                    : item.unit || "Standard unit";
+
+                  return (
+                    <tr key={item.stockId}>
+                      <td>
+                        <div className="mps-product-cell">
+                          <strong>{item.productName}</strong>
+                          <span>{item.variantName}</span>
+                          <small>{item.category || "Uncategorized product"}</small>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="mps-location-cell">
+                          <strong>{item.distributorName}</strong>
+                          <span>{item.distributorId ? "Distributor inventory" : "Main warehouse"}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="mps-sku-cell">
+                          <code>{item.sku || "No SKU"}</code>
+                          <span>{packagingText}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="mps-stock-cell">
+                          <strong className={`mps-stock-value is-${stockTone}`}>
+                            {item.availableStocks} {item.unit}
+                          </strong>
+                          <span className={`mps-stock-badge is-${stockTone}`}>
+                            {getStockLabel(item.availableStocks)}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="mps-row-actions">
+                          <button
+                            type="button"
+                            className="mps-row-btn mps-row-btn-in"
+                            onClick={() => handleOpenStockForm(item, "Add")}
+                          >
+                            <Plus size={14} />
+                            Stock In
+                          </button>
+                          <button
+                            type="button"
+                            className="mps-row-btn mps-row-btn-out"
+                            onClick={() => handleOpenStockForm(item, "Less")}
+                          >
+                            <Minus size={14} />
+                            Stock Out
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
+
+        {filteredData.length > 0 && (
+          <div className="mps-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="mps-pagination-controls">
+              <button
+                type="button"
+                className="mps-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="mps-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {showHistoryModal && (
+        <div className="lm-modal-overlay" onClick={() => setShowHistoryModal(false)}>
+          <div className="lm-modal-content mps-history-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="lm-modal-header mps-history-header">
+              <div>
+                <h3>Global Stock Logs</h3>
+                <p>Review stock-in and stock-out activity across every location.</p>
+              </div>
+              <button
+                type="button"
+                className="mps-icon-btn"
+                onClick={() => setShowHistoryModal(false)}
+                aria-label="Close stock logs"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="lm-modal-body">
+              <div className="mps-history-stats">
+                <div className="mps-history-stat">
+                  <span>Total logs</span>
+                  <strong>{stockHistory.length}</strong>
+                </div>
+                <div className="mps-history-stat">
+                  <span>Stock in</span>
+                  <strong>{historyInCount}</strong>
+                </div>
+                <div className="mps-history-stat">
+                  <span>Stock out</span>
+                  <strong>{historyOutCount}</strong>
+                </div>
+              </div>
+
+              <div className="lm-table-wrap mps-history-table-wrap">
+                <table className="lm-table mps-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Quantity</th>
+                      <th>Product / Variant</th>
+                      <th>Distributor</th>
+                      <th>Performed By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyLoading ? (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="mps-empty-state is-compact">
+                            <p>Loading stock history...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : stockHistory.length === 0 ? (
+                      <tr>
+                        <td colSpan={6}>
+                          <div className="mps-empty-state is-compact">
+                            <p>No stock history found yet.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      stockHistory.map((entry) => (
+                        <tr key={entry.id}>
+                          <td>{formatHistoryDate(entry.stockDate)}</td>
+                          <td>
+                            <span className={`mps-history-type ${entry.type === "Stock In" ? "is-in" : "is-out"}`}>
+                              {entry.type}
+                            </span>
+                          </td>
+                          <td>{entry.quantity}</td>
+                          <td>{entry.product?.name} ({entry.variant?.variantName})</td>
+                          <td>{entry.distributor?.name || "Main Warehouse"}</td>
+                          <td>{entry.performBy}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

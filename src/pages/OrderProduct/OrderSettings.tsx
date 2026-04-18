@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Settings, Save, CheckCircle, AlertCircle } from "lucide-react";
 import { adminSettingsAPI } from "../../services/apiService";
 import { toast } from "../../components/Toast";
+import "./orderSettings.css";
 
 interface OrderSettings {
   // General Settings
@@ -554,96 +555,56 @@ export default function OrderSettings() {
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
-          <h2 className="lm-page-title"><Settings size={22} /> Order Settings</h2>
-          <p className="lm-page-subtitle">Configure order creation, management, and processing in the system</p>
+    <div className="lm-container lm-fade os-page-shell">
+      <div className="os-header">
+        <div className="os-header-content">
+          <span className="os-eyebrow">Order Control Center</span>
+          <h2><Settings size={22} /> Order Settings</h2>
+          <p>Configure order creation, management, and processing in a clean, structured workspace.</p>
         </div>
-        <button 
-          className="lm-btn-primary" 
-          onClick={handleSave} 
-          disabled={saving}
-          style={{
-            padding: "0.75rem 1.5rem",
-            backgroundColor: saving ? "#cbd5e1" : "#6366f1",
-            color: "white",
-            border: "none",
-            borderRadius: "0.5rem",
-            cursor: saving ? "not-allowed" : "pointer",
-            fontWeight: 600,
-            transition: "all 0.3s ease",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "0.9rem"
-          }}
-          onMouseEnter={(e) => {
-            if (!saving) {
-              e.currentTarget.style.backgroundColor = "#4f46e5";
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 8px 16px rgba(99, 102, 241, 0.3)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!saving) {
-              e.currentTarget.style.backgroundColor = "#6366f1";
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "none";
-            }
-          }}
-        >
+        <button className="os-save-button" onClick={handleSave} disabled={saving}>
           <Save size={16} /> {saving ? "Saving..." : "Save Settings"}
         </button>
       </div>
 
+      <div className="os-hero-card">
+        <div className="os-hero-copy">
+          <span className="os-eyebrow">System-wide configuration</span>
+          <h3>Control order behavior, customer flow, and product rules in one place.</h3>
+          <p>
+            This layout groups settings into focused sections so teams can scan faster and change with confidence.
+          </p>
+        </div>
+        <div className="os-hero-stats">
+          <div className="os-stat-card">
+            <span>Tabs</span>
+            <strong>9</strong>
+          </div>
+          <div className="os-stat-card">
+            <span>Core Fields</span>
+            <strong>14+</strong>
+          </div>
+          <div className="os-stat-card">
+            <span>Status</span>
+            <strong>Ready</strong>
+          </div>
+        </div>
+      </div>
+
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+        <div className={`os-alert ${msg.type === "error" ? "os-alert-error" : "os-alert-success"}`}>
           {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+          <button className="os-alert-close" onClick={() => setMsg(null)}>&times;</button>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div style={{ 
-          display: "flex", 
-          gap: "0.5rem", 
-          flexWrap: "wrap", 
-          borderBottom: "2px solid #e2e8f0", 
-          paddingBottom: "1rem",
-          overflow: "auto"
-        }}>
+      <div className="os-card os-tabs-card">
+        <div className="os-tabs-nav">
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              className={`os-tab-button ${activeTab === tab.id ? "active" : ""}`}
               onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: "0.7rem 1.2rem",
-                backgroundColor: activeTab === tab.id ? "#6366f1" : "transparent",
-                color: activeTab === tab.id ? "white" : "#64748b",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: "pointer",
-                fontWeight: activeTab === tab.id ? 600 : 500,
-                fontSize: "0.8rem",
-                transition: "all 0.3s ease",
-                whiteSpace: "nowrap",
-                boxShadow: activeTab === tab.id ? "0 2px 8px rgba(99, 102, 241, 0.2)" : "none",
-                borderBottom: activeTab === tab.id ? "2px solid #4f46e5" : "none"
-              }}
-              onMouseEnter={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.backgroundColor = "#e0e7ff";
-                  e.currentTarget.style.color = "#4f46e5";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "#64748b";
-                }
-              }}
             >
               {tab.label}
             </button>
@@ -651,34 +612,41 @@ export default function OrderSettings() {
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="lm-card" style={{ marginBottom: "2rem", animation: "fadeIn 0.3s ease" }}>
+      <div className="os-tab-content os-card">
+        <div className="os-tab-meta">
+          <span>{tabs.find((tab) => tab.id === activeTab)?.label}</span>
+          <strong>Active configuration</strong>
+        </div>
         {renderTabContent()}
       </div>
 
-      {/* Benefits Section */}
-      <div className="lm-card" style={{ backgroundColor: "#f0fdf4", borderLeft: "4px solid #10b981" }}>
-        <div className="lm-card-title" style={{ color: "#047857" }}>✓ Benefits</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
+      <div className="os-benefits-card os-card">
+        <div className="os-section-head">
           <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Flexible Order Control</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Customize every aspect of order creation and management</p>
+            <span className="os-section-kicker">Why this matters</span>
+            <h3>Built to keep order operations clear and consistent</h3>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Distributor-Retailer Support</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Support complex B2B business models</p>
+        </div>
+        <div className="os-benefits-grid">
+          <div className="os-benefit-item">
+            <h4>Flexible order control</h4>
+            <p>Customize every aspect of order creation and management.</p>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Better Sales Team Management</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Manage field sales teams effectively</p>
+          <div className="os-benefit-item">
+            <h4>Distributor-retailer support</h4>
+            <p>Support complex B2B business models with cleaner rules.</p>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Customizable Data Collection</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Control which retailer information to collect</p>
+          <div className="os-benefit-item">
+            <h4>Better sales team management</h4>
+            <p>Keep field workflows organized and easier to maintain.</p>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Improved Order Workflow</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Streamline order processes for field sales</p>
+          <div className="os-benefit-item">
+            <h4>Customizable data collection</h4>
+            <p>Control which retailer information you collect from the app.</p>
+          </div>
+          <div className="os-benefit-item">
+            <h4>Improved order workflow</h4>
+            <p>Streamline processing with a more guided settings experience.</p>
           </div>
         </div>
       </div>

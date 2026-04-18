@@ -4,6 +4,7 @@ import {
   Plus, Upload, Trash2, Edit2, Filter, Search, Save, CheckCircle, AlertCircle, Building2
 } from "lucide-react";
 import API_BASE from "../api";
+import "./ManageCities.css";
 
 interface State { id: number; name: string; country: { name: string } }
 interface City {
@@ -58,20 +59,21 @@ export default function ManageCities() {
 
   const paginatedCities = filteredCities.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredCities.length / itemsPerPage);
+  const activeCities = cities.filter(city => city.status === "Active").length;
+  const selectedVisible = checkedRows.filter(id => filteredCities.some(city => city.id === id)).length;
 
   const handleSave = async () => {
     if (!formData.name || !formData.stateId) { alert("All fields are required!"); return; }
     setLoading(true);
     try {
       if (editingId) {
-        const res = await axios.put(`${API_BASE}/geo/cities/${editingId}`, formData);
-        setCities(cities.map(c => c.id === editingId ? { ...c, ...res.data, state: c.state } : c));
+        await axios.put(`${API_BASE}/geo/cities/${editingId}`, formData);
         setMsg({ type: "success", text: "City updated!" });
       } else {
-        const res = await axios.post(`${API_BASE}/geo/cities`, formData);
-        await fetchData();
+        await axios.post(`${API_BASE}/geo/cities`, formData);
         setMsg({ type: "success", text: "City added!" });
       }
+      await fetchData();
       resetForm(); setShowForm(false);
     } catch (err: any) {
       setMsg({ type: "error", text: "Failed to save city: " + err.message });
@@ -105,25 +107,47 @@ export default function ManageCities() {
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade city-page-shell">
+      <div className="city-hero">
+        <div className="city-hero-copy">
+          <span className="city-eyebrow">Location Operations</span>
           <h2 className="lm-page-title"><Building2 size={22} /> Manage Cities</h2>
-          <p className="lm-page-subtitle">Dynamic city management via live database — TiDB powered</p>
+          <p className="lm-page-subtitle">Dynamic city management via live database — TiDB powered, cleaner, and easier to scan.</p>
+        </div>
+        <div className="city-hero-stats">
+          <div className="city-stat-card">
+            <span>Total Cities</span>
+            <strong>{cities.length}</strong>
+          </div>
+          <div className="city-stat-card">
+            <span>Active</span>
+            <strong>{activeCities}</strong>
+          </div>
+          <div className="city-stat-card">
+            <span>Selected</span>
+            <strong>{selectedVisible}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+        <div className={`city-alert ${msg.type === "error" ? "city-alert-error" : "city-alert-success"}`}>
           {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+          <button className="city-alert-close" onClick={() => setMsg(null)}>&times;</button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Filters</div>
-        <div className="lm-form-grid">
+      <div className="city-filters-card">
+        <div className="city-card-head">
+          <div className="city-card-title">
+            <Filter size={18} />
+            <div>
+              <h3>Filters</h3>
+              <p>Refine by state to focus on the city records you need.</p>
+            </div>
+          </div>
+        </div>
+        <div className="city-filter-grid">
           <div className="lm-field">
             <label className="lm-label">State</label>
             <select className="lm-select" value={filters.stateId} onChange={e => setFilters({ stateId: e.target.value })}>
@@ -134,28 +158,35 @@ export default function ManageCities() {
         </div>
       </div>
 
-      {/* Top Buttons and Search */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button className="lm-btn-primary" onClick={() => { resetForm(); setShowForm(true); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem" }}>
-          <Plus size={16} /> Add City
-        </button>
-        {checkedRows.length > 0 && (
-          <button onClick={handleBulkDelete} style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", backgroundColor: "#fee2e2", border: "1px solid #fecaca", borderRadius: "0.375rem", cursor: "pointer" }}>
-            <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+      <div className="city-toolbar">
+        <div className="city-toolbar-actions">
+          <button className="city-primary-btn" onClick={() => { resetForm(); setShowForm(true); }}>
+            <Plus size={16} /> Add City
           </button>
-        )}
-        <div style={{ marginLeft: "auto", position: "relative", minWidth: "250px" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input type="text" className="lm-input" placeholder="Search city name..." value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ paddingLeft: "2.5rem" }} />
+          {checkedRows.length > 0 && (
+            <button onClick={handleBulkDelete} className="city-danger-btn">
+              <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+            </button>
+          )}
+        </div>
+        <div className="city-search-wrap">
+          <Search size={16} className="city-search-icon" />
+          <input type="text" className="lm-input city-search-input" placeholder="Search city name..." value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
         </div>
       </div>
 
-      {/* Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit City" : "Add New City"}</div>
+        <div className="city-form-card">
+          <div className="city-card-head city-card-head-form">
+            <div className="city-card-title">
+              <Save size={18} />
+              <div>
+                <h3>{editingId ? "Edit City" : "Add New City"}</h3>
+                <p>Create or update city records with a cleaner and more structured form.</p>
+              </div>
+            </div>
+          </div>
           <div className="lm-form-grid">
             <div className="lm-field lm-col-2">
               <label className="lm-label">City Name*</label>
@@ -176,55 +207,63 @@ export default function ManageCities() {
                 <option value="Inactive">Inactive</option>
               </select>
             </div>
-            <div className="lm-form-footer lm-col-4" style={{ display: "flex", gap: "1rem" }}>
-              <button className="lm-btn-primary" onClick={handleSave} disabled={loading} style={{ flex: 1, padding: "0.7rem 1rem" }}>
+            <div className="city-form-actions lm-col-4">
+              <button className="city-primary-btn" onClick={handleSave} disabled={loading}>
                 <Save size={14} /> {loading ? "Saving..." : "Save"}
               </button>
-              <button className="lm-btn-secondary" onClick={() => { setShowForm(false); resetForm(); }} style={{ flex: 1, padding: "0.7rem 1rem" }}>Cancel</button>
+              <button className="city-secondary-btn" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">City Records ({filteredCities.length} total) — Live DB</div>
+      <div className="city-table-card">
+        <div className="city-card-head city-table-head">
+          <div className="city-card-title">
+            <Building2 size={18} />
+            <div>
+              <h3>City Records ({filteredCities.length} total)</h3>
+              <p>Live DB data with bulk selection, edit, and delete actions.</p>
+            </div>
+          </div>
+          <span className="city-table-badge">Live DB</span>
+        </div>
         <div className="lm-table-wrap">
-          <table className="lm-table">
+          <table className="lm-table city-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", textAlign: "center", width: "50px" }}>
+              <tr>
+                <th className="city-check-col">
                   <input type="checkbox" onChange={e => setCheckedRows(e.target.checked ? cities.map(c => c.id) : [])} checked={checkedRows.length === cities.length && cities.length > 0} />
                 </th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>S.No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>City Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>State</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Country</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Action</th>
+                <th>S.No</th>
+                <th>City Name</th>
+                <th>State</th>
+                <th>Country</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {paginatedCities.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No cities found in database</td></tr>
+                <tr><td colSpan={7} className="city-empty-state">No cities found in database</td></tr>
               ) : (
                 paginatedCities.map((city, idx) => (
-                  <tr key={city.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                  <tr key={city.id}>
+                    <td className="city-check-col">
                       <input type="checkbox" checked={checkedRows.includes(city.id)}
                         onChange={e => setCheckedRows(e.target.checked ? [...checkedRows, city.id] : checkedRows.filter(id => id !== city.id))} />
                     </td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{city.name}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{city.state?.name}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{city.state?.country?.name}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span style={{ padding: "0.3rem 0.7rem", borderRadius: "0.25rem", fontSize: "0.75rem", fontWeight: 600, backgroundColor: city.status === "Active" ? "#d1fae5" : "#fee2e2", color: city.status === "Active" ? "#047857" : "#dc2626" }}>{city.status}</span>
+                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                    <td className="city-name-cell">{city.name}</td>
+                    <td>{city.state?.name}</td>
+                    <td>{city.state?.country?.name}</td>
+                    <td>
+                      <span className={`city-status-pill ${city.status === "Active" ? "is-active" : "is-inactive"}`}>{city.status}</span>
                     </td>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button onClick={() => handleEdit(city)} style={{ padding: "0.4rem 0.7rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}><Edit2 size={14} color="#0284c7" /></button>
-                        <button onClick={() => handleDelete(city.id)} style={{ padding: "0.4rem 0.7rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.375rem", cursor: "pointer" }}><Trash2 size={14} color="#ef4444" /></button>
+                    <td>
+                      <div className="city-row-actions">
+                        <button onClick={() => handleEdit(city)} className="city-icon-btn is-edit"><Edit2 size={14} /></button>
+                        <button onClick={() => handleDelete(city.id)} className="city-icon-btn is-delete"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -234,11 +273,11 @@ export default function ManageCities() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
-            <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredCities.length)} of {filteredCities.length}</span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "0.5rem 1rem", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}>Prev</button>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: "0.5rem 1rem", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }}>Next</button>
+          <div className="city-pagination">
+            <span>Showing {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredCities.length)} of {filteredCities.length}</span>
+            <div className="city-pagination-actions">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
             </div>
           </div>
         )}

@@ -10,6 +10,8 @@ import {
   MapPin,
   Package
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "./ViewOrders.css";
 
 interface Order {
@@ -35,6 +37,7 @@ interface Order {
 
 export default function ViewOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const fetchOrders = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/orders`);
@@ -97,13 +100,51 @@ export default function ViewOrders() {
 
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const totalOrders = filteredOrders.length;
+  const pendingOrders = filteredOrders.filter(order => order.status === "Pending").length;
+  const deliveredOrders = filteredOrders.filter(order => order.status === "Delivered").length;
+  const outOfRangeOrders = filteredOrders.filter(order => order.outOfRange === "Yes").length;
 
   const handleViewDetails = (order: Order) => {
-    alert(`Order Details:\n\nOrder #${order.orderNo}\nEmployee: ${order.orderBy}\nAmount: ${order.amount}\nQuantity: ${order.quantity}\nStatus: ${order.status}\nLocation: ${order.location}`);
+    setSelectedOrder(order);
   };
 
   const handleDownloadPDF = (order: Order) => {
-    setMsg({ type: "success", text: `PDF downloaded for order ${order.orderNo}` });
+    try {
+      const doc = new jsPDF({ orientation: "landscape" });
+      doc.setFontSize(18);
+      doc.text(`Order ${order.orderNo}`, 14, 16);
+      doc.setFontSize(10);
+      doc.text(`Generated on ${new Date().toLocaleString()}`, 14, 22);
+
+      autoTable(doc, {
+        startY: 30,
+        head: [["Field", "Value"]],
+        body: [
+          ["Order Number", order.orderNo],
+          ["Order By", order.orderBy],
+          ["Retailer", order.retailer],
+          ["Distributor", order.distributor],
+          ["City", order.city],
+          ["Area", order.area],
+          ["Product", order.product],
+          ["Quantity", String(order.quantity)],
+          ["Unit", order.unit],
+          ["Amount", `₹${order.amount.toFixed(2)}`],
+          ["Status", order.status],
+          ["Location", order.location],
+          ["Out of Range", order.outOfRange],
+          ["Reason", order.outOfRangeReason || "-"],
+        ],
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [15, 23, 42] },
+      });
+
+      doc.save(`order-${order.orderNo}.pdf`);
+      setMsg({ type: "success", text: `PDF downloaded for order ${order.orderNo}` });
+    } catch (err) {
+      setMsg({ type: "error", text: "Failed to generate PDF" });
+    }
   };
 
   const handleCancelOrder = async (order: Order) => {
@@ -123,10 +164,30 @@ export default function ViewOrders() {
   return (
     <div className="orders-container">
       <div className="orders-wrapper">
-        {/* Header */}
-        <div className="orders-header">
-          <h2 className="orders-header"><MapPin size={24} /> View Orders</h2>
-          <p>Monitor, filter, and manage all placed orders with GPS location tracking</p>
+        <div className="orders-hero">
+          <div className="orders-hero-copy">
+            <div className="orders-kicker"><MapPin size={16} /> Order intelligence</div>
+            <h2>View Orders</h2>
+            <p>Monitor, filter, and manage all placed orders with GPS context, fast exports, and high-contrast row actions.</p>
+          </div>
+          <div className="orders-stats">
+            <div className="orders-stat">
+              <span>Total orders</span>
+              <strong>{totalOrders}</strong>
+            </div>
+            <div className="orders-stat">
+              <span>Pending</span>
+              <strong>{pendingOrders}</strong>
+            </div>
+            <div className="orders-stat">
+              <span>Delivered</span>
+              <strong>{deliveredOrders}</strong>
+            </div>
+            <div className="orders-stat">
+              <span>Out of range</span>
+              <strong>{outOfRangeOrders}</strong>
+            </div>
+          </div>
         </div>
 
         {/* Alert Messages */}
@@ -419,6 +480,42 @@ export default function ViewOrders() {
             </div>
           )}
         </div>
+
+        {selectedOrder && (
+          <div className="orders-modal-overlay" onClick={() => setSelectedOrder(null)}>
+            <div className="orders-modal" onClick={e => e.stopPropagation()}>
+              <div className="orders-modal-head">
+                <div>
+                  <span>Order details</span>
+                  <h3>{selectedOrder.orderNo}</h3>
+                </div>
+                <button className="orders-modal-close" onClick={() => setSelectedOrder(null)}>&times;</button>
+              </div>
+
+              <div className="orders-modal-grid">
+                <div><strong>Order By</strong><span>{selectedOrder.orderBy}</span></div>
+                <div><strong>Retailer</strong><span>{selectedOrder.retailer}</span></div>
+                <div><strong>Distributor</strong><span>{selectedOrder.distributor}</span></div>
+                <div><strong>Product</strong><span>{selectedOrder.product}</span></div>
+                <div><strong>Quantity</strong><span>{selectedOrder.quantity} {selectedOrder.unit}</span></div>
+                <div><strong>Amount</strong><span>₹{selectedOrder.amount.toFixed(2)}</span></div>
+                <div><strong>Status</strong><span>{selectedOrder.status}</span></div>
+                <div><strong>Location</strong><span>{selectedOrder.location}</span></div>
+                <div><strong>Out of range</strong><span>{selectedOrder.outOfRange}</span></div>
+                <div><strong>Reason</strong><span>{selectedOrder.outOfRangeReason || "-"}</span></div>
+              </div>
+
+              <div className="orders-modal-actions">
+                <button className="orders-modal-btn is-secondary" onClick={() => handleDownloadPDF(selectedOrder)}>
+                  <Download size={16} /> Download PDF
+                </button>
+                <button className="orders-modal-btn is-primary" onClick={() => setSelectedOrder(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Benefits Section */}
         <div className="benefits-card">

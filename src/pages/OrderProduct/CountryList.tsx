@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Globe
 } from "lucide-react";
+import "./CountryList.css";
 
 interface Country {
   id: number;
@@ -54,6 +55,8 @@ export default function CountryList() {
 
   const paginatedCountries = filteredCountries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredCountries.length / itemsPerPage);
+  const activeCountries = countries.filter(country => country.status === "Active").length;
+  const selectedVisible = checkedRows.filter(id => filteredCountries.some(country => country.id === id)).length;
 
   const handleSave = async () => {
     if (!formData.countryName || !formData.countryCode || !formData.currency || !formData.phoneCode) {
@@ -134,78 +137,74 @@ export default function CountryList() {
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade country-page-shell">
+      <div className="country-hero">
+        <div className="country-hero-copy">
+          <span className="country-eyebrow">Location Operations</span>
           <h2 className="lm-page-title"><Globe size={22} /> Country List</h2>
-          <p className="lm-page-subtitle">Manage countries and control availability across all location-based modules</p>
+          <p className="lm-page-subtitle">Manage countries and control availability across all location-based modules.</p>
+        </div>
+        <div className="country-hero-stats">
+          <div className="country-stat-card">
+            <span>Total Countries</span>
+            <strong>{countries.length}</strong>
+          </div>
+          <div className="country-stat-card">
+            <span>Active</span>
+            <strong>{activeCountries}</strong>
+          </div>
+          <div className="country-stat-card">
+            <span>Selected</span>
+            <strong>{selectedVisible}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+        <div className={`country-alert ${msg.type === "error" ? "country-alert-error" : "country-alert-success"}`}>
           {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+          <button className="country-alert-close" onClick={() => setMsg(null)}>&times;</button>
         </div>
       )}
 
-      {/* Top Buttons and Search */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button
-          className="lm-btn-primary"
-          onClick={() => { resetForm(); setShowForm(true); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", transition: "all 0.3s ease" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#4f46e5";
-            e.currentTarget.style.transform = "translateY(-2px)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#6366f1";
-            e.currentTarget.style.transform = "translateY(0)";
-          }}
-        >
-          <Plus size={16} /> Add Country
-        </button>
-        <button
-          className="lm-btn-secondary"
-          onClick={handleImportBulk}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", backgroundColor: "#fef3c7", border: "1px solid #fcd34d", borderRadius: "0.375rem", cursor: "pointer", transition: "all 0.3s ease" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "#fde68a";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "#fef3c7";
-          }}
-        >
-          <Upload size={16} /> Import Bulk
-        </button>
-        {checkedRows.length > 0 && (
-          <button
-            className="action-btn action-btn-delete"
-            onClick={handleBulkDelete}
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "6px 12px" }}
-          >
-            <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+      <div className="country-toolbar">
+        <div className="country-toolbar-actions">
+          <button className="country-primary-btn" onClick={() => { resetForm(); setShowForm(true); }}>
+            <Plus size={16} /> Add Country
           </button>
-        )}
+          <button className="country-amber-btn" onClick={handleImportBulk}>
+            <Upload size={16} /> Import Bulk
+          </button>
+          {checkedRows.length > 0 && (
+            <button className="country-danger-btn" onClick={handleBulkDelete}>
+              <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+            </button>
+          )}
+        </div>
 
-        <div style={{ marginLeft: "auto", position: "relative", minWidth: "250px" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+        <div className="country-search-wrap">
+          <Search size={16} className="country-search-icon" />
           <input
             type="text"
-            className="lm-input"
+            className="lm-input country-search-input"
             placeholder="Search country name or code..."
             value={searchTerm}
             onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ paddingLeft: "2.5rem" }}
           />
         </div>
       </div>
 
-      {/* Add/Edit Form Modal */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit Country" : "Add New Country"}</div>
+        <div className="country-form-card">
+          <div className="country-card-head country-card-head-form">
+            <div className="country-card-title">
+              <Save size={18} />
+              <div>
+                <h3>{editingId ? "Edit Country" : "Add New Country"}</h3>
+                <p>Create or update a country record with code, currency, and phone prefix.</p>
+              </div>
+            </div>
+          </div>
           <div className="lm-form-grid">
             <div className="lm-field lm-col-2">
               <label className="lm-label">Country Name*</label>
@@ -256,63 +255,11 @@ export default function CountryList() {
                 <option value="Inactive">Inactive</option>
               </select>
             </div>
-            <div className="lm-form-footer lm-col-2" style={{ display: "flex", gap: "1rem" }}>
-              <button
-                className="lm-btn-primary"
-                onClick={handleSave}
-                disabled={loading}
-                style={{
-                  flex: 1,
-                  padding: "0.7rem 1rem",
-                  backgroundColor: "#6366f1",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: 600,
-                  transition: "all 0.3s ease",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "0.5rem",
-                  opacity: loading ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#4f46e5";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#6366f1";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }
-                }}
-              >
+            <div className="country-form-actions lm-col-2">
+              <button className="country-primary-btn" onClick={handleSave} disabled={loading}>
                 <Save size={14} /> {loading ? "Saving..." : "Save"}
               </button>
-              <button
-                className="lm-btn-secondary"
-                onClick={() => { setShowForm(false); resetForm(); }}
-                style={{
-                  flex: 1,
-                  padding: "0.7rem 1rem",
-                  backgroundColor: "#e2e8f0",
-                  color: "#475569",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: "pointer",
-                  fontWeight: 500,
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#cbd5e1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#e2e8f0";
-                }}
-              >
+              <button className="country-secondary-btn" onClick={() => { setShowForm(false); resetForm(); }}>
                 Cancel
               </button>
             </div>
@@ -320,146 +267,65 @@ export default function CountryList() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Country Records ({filteredCountries.length} total)</div>
+      <div className="country-table-card">
+        <div className="country-card-head country-table-head">
+          <div className="country-card-title">
+            <Globe size={18} />
+            <div>
+              <h3>Country Records ({filteredCountries.length} total)</h3>
+              <p>Live country data with bulk selection, toggling, editing, and removal actions.</p>
+            </div>
+          </div>
+          <span className="country-table-badge">Live DB</span>
+        </div>
         <div className="lm-table-wrap">
-          <table className="lm-table">
+          <table className="lm-table country-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", textAlign: "center", width: "50px" }}>
+              <tr>
+                <th className="country-check-col">
                   <input
                     type="checkbox"
                     onChange={e => setCheckedRows(e.target.checked ? countries.map(c => c.id) : [])}
                     checked={checkedRows.length === countries.length && countries.length > 0}
                   />
                 </th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>S.No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Country Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Code</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Currency</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Phone Code</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Action</th>
+                <th>S.No</th>
+                <th>Country Name</th>
+                <th>Code</th>
+                <th>Currency</th>
+                <th>Phone Code</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {paginatedCountries.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No countries found</td></tr>
+                <tr><td colSpan={8} className="country-empty-state">No countries found</td></tr>
               ) : (
                 paginatedCountries.map((country, idx) => (
-                  <tr
-                    key={country.id}
-                    style={{
-                      backgroundColor: idx % 2 === 0 ? "white" : "#f8fafc",
-                      borderBottom: "1px solid #e2e8f0",
-                      transition: "background-color 0.3s ease"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f0f9ff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = idx % 2 === 0 ? "white" : "#f8fafc";
-                    }}
-                  >
-                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                  <tr key={country.id}>
+                    <td className="country-check-col">
                       <input
                         type="checkbox"
                         checked={checkedRows.includes(country.id)}
                         onChange={e => setCheckedRows(e.target.checked ? [...checkedRows, country.id] : checkedRows.filter(id => id !== country.id))}
                       />
                     </td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{country.countryName}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontWeight: 500 }}>{country.countryCode}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{country.currency}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{country.phoneCode}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span
-                        className="lm-badge"
-                        style={{
-                          padding: "0.4rem 0.8rem",
-                          borderRadius: "0.25rem",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          backgroundColor: country.status === "Active" ? "#d1fae5" : "#fee2e2",
-                          color: country.status === "Active" ? "#047857" : "#dc2626"
-                        }}
-                      >
+                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                    <td className="country-name-cell">{country.countryName}</td>
+                    <td>{country.countryCode}</td>
+                    <td>{country.currency}</td>
+                    <td>{country.phoneCode}</td>
+                    <td>
+                      <span className={`country-status-pill ${country.status === "Active" ? "is-active" : "is-inactive"}`}>
                         {country.status}
                       </span>
                     </td>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button
-                          onClick={() => handleEdit(country)}
-                          style={{
-                            padding: "0.5rem",
-                            backgroundColor: "#dbeafe",
-                            border: "1px solid #0284c7",
-                            borderRadius: "0.375rem",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#bfdbfe";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#dbeafe";
-                          }}
-                        >
-                          <Edit2 size={14} color="#0284c7" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleStatus(country.id)}
-                          style={{
-                            padding: "0.5rem",
-                            backgroundColor: "#d1d5db",
-                            border: "1px solid #9ca3af",
-                            borderRadius: "0.375rem",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "0.875rem",
-                            fontWeight: 600,
-                            color: "#6b7280"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#b4b8bf";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#d1d5db";
-                          }}
-                        >
-                          ⟺
-                        </button>
-                        <button
-                          onClick={() => handleDelete(country.id)}
-                          style={{
-                            padding: "0.5rem",
-                            backgroundColor: "#fee2e2",
-                            border: "1px solid #ef4444",
-                            borderRadius: "0.375rem",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#fecaca";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#fee2e2";
-                          }}
-                        >
-                          <Trash2 size={14} color="#ef4444" />
-                        </button>
+                    <td>
+                      <div className="country-row-actions">
+                        <button onClick={() => handleEdit(country)} className="country-icon-btn is-edit"><Edit2 size={14} /></button>
+                        <button onClick={() => handleToggleStatus(country.id)} className="country-icon-btn is-toggle">⟺</button>
+                        <button onClick={() => handleDelete(country.id)} className="country-icon-btn is-delete"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -471,15 +337,14 @@ export default function CountryList() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
-            <span style={{ color: "#64748b", fontSize: "0.875rem" }}>
+          <div className="country-pagination">
+            <span>
               Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCountries.length)} of {filteredCountries.length} entries
             </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="country-pagination-actions">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                style={{ padding: "0.5rem 1rem", cursor: currentPage === 1 ? "not-allowed" : "pointer" }}
               >
                 Previous
               </button>
@@ -487,14 +352,7 @@ export default function CountryList() {
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  style={{
-                    padding: "0.5rem 0.75rem",
-                    backgroundColor: currentPage === page ? "#6366f1" : "#e2e8f0",
-                    color: currentPage === page ? "white" : "#475569",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer"
-                  }}
+                  className={currentPage === page ? "is-active" : ""}
                 >
                   {page}
                 </button>
@@ -502,7 +360,6 @@ export default function CountryList() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                style={{ padding: "0.5rem 1rem", cursor: currentPage === totalPages ? "not-allowed" : "pointer" }}
               >
                 Next
               </button>
@@ -511,25 +368,29 @@ export default function CountryList() {
         )}
       </div>
 
-      {/* Benefits Section */}
-      <div className="lm-card" style={{ backgroundColor: "#f0fdf4", borderLeft: "4px solid #10b981", marginTop: "2rem" }}>
-        <div className="lm-card-title" style={{ color: "#047857" }}>✓ Benefits</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
+      <div className="country-benefits-card">
+        <div className="country-section-head">
           <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Central control for location data</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Manage all countries from one place</p>
+            <span className="country-section-kicker">Benefits</span>
+            <h3>Built for cleaner location control</h3>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Prevents unused countries appearing</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Hide inactive countries from system</p>
+        </div>
+        <div className="country-benefits-grid">
+          <div className="country-benefit-item">
+            <h4>Central control for location data</h4>
+            <p>Manage all countries from one place.</p>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Clean location hierarchy</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Organized country-state-city structure</p>
+          <div className="country-benefit-item">
+            <h4>Prevents unused countries appearing</h4>
+            <p>Hide inactive countries from the system.</p>
           </div>
-          <div>
-            <h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Better integration across modules</h4>
-            <p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Linked with all location-based modules</p>
+          <div className="country-benefit-item">
+            <h4>Clean location hierarchy</h4>
+            <p>Keep the country-state-city structure organized.</p>
+          </div>
+          <div className="country-benefit-item">
+            <h4>Better integration across modules</h4>
+            <p>Keep every location-based module aligned.</p>
           </div>
         </div>
       </div>

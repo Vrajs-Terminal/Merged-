@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Trash2,
   Search,
   Save,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeftRight,
+  Pencil,
+  Package,
 } from "lucide-react";
 import { unitMeasureAPI } from "../../services/apiService";
+import "./UnitMeasurement.css";
 
 interface Unit {
   id: number;
@@ -48,12 +52,17 @@ export default function UnitMeasurement() {
     }
   };
 
-  const filteredUnits = units.filter(unit =>
-    unit.unitName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (unit.symbol && unit.symbol.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredUnits = useMemo(
+    () => units.filter(unit =>
+      unit.unitName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (unit.symbol && unit.symbol.toLowerCase().includes(searchTerm.toLowerCase()))
+    ),
+    [searchTerm, units]
   );
 
   const paginatedUnits = filteredUnits.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const activeCount = units.filter(unit => unit.status === "Active").length;
+  const selectedCount = checkedRows.length;
 
   const handleSave = async () => {
     if (!formData.unitName || !formData.symbol) {
@@ -138,11 +147,26 @@ export default function UnitMeasurement() {
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
-          <h2 className="lm-page-title"><Search size={22} /> Unit Measurement</h2>
-          <p className="lm-page-subtitle">Dynamic units via MySQL/Prisma API integration</p>
+    <div className="lm-container lm-fade unit-measurement-page">
+      <div className="unit-measurement-hero lm-card">
+        <div className="unit-measurement-copy">
+          <div className="unit-measurement-kicker"><Package size={16} /> Inventory vocabulary</div>
+          <h2>Unit Measurement</h2>
+          <p>Manage units, symbols, and publishing status from a focused admin surface with fast search and bulk controls.</p>
+        </div>
+        <div className="unit-measurement-stats">
+          <div className="unit-measurement-stat">
+            <span>Total units</span>
+            <strong>{units.length}</strong>
+          </div>
+          <div className="unit-measurement-stat">
+            <span>Active units</span>
+            <strong>{activeCount}</strong>
+          </div>
+          <div className="unit-measurement-stat">
+            <span>Selected</span>
+            <strong>{selectedCount}</strong>
+          </div>
         </div>
       </div>
 
@@ -153,41 +177,41 @@ export default function UnitMeasurement() {
         </div>
       )}
 
-      {/* Top Buttons and Search */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button
-          className="lm-btn-primary"
-          onClick={() => { resetForm(); setShowForm(true); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem", transition: "all 0.3s ease" }}
-        >
-          <Plus size={16} /> Add Unit
-        </button>
-        {checkedRows.length > 0 && (
+      <div className="unit-measurement-toolbar lm-card">
+        <div className="unit-measurement-actions">
           <button
-            className="action-btn action-btn-delete"
+            className="unit-btn unit-btn-primary"
+            onClick={() => { resetForm(); setShowForm(true); }}
+          >
+            <Plus size={16} /> Add Unit
+          </button>
+          <button
+            className="unit-btn unit-btn-danger"
             onClick={handleBulkDelete}
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "6px 12px" }}
+            disabled={checkedRows.length === 0}
           >
             <Trash2 size={16} /> Delete Selected ({checkedRows.length})
           </button>
-        )}
+        </div>
 
-        <div style={{ marginLeft: "auto", position: "relative", minWidth: "250px" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input
-            type="text"
-            className="lm-input"
-            placeholder="Search unit or symbol..."
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ paddingLeft: "2.5rem" }}
-          />
+        <div className="unit-measurement-search">
+          <Search size={16} />
+          <div>
+            <span>Search units</span>
+            <input
+              type="text"
+              className="lm-input"
+              placeholder="Search unit name or symbol"
+              value={searchTerm}
+              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Add/Edit Form Modal */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
+        <div className="lm-card unit-measurement-form-card">
           <div className="lm-card-title">{editingId ? "Edit Unit" : "Add New Unit"}</div>
           <div className="lm-form-grid">
             <div className="lm-field lm-col-2">
@@ -221,17 +245,15 @@ export default function UnitMeasurement() {
             </div>
             <div className="lm-form-footer lm-col-4" style={{ display: "flex", gap: "1rem" }}>
               <button
-                className="lm-btn-primary"
+                className="unit-btn unit-btn-primary"
                 onClick={handleSave}
                 disabled={loading}
-                style={{ flex: 1, padding: "0.7rem 1rem" }}
               >
                 <Save size={14} /> {loading ? "Saving..." : "Save"}
               </button>
               <button
-                className="lm-btn-secondary"
+                className="unit-btn unit-btn-secondary"
                 onClick={() => { setShowForm(false); resetForm(); }}
-                style={{ flex: 1, padding: "0.7rem 1rem" }}
               >
                 Cancel
               </button>
@@ -241,48 +263,50 @@ export default function UnitMeasurement() {
       )}
 
       {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Live Dynamic Database Items ({filteredUnits.length} total)</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card unit-measurement-table-card">
+        <div className="unit-measurement-table-head">
+          <div>
+            <h3>Live dynamic database items</h3>
+            <p>{filteredUnits.length} unit record(s) matched your current search</p>
+          </div>
+          <div className="unit-measurement-table-pill">Toggle and edit actions are connected to the live API</div>
+        </div>
+        <div className="lm-table-wrap unit-measurement-table-wrap">
+          <table className="lm-table unit-measurement-table">
             <thead>
               <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Sr. No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Unit Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Symbol</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Action</th>
+                <th>Sr. No</th>
+                <th>Unit Name</th>
+                <th>Symbol</th>
+                <th>Status</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginatedUnits.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No units found</td></tr>
+                <tr><td colSpan={6} className="unit-measurement-empty-state">No units found</td></tr>
               ) : (
                 paginatedUnits.map((unit, idx) => (
-                  <tr key={unit.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{unit.unitName}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontWeight: 500 }}>{unit.symbol}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "0.4rem 0.8rem",
-                          borderRadius: "0.375rem",
-                          fontSize: "0.825rem",
-                          fontWeight: 500,
-                          backgroundColor: unit.status === "Active" ? "#d1fae5" : "#fee2e2",
-                          color: unit.status === "Active" ? "#065f46" : "#991b1b"
-                        }}
-                      >
+                  <tr key={unit.id}>
+                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                    <td className="unit-measurement-unit-name">{unit.unitName}</td>
+                    <td className="unit-measurement-symbol">{unit.symbol}</td>
+                    <td>
+                      <span className={`unit-status-badge ${unit.status === "Active" ? "is-active" : "is-inactive"}`}>
                         {unit.status}
                       </span>
                     </td>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button onClick={() => handleEdit(unit)} style={{ padding: "0.5rem", borderRadius: "0.375rem", backgroundColor: "#dbeafe", border: "none" }}>Edit</button>
-                        <button onClick={() => toggleStatus(unit.id)} style={{ padding: "0.5rem", borderRadius: "0.375rem", backgroundColor: "#e2e8f0", border: "none" }}>Toggle</button>
-                        <button onClick={() => handleDelete(unit.id)} style={{ padding: "0.5rem", borderRadius: "0.375rem", backgroundColor: "#fee2e2", border: "none" }}>Delete</button>
+                    <td>
+                      <div className="unit-measurement-row-actions">
+                        <button className="unit-row-btn is-edit" onClick={() => handleEdit(unit)}>
+                          <Pencil size={14} /> Edit
+                        </button>
+                        <button className="unit-row-btn is-toggle" onClick={() => toggleStatus(unit.id)}>
+                          <ArrowLeftRight size={14} /> Toggle
+                        </button>
+                        <button className="unit-row-btn is-delete" onClick={() => handleDelete(unit.id)}>
+                          <Trash2 size={14} /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>

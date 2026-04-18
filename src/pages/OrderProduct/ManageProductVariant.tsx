@@ -1,14 +1,33 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, CheckCircle, AlertCircle, ToggleLeft, ToggleRight, Layers } from "lucide-react";
-import { productVariantAPI } from "../../services/apiService";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Layers,
+  Plus,
+  RefreshCcw,
+  Trash2
+} from "lucide-react";
+import { productAPI, productVariantAPI } from "../../services/apiService";
+import "./OrderProductWorkspace.css";
+import { formatCurrency } from "./orderProductReportHelpers";
+import { buildSearchText, extractApiList, getStatusTone } from "./orderProductWorkspaceHelpers";
 
-interface ProductVariant {
+interface ProductOption {
   id: number;
-  status: "Active" | "Inactive";
-  productId?: number;
   name: string;
+}
+
+interface ProductVariantRecord {
+  id: number;
+  status?: "Active" | "Inactive";
+  productId?: number;
+  product?: { id: number; name: string };
+  name?: string;
   variantName?: string;
-  sku: string;
+  sku?: string;
   bulkType?: string;
   perBoxPiece?: number;
   retailerSellingPrice?: number;
@@ -17,84 +36,155 @@ interface ProductVariant {
   unit?: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export default function ManageProductVariant() {
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variants, setVariants] = useState<ProductVariantRecord[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ category: "", product: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [productFilter, setProductFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState({ productId: "", name: "", sku: "", bulkType: "", perBoxPiece: "", retailerSellingPrice: "", mrp: "", manufacturingCost: "", unit: "" });
+  const [formData, setFormData] = useState({
+    productId: "",
+    name: "",
+    sku: "",
+    bulkType: "",
+    perBoxPiece: "",
+    retailerSellingPrice: "",
+    mrp: "",
+    manufacturingCost: "",
+    unit: ""
+  });
 
   useEffect(() => {
-    fetchData();
-  }, [currentPage]);
+    void fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await productVariantAPI.getAll(currentPage, itemsPerPage);
-      const rows = response.data.data || [];
-      setVariants(rows.map((item: any) => ({
-        ...item,
-        name: item.name || item.variantName || "",
-        variantName: item.variantName || item.name || ""
-      })));
-    } catch (error) {
-      setMsg({ type: "error", text: "Failed to load product variants" });
-      console.error(error);
+      const [variantResponse, productResponse] = await Promise.all([
+        productVariantAPI.getAll(1, 1000),
+        productAPI.getAll(1, 1000)
+      ]);
+
+      setVariants(extractApiList<ProductVariantRecord>(variantResponse.data).rows);
+      setProducts(extractApiList<ProductOption>(productResponse.data).rows);
+    } catch (error: any) {
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to load product variants." });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAdd = async () => {
-    if (!formData.name) {
-      setMsg({ type: "error", text: "Variant Name is required" });
+  const productMap = useMemo(
+    () => new Map(products.map((product) => [product.id, product.name])),
+    [products]
+  );
+
+  const filteredVariants = useMemo(
+    () => variants.filter((variant) => {
+      const productId = variant.productId || variant.product?.id;
+      const productName = variant.product?.name || productMap.get(productId || 0);
+      const variantName = variant.variantName || variant.name || "";
+
+      return (
+        (!productFilter || String(productId || "") === productFilter) &&
+        buildSearchText(
+          variantName,
+          variant.sku,
+          variant.bulkType,
+          productName,
+          variant.unit,
+          variant.status
+        ).includes(searchTerm.toLowerCase())
+      );
+    }),
+    [productFilter, productMap, searchTerm, variants]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredVariants.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedVariants = useMemo(
+    () => filteredVariants.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredVariants]
+  );
+
+  const activeCount = variants.filter((variant) => variant.status === "Active").length;
+  const skuCount = variants.filter((variant) => variant.sku?.trim()).length;
+  const linkedProductCount = new Set(variants.map((variant) => variant.productId || variant.product?.id).filter(Boolean)).size;
+  const visibleStart = filteredVariants.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredVariants.length);
+
+  const resetForm = () => {
+    setFormData({
+      productId: "",
+      name: "",
+      sku: "",
+      bulkType: "",
+      perBoxPiece: "",
+      retailerSellingPrice: "",
+      mrp: "",
+      manufacturingCost: "",
+      unit: ""
+    });
+    setEditingId(null);
+  };
+
+  const handleSave = async () => {
+    if (!formData.productId || !formData.name.trim()) {
+      setMsg({ type: "error", text: "Product and variant name are required." });
       return;
     }
+
+    const payload = {
+      productId: Number(formData.productId),
+      name: formData.name,
+      sku: formData.sku,
+      bulkType: formData.bulkType,
+      perBoxPiece: formData.perBoxPiece ? Number(formData.perBoxPiece) : undefined,
+      retailerSellingPrice: formData.retailerSellingPrice ? Number(formData.retailerSellingPrice) : undefined,
+      mrp: formData.mrp ? Number(formData.mrp) : undefined,
+      manufacturingCost: formData.manufacturingCost ? Number(formData.manufacturingCost) : undefined,
+      unit: formData.unit
+    };
+
     try {
-      const payload = {
-        productId: formData.productId ? parseInt(formData.productId) : undefined,
-        name: formData.name,
-        sku: formData.sku,
-        bulkType: formData.bulkType,
-        perBoxPiece: formData.perBoxPiece ? parseInt(formData.perBoxPiece) : undefined,
-        retailerSellingPrice: formData.retailerSellingPrice ? parseFloat(formData.retailerSellingPrice) : undefined,
-        mrp: formData.mrp ? parseFloat(formData.mrp) : undefined,
-        manufacturingCost: formData.manufacturingCost ? parseFloat(formData.manufacturingCost) : undefined,
-        unit: formData.unit
-      };
       if (editingId) {
         await productVariantAPI.update(editingId, payload);
-        setMsg({ type: "success", text: "Variant updated successfully" });
-        setEditingId(null);
+        setMsg({ type: "success", text: "Product variant updated successfully." });
       } else {
         await productVariantAPI.create(payload);
-        setMsg({ type: "success", text: "Variant added successfully" });
+        setMsg({ type: "success", text: "Product variant created successfully." });
       }
-      fetchData();
-      setFormData({ productId: "", name: "", sku: "", bulkType: "", perBoxPiece: "", retailerSellingPrice: "", mrp: "", manufacturingCost: "", unit: "" });
+
+      await fetchData();
+      resetForm();
       setShowForm(false);
-    } catch (error) {
-      setMsg({ type: "error", text: editingId ? "Failed to update variant" : "Failed to add variant" });
-      console.error(error);
+    } catch (error: any) {
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to save product variant." });
     }
   };
 
-  const handleEdit = (variant: ProductVariant) => {
+  const handleEdit = (variant: ProductVariantRecord) => {
     setEditingId(variant.id);
     setFormData({
-      productId: variant.productId?.toString() || "",
-      name: variant.name,
-      sku: variant.sku,
+      productId: String(variant.productId || variant.product?.id || ""),
+      name: variant.variantName || variant.name || "",
+      sku: variant.sku || "",
       bulkType: variant.bulkType || "",
-      perBoxPiece: variant.perBoxPiece?.toString() || "",
-      retailerSellingPrice: variant.retailerSellingPrice?.toString() || "",
-      mrp: variant.mrp?.toString() || "",
-      manufacturingCost: variant.manufacturingCost?.toString() || "",
+      perBoxPiece: variant.perBoxPiece ? String(variant.perBoxPiece) : "",
+      retailerSellingPrice: variant.retailerSellingPrice ? String(variant.retailerSellingPrice) : "",
+      mrp: variant.mrp ? String(variant.mrp) : "",
+      manufacturingCost: variant.manufacturingCost ? String(variant.manufacturingCost) : "",
       unit: variant.unit || ""
     });
     setShowForm(true);
@@ -103,178 +193,397 @@ export default function ManageProductVariant() {
   const handleToggleStatus = async (id: number) => {
     try {
       await productVariantAPI.toggleStatus(id);
-      setMsg({ type: "success", text: "Status updated successfully" });
-      fetchData();
-    } catch (error) {
-      setMsg({ type: "error", text: "Failed to update status" });
-      console.error(error);
+      setMsg({ type: "success", text: "Product variant status updated successfully." });
+      await fetchData();
+    } catch (error: any) {
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to update product variant status." });
     }
   };
 
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Delete this product variant?")) {
+      return;
+    }
+
     try {
       await productVariantAPI.delete(id);
-      setMsg({ type: "success", text: "Variant deleted successfully" });
-      fetchData();
-    } catch (error) {
-      setMsg({ type: "error", text: "Failed to delete variant" });
-      console.error(error);
+      setMsg({ type: "success", text: "Product variant deleted successfully." });
+      await fetchData();
+    } catch (error: any) {
+      setMsg({ type: "error", text: error.response?.data?.message || "Failed to delete product variant." });
     }
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><Layers size={14} /> Sellable variations</span>
           <h2 className="lm-page-title"><Layers size={22} /> Manage Product Variants</h2>
-          <p className="lm-page-subtitle">Define product variants like size, packaging, or type</p>
+          <p className="lm-page-subtitle">
+            Manage packaging, SKU, and price-level variation data from one cleaner workspace that keeps each variant tied to its parent product.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Product-linked variants</span>
+            <span className="opw-hero-pill">Pricing visibility</span>
+            <span className="opw-hero-pill">Cleaner lifecycle control</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Total Variants</span>
+            <strong>{variants.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Active</span>
+            <strong>{activeCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Products Linked</span>
+            <strong>{linkedProductCount}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>SKU Ready</span>
+            <strong>{skuCount}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
-          <div className="lm-field">
-            <label className="lm-label">Category</label>
-            <select className="lm-select" value={filters.category} onChange={e => setFilters({ ...filters, category: e.target.value })}>
-              <option value="">All Categories</option>
-              <option value="Snacks">Snacks</option>
-              <option value="Beverages">Beverages</option>
-            </select>
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Layers size={18} />
+            <div>
+              <h3>Browse Variants</h3>
+              <p>Use a slim product filter and search to find packaging or pricing variants quickly without adding unnecessary controls.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{filteredVariants.length} visible</span>
+        </div>
+
+        <div className="opw-form-grid">
+          <div className="lm-field opw-form-span-2">
+            <label className="lm-label">Search</label>
+            <input
+              type="text"
+              className="lm-input"
+              placeholder="Search by variant, SKU, product, packaging, or status"
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+            />
           </div>
           <div className="lm-field">
-            <label className="lm-label">Product</label>
-            <input type="text" className="lm-input" placeholder="Search product" value={filters.product} onChange={e => setFilters({ ...filters, product: e.target.value })} />
+            <label className="lm-label">Product Filter</label>
+            <select
+              className="lm-select"
+              value={productFilter}
+              onChange={(event) => {
+                setProductFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All Products</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="opw-form-actions">
+            <button type="button" className="opw-primary-btn" onClick={() => setShowForm((value) => !value)}>
+              <Plus size={16} />
+              {showForm ? "Hide Form" : "Add Variant"}
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={() => void fetchData()} disabled={loading}>
+              <RefreshCcw size={16} />
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+            <button
+              type="button"
+              className="opw-secondary-btn"
+              onClick={() => {
+                setSearchTerm("");
+                setProductFilter("");
+                setCurrentPage(1);
+              }}
+            >
+              Clear
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
-        <button onClick={() => setShowForm(!showForm)} style={{ padding: "0.75rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Plus size={16} /> Add Variant
-        </button>
-      </div>
-
-      {/* Add Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit" : "Add"} Product Variant</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <Plus size={18} />
+              <div>
+                <h3>{editingId ? "Edit Product Variant" : "Create Product Variant"}</h3>
+                <p>Capture the sellable unit, packaging, and commercial pricing details in one cleaner variant form.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="opw-form-grid">
+            <div className="lm-field">
+              <label className="lm-label">Product</label>
+              <select
+                className="lm-select"
+                value={formData.productId}
+                onChange={(event) => setFormData((current) => ({ ...current, productId: event.target.value }))}
+              >
+                <option value="">Select product</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="lm-field">
               <label className="lm-label">Variant Name</label>
-              <input type="text" className="lm-input" placeholder="e.g., 100g Pack" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter variant name"
+                value={formData.name}
+                onChange={(event) => setFormData((current) => ({ ...current, name: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">SKU</label>
-              <input type="text" className="lm-input" placeholder="Enter SKU" value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="Enter SKU"
+                value={formData.sku}
+                onChange={(event) => setFormData((current) => ({ ...current, sku: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">Bulk Type</label>
-              <select className="lm-select" value={formData.bulkType} onChange={e => setFormData({ ...formData, bulkType: e.target.value })}>
-                <option value="">Select Type</option>
+              <select
+                className="lm-select"
+                value={formData.bulkType}
+                onChange={(event) => setFormData((current) => ({ ...current, bulkType: event.target.value }))}
+              >
+                <option value="">Select bulk type</option>
                 <option value="Box">Box</option>
                 <option value="Case">Case</option>
                 <option value="Packet">Packet</option>
                 <option value="Bottle">Bottle</option>
+                <option value="Jar">Jar</option>
               </select>
             </div>
             <div className="lm-field">
               <label className="lm-label">Per Box Piece</label>
-              <input type="number" className="lm-input" placeholder="Enter quantity" value={formData.perBoxPiece} onChange={e => setFormData({ ...formData, perBoxPiece: e.target.value })} />
-            </div>
-            <div className="lm-field">
-              <label className="lm-label">Retailer Selling Price</label>
-              <input type="number" className="lm-input" placeholder="Enter price" value={formData.retailerSellingPrice} onChange={e => setFormData({ ...formData, retailerSellingPrice: e.target.value })} />
-            </div>
-            <div className="lm-field">
-              <label className="lm-label">MRP</label>
-              <input type="number" className="lm-input" placeholder="Enter MRP" value={formData.mrp} onChange={e => setFormData({ ...formData, mrp: e.target.value })} />
-            </div>
-            <div className="lm-field">
-              <label className="lm-label">Manufacturing Cost</label>
-              <input type="number" className="lm-input" placeholder="Enter cost" value={formData.manufacturingCost} onChange={e => setFormData({ ...formData, manufacturingCost: e.target.value })} />
+              <input
+                type="number"
+                className="lm-input"
+                placeholder="Enter quantity"
+                value={formData.perBoxPiece}
+                onChange={(event) => setFormData((current) => ({ ...current, perBoxPiece: event.target.value }))}
+              />
             </div>
             <div className="lm-field">
               <label className="lm-label">Unit</label>
-              <input type="text" className="lm-input" placeholder="e.g., Pack, Box" value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })} />
+              <input
+                type="text"
+                className="lm-input"
+                placeholder="e.g. PCS, Box, Pack"
+                value={formData.unit}
+                onChange={(event) => setFormData((current) => ({ ...current, unit: event.target.value }))}
+              />
             </div>
-          </div>
-          <div style={{ display: "flex", gap: "0.75rem" }}>
-            <button onClick={handleAdd} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>{editingId ? "Update" : "Add"} Variant</button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setFormData({ productId: "", name: "", sku: "", bulkType: "", perBoxPiece: "", retailerSellingPrice: "", mrp: "", manufacturingCost: "", unit: "" }); }} style={{ padding: "0.6rem 1.5rem", backgroundColor: "#e2e8f0", color: "#475569", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <div className="lm-field">
+              <label className="lm-label">Retailer Selling Price</label>
+              <input
+                type="number"
+                className="lm-input"
+                placeholder="Enter selling price"
+                value={formData.retailerSellingPrice}
+                onChange={(event) => setFormData((current) => ({ ...current, retailerSellingPrice: event.target.value }))}
+              />
+            </div>
+            <div className="lm-field">
+              <label className="lm-label">MRP</label>
+              <input
+                type="number"
+                className="lm-input"
+                placeholder="Enter MRP"
+                value={formData.mrp}
+                onChange={(event) => setFormData((current) => ({ ...current, mrp: event.target.value }))}
+              />
+            </div>
+            <div className="lm-field">
+              <label className="lm-label">Manufacturing Cost</label>
+              <input
+                type="number"
+                className="lm-input"
+                placeholder="Enter cost"
+                value={formData.manufacturingCost}
+                onChange={(event) => setFormData((current) => ({ ...current, manufacturingCost: event.target.value }))}
+              />
+            </div>
+            <div className="opw-form-actions">
+              <button type="button" className="opw-primary-btn" onClick={() => void handleSave()}>
+                {editingId ? "Update Variant" : "Save Variant"}
+              </button>
+              <button
+                type="button"
+                className="opw-secondary-btn"
+                onClick={() => {
+                  resetForm();
+                  setShowForm(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Product Variants ({variants.length} total) {loading && <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Loading...</span>}</div>
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Layers size={18} />
+            <div>
+              <h3>Variant Directory</h3>
+              <p>Review SKU and pricing setup with clearer product links, packaging data, and status handling.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{loading ? "Loading..." : "Live Catalog"}</span>
+        </div>
+
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredVariants.length} variants</span>
+          <span>{linkedProductCount} linked products</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table opw-admin-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center", width: "40px" }}>#</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Action</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Variant Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>SKU</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left" }}>Bulk Type</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center" }}>Per Box</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center" }}>RSP</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center" }}>MRP</th>
+              <tr>
+                <th>Product</th>
+                <th>Variant</th>
+                <th>SKU</th>
+                <th>Packaging</th>
+                <th className="opw-value-cell">Retail Price</th>
+                <th className="opw-value-cell">MRP</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {variants.map((variant, idx) => (
-                <tr key={variant.id} style={{ borderBottom: "1px solid #e2e8f0" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = ""}>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#64748b", fontSize: "0.875rem" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem", display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => handleEdit(variant)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#0c4a6e" }}>
-                      <Edit2 size={12} /> Edit
-                    </button>
-                    <button onClick={() => handleToggleStatus(variant.id)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#e0e7ff", border: "1px solid #6366f1", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#4f46e5" }}>
-                      {variant.status === "Active" ? <ToggleRight size={12} /> : <ToggleLeft size={12} />}
-                    </button>
-                    <button onClick={() => handleDelete(variant.id)} style={{ padding: "0.4rem 0.8rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.25rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 500, color: "#7f1d1d" }}>
-                      <Trash2 size={12} /> Del
-                    </button>
-                  </td>
-                  <td style={{ padding: "1rem", fontSize: "0.875rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      {variant.status === "Active" ? <ToggleRight size={18} color="#22c55e" /> : <ToggleLeft size={18} color="#94a3b8" />}
-                      <span style={{ color: variant.status === "Active" ? "#166534" : "#64748b", fontWeight: 600, fontSize: "0.75rem" }}>{variant.status}</span>
+              {loading ? (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="opw-empty">
+                      <h4>Loading product variants</h4>
+                      <p>Pulling the latest SKU and packaging setup from the catalog.</p>
                     </div>
                   </td>
-                  <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem" }}>{variant.variantName || variant.name}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem", fontFamily: "monospace" }}>{variant.sku}</td>
-                  <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{variant.bulkType || "—"}</td>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#475569", fontSize: "0.875rem" }}>{variant.perBoxPiece || "—"}</td>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#059669", fontSize: "0.875rem", fontWeight: 600 }}>₹{variant.retailerSellingPrice || "—"}</td>
-                  <td style={{ padding: "1rem", textAlign: "center", color: "#dc2626", fontSize: "0.875rem", fontWeight: 600 }}>₹{variant.mrp || "—"}</td>
                 </tr>
-              ))}
+              ) : paginatedVariants.length === 0 ? (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="opw-empty">
+                      <h4>No variants match this view</h4>
+                      <p>Clear the search or create a new product variant to expand the sellable catalog.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedVariants.map((variant) => {
+                const productName = variant.product?.name || productMap.get(variant.productId || 0) || "Unlinked";
+                const variantName = variant.variantName || variant.name || "Unnamed Variant";
+                const packaging = [
+                  variant.bulkType,
+                  variant.perBoxPiece ? `${variant.perBoxPiece}/box` : null,
+                  variant.unit
+                ].filter(Boolean).join(" • ");
+
+                return (
+                  <tr key={variant.id}>
+                    <td>{productName}</td>
+                    <td>
+                      <div className="opw-entity">
+                        <strong>{variantName}</strong>
+                        <small>Variant #{variant.id}</small>
+                      </div>
+                    </td>
+                    <td><code>{variant.sku || "—"}</code></td>
+                    <td>{packaging || "—"}</td>
+                    <td className="opw-value-cell">{formatCurrency(variant.retailerSellingPrice || 0)}</td>
+                    <td className="opw-value-cell">{formatCurrency(variant.mrp || 0)}</td>
+                    <td>
+                      <span className={`opw-status-badge ${getStatusTone(variant.status)}`}>
+                        {variant.status || "Unknown"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="opw-row-actions">
+                        <button type="button" className="opw-row-btn is-info" onClick={() => handleEdit(variant)}>
+                          <Edit2 size={14} />
+                          Edit
+                        </button>
+                        <button type="button" className="opw-row-btn is-muted" onClick={() => void handleToggleStatus(variant.id)}>
+                          {variant.status === "Active" ? "Deactivate" : "Activate"}
+                        </button>
+                        <button type="button" className="opw-row-btn is-danger" onClick={() => void handleDelete(variant.id)}>
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
-          <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === 1 ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === 1 ? "default" : "pointer" }}>Prev</button>
-          {Array.from({ length: Math.ceil(variants.length / itemsPerPage) }, (_, i) => (
-            <button key={i + 1} onClick={() => setCurrentPage(i + 1)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === i + 1 ? "#6366f1" : "#f1f5f9", color: currentPage === i + 1 ? "white" : "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: "pointer" }}>
-              {i + 1}
-            </button>
-          ))}
-          <button onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === Math.ceil(variants.length / itemsPerPage)} style={{ padding: "0.4rem 0.8rem", backgroundColor: currentPage === Math.ceil(variants.length / itemsPerPage) ? "#f1f5f9" : "#e0e7ff", color: "#4f46e5", fontSize: "0.875rem", border: "1px solid #c7d2fe", borderRadius: "0.25rem", cursor: currentPage === Math.ceil(variants.length / itemsPerPage) ? "default" : "pointer" }}>Next</button>
-        </div>
+        {filteredVariants.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

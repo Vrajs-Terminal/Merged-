@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, Save, Shield, Clock, Eye, AlertCircle, CheckCircle2, Bell, Link2, Globe, CheckSquare } from "lucide-react";
+import { Settings, Save, Shield, CheckCircle2, Bell, Link2, Globe, CheckSquare } from "lucide-react";
 import "./TaskSheet.css";
 
 const TaskSetting: React.FC = () => {
@@ -12,18 +12,47 @@ const TaskSetting: React.FC = () => {
         </div>
       </div>
 
+      <div className="tasksheet-settings-intro glass-card">
+        <div className="tasksheet-settings-intro-copy">
+          <span className="tasksheet-settings-kicker">Task Control Center</span>
+          <h2>Shape how tasks behave across your workspace</h2>
+          <p>
+            Use these settings to control scheduling rules, task visibility, reminders, and approval
+            policies with a cleaner, easier-to-scan interface.
+          </p>
+        </div>
+        <div className="tasksheet-settings-intro-stats">
+          <div className="tasksheet-settings-stat">
+            <span>Core Rules</span>
+            <strong>5</strong>
+          </div>
+          <div className="tasksheet-settings-stat">
+            <span>Pro Controls</span>
+            <strong>4</strong>
+          </div>
+          <div className="tasksheet-settings-stat">
+            <span>Status</span>
+            <strong>Ready</strong>
+          </div>
+        </div>
+      </div>
+
       <div className="tasksheet-settings-grid">
         {/* Core Settings */}
-        <div className="glass-card tasksheet-main-card">
-          <div className="tasksheet-card-heading">
+        <div className="glass-card tasksheet-main-card tasksheet-settings-panel">
+          <div className="tasksheet-settings-panel-head">
             <div className="tasksheet-card-heading-icon">
               <Settings size={18} />
             </div>
-            <h3>Workflow Settings</h3>
+            <div className="tasksheet-settings-panel-copy">
+              <span className="tasksheet-settings-panel-kicker">Core Rules</span>
+              <h3>Workflow Settings</h3>
+              <p>Configure the default behavior for task dates, permissions, and completion rules.</p>
+            </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-setting-copy">
                 <h4>Task Timeline Modification *</h4>
                 <p>Controls if task dates can be changed post-creation</p>
@@ -35,7 +64,7 @@ const TaskSetting: React.FC = () => {
               </select>
             </div>
 
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-setting-copy">
                 <h4>Task Priority *</h4>
                 <p>Enable priority selection (Low/Med/High)</p>
@@ -50,7 +79,7 @@ const TaskSetting: React.FC = () => {
               </div>
             </div>
 
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-setting-copy">
                 <h4>Completed Task Editable *</h4>
                 <p>Unlock tasks after they are marked as finished</p>
@@ -65,7 +94,7 @@ const TaskSetting: React.FC = () => {
               </div>
             </div>
 
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-setting-copy">
                 <h4>Hide Future Task *</h4>
                 <p>Visibility of upcoming scheduled tasks</p>
@@ -80,7 +109,7 @@ const TaskSetting: React.FC = () => {
               </div>
             </div>
 
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-setting-copy">
                 <h4>Due Date Revision Access *</h4>
                 <p>Who can update the final deadline</p>
@@ -96,29 +125,34 @@ const TaskSetting: React.FC = () => {
         </div>
 
         {/* Pro Settings (Suggested Features) */}
-          <div className="glass-card tasksheet-main-card" style={{ border: "1px solid rgba(79, 70, 229, 0.2)" }}>
-            <div className="tasksheet-card-heading">
-              <div className="tasksheet-card-heading-icon">
-                <Shield size={18} />
-              </div>
-              <h3>Advanced Controls (Pro)</h3>
-              <span className="badge badge-primary" style={{ marginLeft: "auto", fontSize: "10px" }}>ENHANCED</span>
+        <div className="glass-card tasksheet-main-card tasksheet-settings-panel tasksheet-settings-panel-pro">
+          <div className="tasksheet-settings-panel-head">
+            <div className="tasksheet-card-heading-icon tasksheet-card-heading-icon-pro">
+              <Shield size={18} />
             </div>
+            <div className="tasksheet-settings-panel-copy">
+              <span className="tasksheet-settings-panel-kicker">Pro Controls</span>
+              <h3>Advanced Controls (Pro)</h3>
+              <p>Optional controls for approval flow, reminders, dependency handling, and visibility.</p>
+            </div>
+            <span className="badge badge-primary tasksheet-settings-badge">ENHANCED</span>
+          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-             <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-name-cell">
                 <CheckCircle2 size={16} color="var(--success)" />
-               <strong>Task Approval Required</strong>
+                <strong>Task Approval Required</strong>
               </div>
-              <div style={{ display: "flex", gap: "12px" }}>
-                 <label className="switch" style={{ width: "40px", height: "20px", background: "var(--primary)", borderRadius: "10px", position: "relative" }}>
-                    <div style={{ width: "16px", height: "16px", background: "white", borderRadius: "50%", position: "absolute", right: "2px", top: "2px" }}></div>
-                 </label>
+              <div className="tasksheet-toggle is-on">
+                <span className="tasksheet-toggle-track">
+                  <span className="tasksheet-toggle-thumb" />
+                </span>
+                <span className="tasksheet-toggle-label">On</span>
               </div>
             </div>
 
-             <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-name-cell">
                 <Bell size={16} color="var(--warning)" />
                 <strong>Task Auto Reminder</strong>
@@ -130,19 +164,17 @@ const TaskSetting: React.FC = () => {
               </select>
             </div>
 
-             <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-name-cell">
                 <Link2 size={16} color="#6366f1" />
                 <strong>Task Dependency</strong>
               </div>
-               <div style={{ display: "flex", gap: "12px" }}>
-                 <label className="tasksheet-radio">
-                  <input type="checkbox" checked /> Enforce
-                </label>
+              <div className="tasksheet-toggle is-enabled">
+                <span className="tasksheet-toggle-pill">Enforce</span>
               </div>
             </div>
 
-            <div className="tasksheet-setting-row">
+            <div className="tasksheet-setting-row tasksheet-setting-row-card">
               <div className="tasksheet-name-cell">
                 <Globe size={16} color="#06b6d4" />
                 <strong>Task Visibility Control</strong>

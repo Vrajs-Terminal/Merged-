@@ -1,11 +1,27 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
-  Filter,
-  CheckCircle,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  RefreshCcw,
+  Search
 } from "lucide-react";
+import "./OrderProductWorkspace.css";
+import {
+  copyRowsToClipboard,
+  downloadRowsAsCsv,
+  exportRowsToExcel,
+  exportRowsToPdf,
+  formatDate,
+  formatDateTime
+} from "./orderProductReportHelpers";
 
 interface StockRecord {
   id: number;
@@ -20,10 +36,27 @@ interface StockRecord {
   orderId: string;
 }
 
+const ITEMS_PER_PAGE = 10;
+
+const getTypeTone = (type: string) => {
+  if (type === "Stock In") {
+    return "is-success";
+  }
+
+  if (type === "Stock Out") {
+    return "is-danger";
+  }
+
+  if (type === "Adjustment") {
+    return "is-warning";
+  }
+
+  return "is-neutral";
+};
+
 export default function StockInOutReport() {
   const [stockRecords, setStockRecords] = useState<StockRecord[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [filters, setFilters] = useState({
     distributor: "",
     stockType: "",
@@ -31,105 +64,242 @@ export default function StockInOutReport() {
     startDate: "",
     endDate: ""
   });
-
-  const [searchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [msg, setMsg] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
-  const itemsPerPage = 10;
-
   useEffect(() => {
-    fetchLogs();
+    void fetchLogs();
   }, []);
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/product-stock/logs');
-      const data = res.data.map((log: any) => ({
-        id: log.id,
-        stockDate: new Date(log.stockDate).toISOString().split('T')[0],
-        stockTime: log.stockTime || '-',
-        quantity: log.quantity,
-        type: log.type,
-        performBy: log.performBy || 'System',
-        category: "General", 
-        product: log.variant?.variantName ? `${log.product?.name} (${log.variant?.variantName})` : log.product?.name || 'Unknown',
-        distributor: log.distributor?.name || 'Main Warehouse',
-        orderId: log.orderId || '-'
-      }));
-      setStockRecords(data);
-    } catch (err: any) {
-      setMsg({ type: "error", text: "Failed to fetch stock logs: " + err.message });
+      const response = await axios.get("/api/product-stock/logs");
+      const rawLogs = Array.isArray(response.data) ? response.data : response.data?.data || [];
+      const nextRecords = rawLogs.map((log: any) => {
+        const stockDate = log.stockDate ? new Date(log.stockDate) : null;
+
+        return {
+          id: log.id,
+          stockDate: stockDate && !Number.isNaN(stockDate.getTime()) ? stockDate.toISOString().split("T")[0] : "—",
+          stockTime: stockDate && !Number.isNaN(stockDate.getTime())
+            ? stockDate.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+            : (log.stockTime || "—"),
+          quantity: log.quantity || 0,
+          type: log.type || "Adjustment",
+          performBy: log.performBy || "System",
+          category: log.product?.category?.name || "General",
+          product: log.variant?.variantName ? `${log.product?.name} (${log.variant?.variantName})` : (log.product?.name || "Unknown"),
+          distributor: log.distributor?.name || "Main Warehouse",
+          orderId: log.orderId ? String(log.orderId) : "—"
+        } as StockRecord;
+      });
+      setStockRecords(nextRecords);
+    } catch (error: any) {
+      setMsg({ type: "error", text: "Failed to fetch stock logs: " + error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredRecords = stockRecords.filter(record => {
-    const matchFilters = (!filters.distributor || record.distributor === filters.distributor) &&
-      (!filters.stockType || record.type === filters.stockType) &&
-      (!filters.product || record.product.toLowerCase().includes(filters.product.toLowerCase())) &&
-      (!filters.startDate || new Date(record.stockDate) >= new Date(filters.startDate)) &&
-      (!filters.endDate || new Date(record.stockDate) <= new Date(filters.endDate));
+  const distributors = useMemo(
+    () => Array.from(new Set(stockRecords.map((record) => record.distributor))).sort(),
+    [stockRecords]
+  );
 
-    const matchSearch = record.product.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.distributor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.orderId.includes(searchTerm) ||
-      record.category.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRecords = useMemo(
+    () => stockRecords.filter((record) => {
+      const query = searchTerm.toLowerCase();
 
-    return matchFilters && matchSearch;
-  });
+      return (
+        (!filters.distributor || record.distributor === filters.distributor) &&
+        (!filters.stockType || record.type === filters.stockType) &&
+        (!filters.product || record.product.toLowerCase().includes(filters.product.toLowerCase())) &&
+        (!filters.startDate || new Date(record.stockDate) >= new Date(filters.startDate)) &&
+        (!filters.endDate || new Date(record.stockDate) <= new Date(filters.endDate)) &&
+        (!searchTerm
+          || record.product.toLowerCase().includes(query)
+          || record.distributor.toLowerCase().includes(query)
+          || record.orderId.toLowerCase().includes(query)
+          || record.performBy.toLowerCase().includes(query))
+      );
+    }),
+    [filters, searchTerm, stockRecords]
+  );
 
-  const paginatedRecords = filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const totals = useMemo(() => ({
+    stockIn: filteredRecords.filter((record) => record.type === "Stock In").reduce((sum, record) => sum + record.quantity, 0),
+    stockOut: filteredRecords.filter((record) => record.type === "Stock Out").reduce((sum, record) => sum + record.quantity, 0),
+    adjustment: filteredRecords.filter((record) => record.type === "Adjustment").reduce((sum, record) => sum + record.quantity, 0)
+  }), [filteredRecords]);
 
-  const totals = {
-    stockIn: filteredRecords.filter(r => r.type === "Stock In").reduce((sum, r) => sum + r.quantity, 0),
-    stockOut: filteredRecords.filter(r => r.type === "Stock Out").reduce((sum, r) => sum + r.quantity, 0),
-    adjustment: filteredRecords.filter(r => r.type === "Adjustment").reduce((sum, r) => sum + r.quantity, 0)
+  const totalPages = Math.max(1, Math.ceil(filteredRecords.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedRecords = useMemo(
+    () => filteredRecords.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredRecords]
+  );
+
+  const exportRows = useMemo(
+    () => filteredRecords.map((record) => ({
+      stock_date: record.stockDate,
+      stock_time: record.stockTime,
+      product: record.product,
+      distributor: record.distributor,
+      type: record.type,
+      quantity: record.quantity,
+      performed_by: record.performBy,
+      category: record.category,
+      order_id: record.orderId
+    })),
+    [filteredRecords]
+  );
+
+  const exportKeys = [
+    "stock_date",
+    "stock_time",
+    "product",
+    "distributor",
+    "type",
+    "quantity",
+    "performed_by",
+    "category",
+    "order_id"
+  ];
+
+  const visibleStart = filteredRecords.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredRecords.length);
+  const netMovement = totals.stockIn - totals.stockOut;
+
+  const handleCopy = async () => {
+    const copied = await copyRowsToClipboard(exportRows, exportKeys);
+    setMsg({
+      type: copied ? "success" : "error",
+      text: copied ? "Stock movement data copied to clipboard." : "No stock movement data available to copy."
+    });
   };
 
-  const handleSubmitFilters = () => {
+  const handleCsvExport = () => {
+    const exported = downloadRowsAsCsv(exportRows, "stock_in_out_report", exportKeys);
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Stock movement data exported as CSV." : "No stock movement data available to export."
+    });
+  };
+
+  const handleExcelExport = () => {
+    const exported = exportRowsToExcel(exportRows, "stock_in_out_report", "Stock In Out");
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Stock movement data exported to Excel." : "No stock movement data available to export."
+    });
+  };
+
+  const handlePdfExport = () => {
+    const exported = exportRowsToPdf(exportRows, "stock_in_out_report", "Stock In Out Report", exportKeys);
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Stock movement data exported to PDF." : "No stock movement data available to export."
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      distributor: "",
+      stockType: "",
+      product: "",
+      startDate: "",
+      endDate: ""
+    });
+    setSearchTerm("");
     setCurrentPage(1);
-    setMsg({ type: "success", text: "Report generated with selected filters" });
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><BarChart3 size={14} /> Inventory flow</span>
           <h2 className="lm-page-title"><BarChart3 size={22} /> Stock In/Out Report</h2>
-          <p className="lm-page-subtitle">Track live stock movements, additions, and reductions directly from the database</p>
+          <p className="lm-page-subtitle">
+            Track incoming, outgoing, and adjusted inventory movements with a more professional stock-control reporting surface.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Movement analytics</span>
+            <span className="opw-hero-pill">Distributor visibility</span>
+            <span className="opw-hero-pill">Export-ready audit log</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Logs</span>
+            <strong>{filteredRecords.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Stock In</span>
+            <strong>{totals.stockIn}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Stock Out</span>
+            <strong>{totals.stockOut}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Net Movement</span>
+            <strong>{netMovement}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Advanced Filters</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Filter size={18} />
+            <div>
+              <h3>Filter Movement Logs</h3>
+              <p>Focus on a location, stock type, product, or time period for closer inventory review.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge">{filteredRecords.length} records</span>
+        </div>
+
+        <div className="opw-form-grid">
           <div className="lm-field">
             <label className="lm-label">Distributor</label>
-            <input
-              className="lm-input"
-              placeholder="Search distributor"
+            <select
+              className="lm-select"
               value={filters.distributor}
-              onChange={e => setFilters({ ...filters, distributor: e.target.value })}
-            />
+              onChange={(event) => setFilters((current) => ({ ...current, distributor: event.target.value }))}
+            >
+              <option value="">All Distributors</option>
+              {distributors.map((distributor) => (
+                <option key={distributor} value={distributor}>
+                  {distributor}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="lm-field">
             <label className="lm-label">Stock Type</label>
             <select
               className="lm-select"
               value={filters.stockType}
-              onChange={e => setFilters({ ...filters, stockType: e.target.value })}
+              onChange={(event) => setFilters((current) => ({ ...current, stockType: event.target.value }))}
             >
               <option value="">All Types</option>
               <option value="Stock In">Stock In</option>
@@ -141,9 +311,9 @@ export default function StockInOutReport() {
             <label className="lm-label">Product</label>
             <input
               className="lm-input"
-              placeholder="Search product name"
+              placeholder="Search product"
               value={filters.product}
-              onChange={e => setFilters({ ...filters, product: e.target.value })}
+              onChange={(event) => setFilters((current) => ({ ...current, product: event.target.value }))}
             />
           </div>
           <div className="lm-field">
@@ -152,7 +322,7 @@ export default function StockInOutReport() {
               type="date"
               className="lm-input"
               value={filters.startDate}
-              onChange={e => setFilters({ ...filters, startDate: e.target.value })}
+              onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))}
             />
           </div>
           <div className="lm-field">
@@ -161,106 +331,192 @@ export default function StockInOutReport() {
               type="date"
               className="lm-input"
               value={filters.endDate}
-              onChange={e => setFilters({ ...filters, endDate: e.target.value })}
+              onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))}
             />
           </div>
-        </div>
-        <button
-          className="lm-btn-primary"
-          onClick={handleSubmitFilters}
-          style={{ padding: "0.7rem 2rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", fontWeight: 600, transition: "all 0.3s ease" }}
-        >
-          Submit
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-        <div className="lm-card" style={{ backgroundColor: "#f0fdf4", borderLeft: "4px solid #22c55e" }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#4ade80", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Stock In</div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#166534", marginTop: "0.5rem" }}>{totals.stockIn}</div>
-        </div>
-        <div className="lm-card" style={{ backgroundColor: "#fef2f2", borderLeft: "4px solid #ef4444" }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#fca5a5", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Stock Out</div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#7f1d1d", marginTop: "0.5rem" }}>{totals.stockOut}</div>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Live Dynamic Stock Logs ({filteredRecords.length} total)</div>
-        {loading ? (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>Loading dynamic logs...</div>
-        ) : filteredRecords.length === 0 ? (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
-            No log data found in database. Add stock to see logs here!
+          <div className="opw-form-actions">
+            <button type="button" className="opw-primary-btn" onClick={() => { setCurrentPage(1); void fetchLogs(); }}>
+              <RefreshCcw size={16} />
+              Apply & Refresh
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={handleClearFilters}>
+              Clear
+            </button>
           </div>
-        ) : (
-          <>
-            <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-              <table className="lm-table">
-                <thead>
-                  <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "center", width: "40px" }}>#</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "80px" }}>Stock Date</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "70px" }}>Stock Time</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "right", minWidth: "80px" }}>Quantity</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "100px" }}>Type</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "90px" }}>Perform By</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "90px" }}>Product</th>
-                    <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.75rem", textAlign: "left", minWidth: "120px" }}>Distributor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedRecords.map((record, idx) => (
-                    <tr key={record.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                      <td style={{ padding: "1rem", textAlign: "center", color: "#64748b", fontSize: "0.875rem", fontWeight: 500 }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                      <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 500 }}>{record.stockDate}</td>
-                      <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem" }}>{record.stockTime}</td>
-                      <td style={{ padding: "1rem", textAlign: "right", color: "#1e293b", fontSize: "0.875rem", fontWeight: 600 }}>{record.quantity}</td>
-                      <td style={{ padding: "1rem", fontSize: "0.875rem" }}>
-                        <span style={{
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "0.25rem",
-                          fontSize: "0.75rem",
-                          fontWeight: 600,
-                          backgroundColor: record.type === "Stock In" ? "#dcfce7" : record.type === "Stock Out" ? "#fee2e2" : "#fef3c7",
-                          color: record.type === "Stock In" ? "#166534" : record.type === "Stock Out" ? "#7f1d1d" : "#92400e"
-                        }}>
-                          {record.type}
-                        </span>
-                      </td>
-                      <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{record.performBy}</td>
-                      <td style={{ padding: "1rem", color: "#1e293b", fontSize: "0.875rem", fontWeight: 500 }}>{record.product}</td>
-                      <td style={{ padding: "1rem", color: "#475569", fontSize: "0.875rem" }}>{record.distributor}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        </div>
+      </div>
+
+      <div className="opw-metric-grid">
+        <div className="opw-metric-card is-success">
+          <span className="opw-metric-label">Total Stock In</span>
+          <strong className="opw-metric-value">{totals.stockIn}</strong>
+          <span className="opw-metric-note">All inventory additions in the current view.</span>
+        </div>
+        <div className="opw-metric-card is-danger">
+          <span className="opw-metric-label">Total Stock Out</span>
+          <strong className="opw-metric-value">{totals.stockOut}</strong>
+          <span className="opw-metric-note">All stock reductions and dispatch movements.</span>
+        </div>
+        <div className="opw-metric-card is-warning">
+          <span className="opw-metric-label">Adjustments</span>
+          <strong className="opw-metric-value">{totals.adjustment}</strong>
+          <span className="opw-metric-note">Manual or system balance corrections.</span>
+        </div>
+        <div className="opw-metric-card is-info">
+          <span className="opw-metric-label">Net Movement</span>
+          <strong className="opw-metric-value">{netMovement}</strong>
+          <span className="opw-metric-note">Stock in minus stock out for the current filter set.</span>
+        </div>
+      </div>
+
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <Search size={18} />
+            <div>
+              <h3>Search & Export</h3>
+              <p>Search log details and export the filtered stock movement trail.</p>
             </div>
-            {/* Pagination Controls... */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
-              <span style={{ fontSize: "0.875rem", color: "#64748b" }}>
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredRecords.length)} of {filteredRecords.length} records
-              </span>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: "0.5rem 1rem", backgroundColor: currentPage === 1 ? "#f1f5f9" : "#e0f2fe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: currentPage === 1 ? "default" : "pointer" }}
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  style={{ padding: "0.5rem 1rem", backgroundColor: currentPage === totalPages ? "#f1f5f9" : "#e0f2fe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: currentPage === totalPages ? "default" : "pointer" }}
-                >
-                  Next
-                </button>
-              </div>
+          </div>
+          <div className="opw-toolbar-actions">
+            <button type="button" className="opw-secondary-btn" onClick={() => void handleCopy()}>
+              <Copy size={16} />
+              Copy
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={handleCsvExport}>
+              CSV
+            </button>
+            <button type="button" className="opw-secondary-btn" onClick={handleExcelExport}>
+              <FileSpreadsheet size={16} />
+              Excel
+            </button>
+            <button type="button" className="opw-primary-btn" onClick={handlePdfExport}>
+              <FileText size={16} />
+              PDF
+            </button>
+          </div>
+        </div>
+
+        <div className="opw-toolbar">
+          <div className="opw-search">
+            <Search size={16} />
+            <div>
+              <label htmlFor="stock-log-search">Search movement logs</label>
+              <input
+                id="stock-log-search"
+                type="text"
+                className="lm-input"
+                placeholder="Search product, distributor, performer, or order reference"
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
-          </>
+          </div>
+        </div>
+      </div>
+
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <BarChart3 size={18} />
+            <div>
+              <h3>Stock Movement Table</h3>
+              <p>Audit the detailed stock trail with clearer quantity, source, and location context.</p>
+            </div>
+          </div>
+          <span className="opw-panel-badge is-success">{loading ? "Loading..." : "Live DB"}</span>
+        </div>
+
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredRecords.length} logs</span>
+          <span>{formatDateTime(new Date().toISOString())}</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Product</th>
+                <th>Distributor</th>
+                <th>Type</th>
+                <th className="opw-value-cell">Qty</th>
+                <th>Performed By</th>
+                <th>Order Ref</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="opw-empty">
+                      <h4>Loading stock movement</h4>
+                      <p>Pulling the latest inventory movement trail from the database.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedRecords.length === 0 ? (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="opw-empty">
+                      <h4>No stock logs found</h4>
+                      <p>No inventory movement matches the selected filters right now.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedRecords.map((record) => (
+                <tr key={record.id}>
+                  <td>{formatDate(record.stockDate)}</td>
+                  <td>{record.stockTime}</td>
+                  <td>
+                    <div className="opw-entity">
+                      <strong>{record.product}</strong>
+                      <small>{record.category}</small>
+                    </div>
+                  </td>
+                  <td>{record.distributor}</td>
+                  <td>
+                    <span className={`opw-status-badge ${getTypeTone(record.type)}`}>
+                      {record.type}
+                    </span>
+                  </td>
+                  <td className="opw-value-cell">{record.quantity}</td>
+                  <td>{record.performBy}</td>
+                  <td>{record.orderId}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredRecords.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

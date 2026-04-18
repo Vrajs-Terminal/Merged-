@@ -3,6 +3,7 @@ import axios from "axios";
 import {
   Plus, Trash2, Edit2, Eye, Filter, Search, Save, CheckCircle, AlertCircle, MapPin
 } from "lucide-react";
+import "./ManageArea.css";
 
 interface City { id: number; name: string; state: { name: string; country: { name: string } } }
 interface Area {
@@ -58,6 +59,8 @@ export default function ManageArea() {
   );
   const paginatedAreas = filteredAreas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredAreas.length / itemsPerPage);
+  const activeAreas = areas.filter(area => area.status === "Active").length;
+  const selectedVisible = checkedRows.filter(id => filteredAreas.some(area => area.id === id)).length;
 
   const handleSave = async () => {
     if (!formData.name || !formData.cityId) { alert("All fields required!"); return; }
@@ -103,25 +106,47 @@ export default function ManageArea() {
   };
 
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade area-page-shell">
+      <div className="area-hero">
+        <div className="area-hero-copy">
+          <span className="area-eyebrow">Location Operations</span>
           <h2 className="lm-page-title"><MapPin size={22} /> Manage Area</h2>
-          <p className="lm-page-subtitle">Dynamic area management via live TiDB API</p>
+          <p className="lm-page-subtitle">Dynamic area management via live TiDB API with clearer controls and faster scanning.</p>
+        </div>
+        <div className="area-hero-stats">
+          <div className="area-stat-card">
+            <span>Total Areas</span>
+            <strong>{areas.length}</strong>
+          </div>
+          <div className="area-stat-card">
+            <span>Active</span>
+            <strong>{activeAreas}</strong>
+          </div>
+          <div className="area-stat-card">
+            <span>Selected</span>
+            <strong>{selectedVisible}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+        <div className={`area-alert ${msg.type === "error" ? "area-alert-error" : "area-alert-success"}`}>
           {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+          <button className="area-alert-close" onClick={() => setMsg(null)}>&times;</button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Filters</div>
-        <div className="lm-form-grid">
+      <div className="area-filters-card">
+        <div className="area-card-head">
+          <div className="area-card-title">
+            <Filter size={18} />
+            <div>
+              <h3>Filters</h3>
+              <p>Refine by city to focus on the exact area set you need.</p>
+            </div>
+          </div>
+        </div>
+        <div className="area-filter-grid">
           <div className="lm-field">
             <label className="lm-label">City</label>
             <select className="lm-select" value={filters.cityId} onChange={e => setFilters({ cityId: e.target.value })}>
@@ -132,28 +157,35 @@ export default function ManageArea() {
         </div>
       </div>
 
-      {/* Top Buttons */}
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap", alignItems: "center" }}>
-        <button className="lm-btn-primary" onClick={() => { resetForm(); setShowForm(true); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", padding: "0.7rem 1.2rem" }}>
-          <Plus size={16} /> Add Area
-        </button>
-        {checkedRows.length > 0 && (
-          <button onClick={handleBulkDelete} style={{ padding: "0.7rem 1.2rem", backgroundColor: "#fee2e2", border: "1px solid #fecaca", borderRadius: "0.375rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-            <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+      <div className="area-toolbar">
+        <div className="area-toolbar-actions">
+          <button className="area-primary-btn" onClick={() => { resetForm(); setShowForm(true); }}>
+            <Plus size={16} /> Add Area
           </button>
-        )}
-        <div style={{ marginLeft: "auto", position: "relative", minWidth: "250px" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input type="text" className="lm-input" placeholder="Search area..." value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} style={{ paddingLeft: "2.5rem" }} />
+          {checkedRows.length > 0 && (
+            <button onClick={handleBulkDelete} className="area-danger-btn">
+              <Trash2 size={16} /> Delete Selected ({checkedRows.length})
+            </button>
+          )}
+        </div>
+        <div className="area-search-wrap">
+          <Search size={16} className="area-search-icon" />
+          <input type="text" className="lm-input area-search-input" placeholder="Search area..." value={searchTerm}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
         </div>
       </div>
 
-      {/* Form */}
       {showForm && (
-        <div className="lm-card" style={{ marginBottom: "2rem", borderLeft: "4px solid #6366f1", backgroundColor: "#f8fafc" }}>
-          <div className="lm-card-title">{editingId ? "Edit Area" : "Add New Area"}</div>
+        <div className="area-form-card">
+          <div className="area-card-head area-card-head-form">
+            <div className="area-card-title">
+              <Save size={18} />
+              <div>
+                <h3>{editingId ? "Edit Area" : "Add New Area"}</h3>
+                <p>Capture the area details and keep city-level records organized.</p>
+              </div>
+            </div>
+          </div>
           <div className="lm-form-grid">
             <div className="lm-field lm-col-2">
               <label className="lm-label">Area Name*</label>
@@ -173,56 +205,64 @@ export default function ManageArea() {
                 <option value="Inactive">Inactive</option>
               </select>
             </div>
-            <div className="lm-form-footer lm-col-4" style={{ display: "flex", gap: "1rem" }}>
-              <button className="lm-btn-primary" onClick={handleSave} disabled={loading} style={{ flex: 1, padding: "0.7rem 1rem" }}>
+            <div className="area-form-actions lm-col-4">
+              <button className="area-primary-btn" onClick={handleSave} disabled={loading}>
                 <Save size={14} /> {loading ? "Saving..." : "Save"}
               </button>
-              <button className="lm-btn-secondary" onClick={() => { setShowForm(false); resetForm(); }} style={{ flex: 1, padding: "0.7rem 1rem" }}>Cancel</button>
+              <button className="area-secondary-btn" onClick={() => { setShowForm(false); resetForm(); }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="lm-card">
-        <div className="lm-card-title">Area Records ({filteredAreas.length} total) — Live DB</div>
+      <div className="area-table-card">
+        <div className="area-card-head area-table-head">
+          <div className="area-card-title">
+            <MapPin size={18} />
+            <div>
+              <h3>Area Records ({filteredAreas.length} total)</h3>
+              <p>Live DB data with bulk selection, quick view, edit, and delete actions.</p>
+            </div>
+          </div>
+          <span className="area-table-badge">Live DB</span>
+        </div>
         <div className="lm-table-wrap">
-          <table className="lm-table">
+          <table className="lm-table area-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", textAlign: "center", width: "50px" }}>
+              <tr>
+                <th className="area-check-col">
                   <input type="checkbox" onChange={e => setCheckedRows(e.target.checked ? areas.map(a => a.id) : [])} checked={checkedRows.length === areas.length && areas.length > 0} />
                 </th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>S.No</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Area Name</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>City</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>State</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem" }}>Action</th>
+                <th>S.No</th>
+                <th>Area Name</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {paginatedAreas.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No areas in database — add one to start!</td></tr>
+                <tr><td colSpan={7} className="area-empty-state">No areas in database — add one to start!</td></tr>
               ) : (
                 paginatedAreas.map((area, idx) => (
-                  <tr key={area.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "1rem", textAlign: "center" }}>
+                  <tr key={area.id}>
+                    <td className="area-check-col">
                       <input type="checkbox" checked={checkedRows.includes(area.id)}
                         onChange={e => setCheckedRows(e.target.checked ? [...checkedRows, area.id] : checkedRows.filter(id => id !== area.id))} />
                     </td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{area.name}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{area.city?.name}</td>
-                    <td style={{ padding: "1rem", color: "#475569" }}>{area.city?.state?.name}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span style={{ padding: "0.3rem 0.7rem", borderRadius: "0.25rem", fontSize: "0.75rem", fontWeight: 600, backgroundColor: area.status === "Active" ? "#d1fae5" : "#fee2e2", color: area.status === "Active" ? "#047857" : "#dc2626" }}>{area.status}</span>
+                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                    <td className="area-name-cell">{area.name}</td>
+                    <td>{area.city?.name}</td>
+                    <td>{area.city?.state?.name}</td>
+                    <td>
+                      <span className={`area-status-pill ${area.status === "Active" ? "is-active" : "is-inactive"}`}>{area.status}</span>
                     </td>
-                    <td style={{ padding: "1rem" }}>
-                      <div style={{ display: "flex", gap: "0.5rem" }}>
-                        <button onClick={() => { setSelectedArea(area); setShowViewModal(true); }} style={{ padding: "0.4rem 0.7rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}><Eye size={14} color="#0284c7" /></button>
-                        <button onClick={() => handleEdit(area)} style={{ padding: "0.4rem 0.7rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}><Edit2 size={14} color="#0284c7" /></button>
-                        <button onClick={() => handleDelete(area.id)} style={{ padding: "0.4rem 0.7rem", backgroundColor: "#fee2e2", border: "1px solid #ef4444", borderRadius: "0.375rem", cursor: "pointer" }}><Trash2 size={14} color="#ef4444" /></button>
+                    <td>
+                      <div className="area-row-actions">
+                        <button className="area-icon-btn is-view" onClick={() => { setSelectedArea(area); setShowViewModal(true); }}><Eye size={14} /></button>
+                        <button className="area-icon-btn is-edit" onClick={() => handleEdit(area)}><Edit2 size={14} /></button>
+                        <button className="area-icon-btn is-delete" onClick={() => handleDelete(area.id)}><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -232,26 +272,32 @@ export default function ManageArea() {
           </table>
         </div>
         {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
-            <span style={{ color: "#64748b", fontSize: "0.875rem" }}>Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredAreas.length)}–{Math.min(currentPage * itemsPerPage, filteredAreas.length)} of {filteredAreas.length}</span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} style={{ padding: "0.5rem 1rem" }}>Prev</button>
-              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} style={{ padding: "0.5rem 1rem" }}>Next</button>
+          <div className="area-pagination">
+            <span>Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredAreas.length)}–{Math.min(currentPage * itemsPerPage, filteredAreas.length)} of {filteredAreas.length}</span>
+            <div className="area-pagination-actions">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
             </div>
           </div>
         )}
       </div>
 
-      {/* View Modal */}
       {showViewModal && selectedArea && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "white", borderRadius: "0.5rem", padding: "2rem", maxWidth: "400px", width: "90%" }}>
-            <h3 style={{ marginBottom: "1rem" }}>View Area</h3>
-            <p><strong>Area:</strong> {selectedArea.name}</p>
-            <p><strong>City:</strong> {selectedArea.city?.name}</p>
-            <p><strong>State:</strong> {selectedArea.city?.state?.name}</p>
-            <p><strong>Status:</strong> {selectedArea.status}</p>
-            <button onClick={() => setShowViewModal(false)} style={{ marginTop: "1rem", padding: "0.7rem 1.5rem", backgroundColor: "#6366f1", color: "white", border: "none", borderRadius: "0.375rem", cursor: "pointer", width: "100%" }}>Close</button>
+        <div className="area-modal-overlay">
+          <div className="area-modal">
+            <div className="area-modal-head">
+              <div>
+                <span className="area-eyebrow">Area Details</span>
+                <h3>View Area</h3>
+              </div>
+            </div>
+            <div className="area-modal-body">
+              <div className="area-detail-row"><span>Area</span><strong>{selectedArea.name}</strong></div>
+              <div className="area-detail-row"><span>City</span><strong>{selectedArea.city?.name}</strong></div>
+              <div className="area-detail-row"><span>State</span><strong>{selectedArea.city?.state?.name}</strong></div>
+              <div className="area-detail-row"><span>Status</span><strong>{selectedArea.status}</strong></div>
+            </div>
+            <button onClick={() => setShowViewModal(false)} className="area-modal-close-btn">Close</button>
           </div>
         </div>
       )}

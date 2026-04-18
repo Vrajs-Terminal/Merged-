@@ -1,15 +1,28 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
-  MapPin,
-  Play,
-  Pause,
-  Search,
-  CheckCircle,
   AlertCircle,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
   Copy,
-  FileText
+  FileSpreadsheet,
+  FileText,
+  MapPin,
+  Pause,
+  Play,
+  RefreshCcw,
+  Search
 } from "lucide-react";
+import "./OrderProductWorkspace.css";
+import {
+  copyRowsToClipboard,
+  downloadRowsAsCsv,
+  exportRowsToExcel,
+  exportRowsToPdf,
+  formatDate,
+  formatDateTime
+} from "./orderProductReportHelpers";
 
 interface RouteVisit {
   id: number;
@@ -26,7 +39,14 @@ interface RouteVisit {
   employeeName: string;
 }
 
-interface Employee { id: number; firstName?: string; lastName?: string; employeeId: string }
+interface Employee {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  employeeId: string;
+}
+
+const ITEMS_PER_PAGE = 8;
 
 export default function OrderRouteMap() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -39,395 +59,560 @@ export default function OrderRouteMap() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [routeVisits, setRouteVisits] = useState<RouteVisit[]>([]);
-  const [activityStats, setActivityStats] = useState({ visits: 0, orders: 0 });
 
   useEffect(() => {
-    axios.get('/api/employees').then(r => setEmployees(r.data.employees || r.data || [])).catch(() => {});
+    axios.get("/api/employees")
+      .then((response) => setEmployees(response.data.employees || response.data || []))
+      .catch(() => {
+        setMsg({ type: "error", text: "Failed to load employees." });
+      });
   }, []);
 
-  const itemsPerPage = 10;
-  const filteredVisits = routeVisits.filter(v =>
-    v.retailer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.route.toLowerCase().includes(searchTerm.toLowerCase())
+  const selectedEmployeeData = useMemo(
+    () => employees.find((employee) => employee.id === Number(selectedEmployee)) || null,
+    [employees, selectedEmployee]
   );
-  const paginatedVisits = filteredVisits.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(filteredVisits.length / itemsPerPage);
+
+  const filteredVisits = useMemo(
+    () => routeVisits.filter((visit) =>
+      visit.retailer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      visit.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      visit.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [routeVisits, searchTerm]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredVisits.length / ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const paginatedVisits = useMemo(
+    () => filteredVisits.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [currentPage, filteredVisits]
+  );
+
+  const completedVisits = filteredVisits.filter((visit) => visit.status === "Completed").length;
+  const pendingVisits = filteredVisits.filter((visit) => visit.status === "Pending").length;
+  const coveredRoutes = new Set(filteredVisits.map((visit) => visit.route)).size;
+  const visibleStart = filteredVisits.length === 0 ? 0 : ((currentPage - 1) * ITEMS_PER_PAGE) + 1;
+  const visibleEnd = Math.min(currentPage * ITEMS_PER_PAGE, filteredVisits.length);
+
+  const exportRows = useMemo(
+    () => filteredVisits.map((visit) => ({
+      retailer: visit.retailer,
+      route: visit.route,
+      scheduled_date: visit.visitScheduledDate,
+      visit_start: visit.visitStartDate,
+      visit_end: visit.visitEndDate,
+      total_time: visit.totalTime,
+      status: visit.status,
+      in_range: visit.inRange,
+      purpose: visit.purpose,
+      remark: visit.remark,
+      employee: visit.employeeName
+    })),
+    [filteredVisits]
+  );
+
+  const exportKeys = [
+    "retailer",
+    "route",
+    "scheduled_date",
+    "visit_start",
+    "visit_end",
+    "total_time",
+    "status",
+    "in_range",
+    "purpose",
+    "remark",
+    "employee"
+  ];
 
   const handleGetData = async () => {
     if (!selectedEmployee || !selectedDate) {
-      setMsg({ type: "error", text: "Please select both employee and date!" });
+      setMsg({ type: "error", text: "Select both an employee and a date to load route activity." });
       return;
     }
+
     setLoading(true);
+
     try {
-      const res = await axios.get(`/api/orders?page=1&limit=1000&employeeId=${selectedEmployee}&date=${selectedDate}`);
-      const orders = res.data.orders || res.data || [];
-      // Map orders into route visits display format
-      const mapped: RouteVisit[] = orders.map((o: any) => ({
-        id: o.id,
-        retailer: o.retailer?.businessName || '—',
-        visitScheduledDate: selectedDate,
-        visitStartDate: new Date(o.createdAt).toLocaleString(),
-        visitEndDate: '—',
-        totalTime: '—',
-        status: o.status === 'Delivered' || o.status === 'Approved' ? 'Completed' : 'Pending' as "Completed" | "Pending" | "Cancelled",
-        inRange: 'Yes' as "Yes" | "No",
-        remark: o.remarks || '—',
-        purpose: 'Sales',
-        route: o.route?.routeName || '—',
-        employeeName: `${o.employee?.firstName || ''} ${o.employee?.lastName || ''}`.trim()
+      const response = await axios.get(`/api/orders?page=1&limit=1000&employeeId=${selectedEmployee}&date=${selectedDate}`);
+      const orders = response.data.orders || response.data || [];
+      const mappedVisits: RouteVisit[] = orders.map((order: any) => ({
+        id: order.id,
+        retailer: order.retailer?.businessName || "—",
+        visitScheduledDate: formatDate(selectedDate),
+        visitStartDate: formatDateTime(order.createdAt),
+        visitEndDate: "—",
+        totalTime: "—",
+        status: order.status === "Delivered" || order.status === "Approved" ? "Completed" : "Pending",
+        inRange: "Yes",
+        remark: order.remarks || "—",
+        purpose: order.orderSource || "Sales",
+        route: order.route?.routeName || "Unassigned Route",
+        employeeName: `${order.employee?.firstName || ""} ${order.employee?.lastName || ""}`.trim() || "—"
       }));
-      setRouteVisits(mapped);
-      setActivityStats({ visits: mapped.length, orders: orders.filter((o: any) => o.status !== 'Cancelled').length });
-      setMsg({ type: "success", text: `Loaded ${mapped.length} orders for selected employee on ${selectedDate}` });
-    } catch (e: any) {
-      setMsg({ type: "error", text: "Failed to load route data: " + e.message });
+
+      setRouteVisits(mappedVisits);
+      setCurrentPage(1);
+      setMsg({
+        type: "success",
+        text: `Loaded ${mappedVisits.length} route activities for ${selectedEmployeeData?.firstName || "the selected employee"} on ${formatDate(selectedDate)}.`
+      });
+    } catch (error: any) {
+      setMsg({ type: "error", text: "Failed to load route data: " + error.message });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleReset = () => {
+    setSelectedEmployee("");
+    setSelectedDate("");
+    setSearchTerm("");
+    setCurrentPage(1);
+    setRouteVisits([]);
+    setIsPlaying(false);
+    setMsg(null);
+  };
+
+  const handleCopy = async () => {
+    const copied = await copyRowsToClipboard(exportRows, exportKeys);
+    setMsg({
+      type: copied ? "success" : "error",
+      text: copied ? "Route summary copied to clipboard." : "No route activity available to copy."
+    });
+  };
+
+  const handleCsvExport = () => {
+    const exported = downloadRowsAsCsv(exportRows, "order_route_map", exportKeys);
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Route summary exported as CSV." : "No route activity available to export."
+    });
+  };
+
+  const handleExcelExport = () => {
+    const exported = exportRowsToExcel(exportRows, "order_route_map", "Route Map");
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Route summary exported to Excel." : "No route activity available to export."
+    });
+  };
+
+  const handlePdfExport = () => {
+    const exported = exportRowsToPdf(exportRows, "order_route_map", "Order Route Map", exportKeys);
+    setMsg({
+      type: exported ? "success" : "error",
+      text: exported ? "Route summary exported to PDF." : "No route activity available to export."
+    });
+  };
+
   return (
-    <div className="lm-container lm-fade">
-      <div className="lm-page-header">
-        <div>
+    <div className="lm-container lm-fade opw-page">
+      <div className="lm-card opw-hero">
+        <div className="opw-hero-copy">
+          <span className="opw-eyebrow"><MapPin size={14} /> Field movement intelligence</span>
           <h2 className="lm-page-title"><MapPin size={22} /> Order Route Map</h2>
-          <p className="lm-page-subtitle">Track employee movement, visits, orders, and route activity on map</p>
+          <p className="lm-page-subtitle">
+            Review employee route activity, visit outcomes, and order coverage from one cleaner route-ops workspace.
+          </p>
+          <div className="opw-hero-pills">
+            <span className="opw-hero-pill">Playback controls</span>
+            <span className="opw-hero-pill">Visit summary export</span>
+            <span className="opw-hero-pill">Employee day view</span>
+          </div>
+        </div>
+
+        <div className="opw-stats">
+          <div className="opw-stat-card">
+            <span>Visits Loaded</span>
+            <strong>{filteredVisits.length}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Completed</span>
+            <strong>{completedVisits}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Pending</span>
+            <strong>{pendingVisits}</strong>
+          </div>
+          <div className="opw-stat-card">
+            <span>Routes Covered</span>
+            <strong>{coveredRoutes}</strong>
+          </div>
         </div>
       </div>
 
       {msg && (
-        <div className={`lm-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
-          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />} {msg.text}
-          <button className="lm-alert-close" onClick={() => setMsg(null)}>&times;</button>
+        <div className={`lm-alert opw-alert ${msg.type === "error" ? "lm-alert-error" : "lm-alert-success"}`}>
+          {msg.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          <span>{msg.text}</span>
+          <button type="button" className="opw-alert-close" onClick={() => setMsg(null)} aria-label="Close message">
+            ×
+          </button>
         </div>
       )}
 
-      {/* Filters and Employee Panel */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "2rem", marginBottom: "2rem" }}>
-        {/* Left: Filters and Map */}
-        <div>
-          {/* Filters */}
-          <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-            <div className="lm-card-title">Filters</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div className="lm-field">
-                <label className="lm-label">Employee*</label>
-                <select
-                  className="lm-select"
-                  value={selectedEmployee}
-                  onChange={e => setSelectedEmployee(e.target.value)}
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.firstName} {emp.lastName} ({emp.employeeId})</option>
-                  ))}
-                </select>
+      <div className="opw-grid">
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <RefreshCcw size={18} />
+              <div>
+                <h3>Load Route Activity</h3>
+                <p>Select an employee and date, then pull the day’s route-driven order activity.</p>
               </div>
-              <div className="lm-field">
-                <label className="lm-label">Date*</label>
-                <input
-                  type="date"
-                  className="lm-input"
-                  value={selectedDate}
-                  onChange={e => setSelectedDate(e.target.value)}
-                />
-              </div>
-              <button
-                className="lm-btn-primary"
-                onClick={handleGetData}
-                disabled={loading}
-                style={{
-                  gridColumn: "1 / -1",
-                  padding: "0.7rem 1rem",
-                  backgroundColor: "#6366f1",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  fontWeight: 600,
-                  transition: "all 0.3s ease",
-                  opacity: loading ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#4f46e5";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) {
-                    e.currentTarget.style.backgroundColor = "#6366f1";
-                  }
-                }}
+            </div>
+            <span className="opw-panel-badge">{employees.length} employees</span>
+          </div>
+
+          <div className="opw-form-grid">
+            <div className="lm-field">
+              <label className="lm-label">Employee*</label>
+              <select
+                className="lm-select"
+                value={selectedEmployee}
+                onChange={(event) => setSelectedEmployee(event.target.value)}
               >
-                {loading ? "Loading..." : "Get Data"}
+                <option value="">Select Employee</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.firstName} {employee.lastName} ({employee.employeeId})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="lm-field">
+              <label className="lm-label">Date*</label>
+              <input
+                type="date"
+                className="lm-input"
+                value={selectedDate}
+                onChange={(event) => setSelectedDate(event.target.value)}
+              />
+            </div>
+
+            <div className="opw-form-actions">
+              <button type="button" className="opw-primary-btn" onClick={handleGetData} disabled={loading}>
+                <RefreshCcw size={16} />
+                {loading ? "Loading..." : "Get Route Data"}
               </button>
-            </div>
-          </div>
-
-          {/* Map Area */}
-          <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-            <div className="lm-card-title">Route Map</div>
-            <div style={{
-              width: "100%",
-              height: "400px",
-              backgroundColor: "#f3f4f6",
-              borderRadius: "0.375rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "2px dashed #cbd5e1",
-              position: "relative"
-            }}>
-              <div style={{ textAlign: "center", color: "#6b7280" }}>
-                <MapPin size={48} style={{ margin: "0 auto 1rem" }} />
-                <p style={{ fontSize: "0.875rem" }}>Google Map Integration</p>
-                <p style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Select employee and date to view route</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Map Legend */}
-          <div className="lm-card" style={{ marginBottom: "1.5rem" }}>
-            <div className="lm-card-title">Map Activity Indicators</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#3b82f6", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>Visit</span>
-              </div>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#10b981", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>Order Placed</span>
-              </div>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#f59e0b", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>No Order</span>
-              </div>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#06b6d4", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>Punch In</span>
-              </div>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#ec4899", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>Punch Out</span>
-              </div>
-              <div style={{ fontSize: "0.85rem" }}>
-                <span style={{ display: "inline-block", width: "20px", height: "20px", backgroundColor: "#8b5cf6", borderRadius: "50%", marginRight: "0.5rem" }}></span>
-                <span>Last Location</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Route Playback Control */}
-          <div className="lm-card">
-            <div className="lm-card-title">Route Playback Control</div>
-            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                style={{
-                  padding: "0.7rem 1.2rem",
-                  backgroundColor: isPlaying ? "#ef4444" : "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                }}
-              >
-                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                {isPlaying ? "Pause" : "Play"}
+              <button type="button" className="opw-secondary-btn" onClick={handleReset}>
+                Reset
               </button>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "#475569" }}>Speed:</label>
-                <select
-                  className="lm-select"
-                  value={playSpeed}
-                  onChange={e => setPlaySpeed(Number(e.target.value))}
-                  style={{ width: "100px" }}
-                >
-                  <option value={1}>1x</option>
-                  <option value={1.5}>1.5x</option>
-                  <option value={2}>2x</option>
-                  <option value={3}>3x</option>
-                </select>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Employee Activity Summary */}
-        <div>
-          {/* Activity Summary Card */}
-          <div className="lm-card" style={{ marginBottom: "1.5rem", backgroundColor: "#f0f9ff", borderLeft: "4px solid #0284c7" }}>
-            <div className="lm-card-title">Employee Activity Summary</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ borderBottom: "1px solid #e0e7ff", paddingBottom: "0.75rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>EMPLOYEE</div>
-                <div style={{ fontSize: "1rem", fontWeight: 600, color: "#1f2937" }}>Harshad</div>
-              </div>
-              <div style={{ borderBottom: "1px solid #e0e7ff", paddingBottom: "0.75rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>DESIGNATION</div>
-                <div style={{ fontSize: "1rem", fontWeight: 600, color: "#1f2937" }}>Sr. BDM</div>
-              </div>
-              <div style={{ borderBottom: "1px solid #e0e7ff", paddingBottom: "0.75rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>PUNCH IN</div>
-                <div style={{ fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Not Available</div>
-              </div>
-              <div style={{ borderBottom: "1px solid #e0e7ff", paddingBottom: "0.75rem" }}>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>PUNCH OUT</div>
-                <div style={{ fontSize: "1rem", fontWeight: 600, color: "#ef4444" }}>Not Available</div>
-              </div>
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <MapPin size={18} />
               <div>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 500 }}>DEVICE</div>
-                <div style={{ fontSize: "1rem", fontWeight: 600, color: "#1f2937" }}>Android</div>
+                <h3>Route Snapshot</h3>
+                <p>A focused summary of the employee and day currently under review.</p>
               </div>
             </div>
           </div>
 
-          {/* Daily Activity Stats */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1rem" }}>
-            <div className="lm-card" style={{ backgroundColor: "#f3f4f6" }}>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>VISITS (Live DB)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#3b82f6" }}>{activityStats.visits}</div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Total orders fetched</div>
+          <div className="orm-summary-list">
+            <div className="orm-summary-item">
+              <span>Employee</span>
+              <strong>{selectedEmployeeData ? `${selectedEmployeeData.firstName || ""} ${selectedEmployeeData.lastName || ""}`.trim() : "Not selected"}</strong>
             </div>
-            <div className="lm-card" style={{ backgroundColor: "#f3f4f6" }}>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>ORDERS (Live DB)</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#10b981" }}>{activityStats.orders}</div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Orders placed</div>
+            <div className="orm-summary-item">
+              <span>Employee ID</span>
+              <strong>{selectedEmployeeData?.employeeId || "—"}</strong>
             </div>
-            <div className="lm-card" style={{ backgroundColor: "#f3f4f6" }}>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 600 }}>TRAVEL</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#f59e0b" }}>—</div>
-              <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>GPS tracking required</div>
+            <div className="orm-summary-item">
+              <span>Report Date</span>
+              <strong>{selectedDate ? formatDate(selectedDate) : "Choose a date"}</strong>
+            </div>
+            <div className="orm-summary-item">
+              <span>Playback</span>
+              <strong>{isPlaying ? `Playing at ${playSpeed}x` : "Paused"}</strong>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Route Summary Table */}
-      <div className="lm-card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <div className="lm-card-title">Route Summary ({filteredVisits.length} visits)</div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button style={{ padding: "0.5rem 0.75rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}>
-              <Copy size={14} />
+      <div className="orm-layout">
+        <div className="lm-card opw-panel">
+          <div className="opw-panel-head">
+            <div className="opw-panel-title">
+              <MapPin size={18} />
+              <div>
+                <h3>Route Map Canvas</h3>
+                <p>This screen is ready for Google Maps or GPS playback when live location data is connected.</p>
+              </div>
+            </div>
+            <span className="opw-panel-badge is-info">{filteredVisits.length} stops</span>
+          </div>
+
+          <div className="orm-map-shell">
+            <div className="orm-map-placeholder">
+              <div className="orm-map-placeholder-content">
+                <MapPin size={52} />
+                <h4>{filteredVisits.length > 0 ? "Route data loaded" : "Map waiting for route data"}</h4>
+                <p>
+                  {filteredVisits.length > 0
+                    ? `Showing ${filteredVisits.length} visit records for ${selectedEmployeeData?.firstName || "the selected employee"} on ${formatDate(selectedDate)}.`
+                    : "Select an employee and date, then load the day view to populate the route playback workspace."}
+                </p>
+                <div className="orm-route-hints">
+                  <span className="orm-route-hint">Employee route tracking</span>
+                  <span className="orm-route-hint">Visit verification</span>
+                  <span className="orm-route-hint">Order-linked map points</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="opw-panel">
+              <div className="opw-panel-head">
+                <div className="opw-panel-title">
+                  <Play size={18} />
+                  <div>
+                    <h3>Playback Controls</h3>
+                    <p>Pause or resume route playback and change the simulation speed.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="orm-playback">
+                <button
+                  type="button"
+                  className={isPlaying ? "opw-danger-btn" : "opw-primary-btn"}
+                  onClick={() => setIsPlaying((value) => !value)}
+                >
+                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  {isPlaying ? "Pause Playback" : "Start Playback"}
+                </button>
+                <div className="lm-field">
+                  <label className="lm-label">Speed</label>
+                  <select
+                    className="lm-select"
+                    value={playSpeed}
+                    onChange={(event) => setPlaySpeed(Number(event.target.value))}
+                  >
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                    <option value={3}>3x</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="opw-panel">
+              <div className="opw-panel-head">
+                <div className="opw-panel-title">
+                  <MapPin size={18} />
+                  <div>
+                    <h3>Map Indicators</h3>
+                    <p>Legend placeholders for future GPS or Google Maps marker states.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="orm-legend">
+                <div className="orm-legend-item"><span className="orm-legend-dot is-visit" /> Visit</div>
+                <div className="orm-legend-item"><span className="orm-legend-dot is-order" /> Order Placed</div>
+                <div className="orm-legend-item"><span className="orm-legend-dot is-no-order" /> No Order</div>
+                <div className="orm-legend-item"><span className="orm-legend-dot is-punch-in" /> Punch In</div>
+                <div className="orm-legend-item"><span className="orm-legend-dot is-punch-out" /> Punch Out</div>
+                <div className="orm-legend-item"><span className="orm-legend-dot is-last-location" /> Last Location</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="orm-side-stack">
+          <div className="opw-metric-grid">
+            <div className="opw-metric-card is-info">
+              <span className="opw-metric-label">Visits</span>
+              <strong className="opw-metric-value">{filteredVisits.length}</strong>
+              <span className="opw-metric-note">Records loaded for the selected employee/date.</span>
+            </div>
+            <div className="opw-metric-card is-success">
+              <span className="opw-metric-label">Orders</span>
+              <strong className="opw-metric-value">{completedVisits}</strong>
+              <span className="opw-metric-note">Completed order-related stops.</span>
+            </div>
+            <div className="opw-metric-card is-warning">
+              <span className="opw-metric-label">Pending Stops</span>
+              <strong className="opw-metric-value">{pendingVisits}</strong>
+              <span className="opw-metric-note">Route points still awaiting completion.</span>
+            </div>
+          </div>
+
+          <div className="lm-card opw-panel">
+            <div className="opw-panel-head">
+              <div className="opw-panel-title">
+                <Search size={18} />
+                <div>
+                  <h3>Why This View Helps</h3>
+                  <p>Keep route ops, productivity tracking, and field visibility aligned.</p>
+                </div>
+              </div>
+            </div>
+            <div className="orm-benefits">
+              <div className="orm-benefit-card">
+                <h4>Track field movement</h4>
+                <p>Understand where employees worked and which routes were actually covered.</p>
+              </div>
+              <div className="orm-benefit-card">
+                <h4>Monitor visit productivity</h4>
+                <p>See completed versus pending retail visits in one scan-friendly report.</p>
+              </div>
+              <div className="orm-benefit-card">
+                <h4>Validate field execution</h4>
+                <p>Prepare this screen for stronger GPS validation when location data is connected.</p>
+              </div>
+              <div className="orm-benefit-card">
+                <h4>Replay route activity</h4>
+                <p>Playback controls support route storytelling during reviews and audits.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="lm-card opw-panel">
+        <div className="opw-panel-head">
+          <div className="opw-panel-title">
+            <MapPin size={18} />
+            <div>
+              <h3>Route Summary</h3>
+              <p>Search, export, and review the loaded visit records with clearer status visibility.</p>
+            </div>
+          </div>
+          <div className="opw-toolbar-actions">
+            <button type="button" className="opw-secondary-btn" onClick={() => void handleCopy()}>
+              <Copy size={16} />
+              Copy
             </button>
-            <button style={{ padding: "0.5rem 0.75rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}>
+            <button type="button" className="opw-secondary-btn" onClick={handleCsvExport}>
               CSV
             </button>
-            <button style={{ padding: "0.5rem 0.75rem", backgroundColor: "#dbeafe", border: "1px solid #0284c7", borderRadius: "0.375rem", cursor: "pointer" }}>
-              <FileText size={14} />
+            <button type="button" className="opw-secondary-btn" onClick={handleExcelExport}>
+              <FileSpreadsheet size={16} />
+              Excel
+            </button>
+            <button type="button" className="opw-primary-btn" onClick={handlePdfExport}>
+              <FileText size={16} />
+              PDF
             </button>
           </div>
         </div>
 
-        <div style={{ marginBottom: "1rem", position: "relative" }}>
-          <Search size={16} style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input
-            type="text"
-            className="lm-input"
-            placeholder="Search retailer or route..."
-            value={searchTerm}
-            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            style={{ paddingLeft: "2.5rem", width: "100%" }}
-          />
+        <div className="opw-toolbar">
+          <div className="opw-search">
+            <Search size={16} />
+            <div>
+              <label htmlFor="order-route-map-search">Search route visits</label>
+              <input
+                id="order-route-map-search"
+                type="text"
+                className="lm-input"
+                placeholder="Search retailer, route, or employee"
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="lm-table-wrap" style={{ overflowX: "auto" }}>
-          <table className="lm-table">
+        <div className="opw-table-summary">
+          <span>Showing {visibleStart}-{visibleEnd} of {filteredVisits.length} route records</span>
+          <span>{selectedEmployeeData ? `${selectedEmployeeData.firstName || ""} ${selectedEmployeeData.lastName || ""}`.trim() : "No employee selected"}</span>
+        </div>
+
+        <div className="lm-table-wrap opw-table-wrap">
+          <table className="lm-table opw-table">
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Retailer</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Visit Scheduled</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Visit Start</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Visit End</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Total Time</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Status</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>In Range</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Purpose</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Route</th>
-                <th style={{ padding: "1rem", fontWeight: 600, color: "#475569", fontSize: "0.875rem", textAlign: "left" }}>Remark</th>
+              <tr>
+                <th>Retailer</th>
+                <th>Route</th>
+                <th>Scheduled Date</th>
+                <th>Visit Start</th>
+                <th>Total Time</th>
+                <th>Status</th>
+                <th>In Range</th>
+                <th>Purpose</th>
+                <th>Remark</th>
               </tr>
             </thead>
             <tbody>
               {paginatedVisits.length === 0 ? (
-                <tr><td colSpan={10} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>No visits found</td></tr>
-              ) : (
-                paginatedVisits.map((visit, idx) => (
-                  <tr
-                    key={visit.id}
-                    style={{
-                      backgroundColor: idx % 2 === 0 ? "white" : "#f8fafc",
-                      borderBottom: "1px solid #e2e8f0"
-                    }}
-                  >
-                    <td style={{ padding: "1rem", fontWeight: 600, color: "#1f2937" }}>{visit.retailer}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.visitScheduledDate}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.visitStartDate}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.visitEndDate}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontWeight: 500 }}>{visit.totalTime}</td>
-                    <td style={{ padding: "1rem" }}>
-                      <span style={{
-                        display: "inline-block",
-                        padding: "0.3rem 0.6rem",
-                        borderRadius: "0.375rem",
-                        fontSize: "0.75rem",
-                        fontWeight: 500,
-                        backgroundColor: visit.status === "Completed" ? "#d1fae5" : "#fee2e2",
-                        color: visit.status === "Completed" ? "#065f46" : "#991b1b"
-                      }}>
-                        {visit.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "1rem", textAlign: "center", fontWeight: 600, color: visit.inRange === "Yes" ? "#16a34a" : "#dc2626" }}>{visit.inRange}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.purpose}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.route}</td>
-                    <td style={{ padding: "1rem", color: "#475569", fontSize: "0.85rem" }}>{visit.remark}</td>
-                  </tr>
-                ))
-              )}
+                <tr>
+                  <td colSpan={9}>
+                    <div className="opw-empty">
+                      <h4>No route activity loaded</h4>
+                      <p>Select an employee and date, then load the route view to review field activity.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedVisits.map((visit) => (
+                <tr key={visit.id}>
+                  <td>
+                    <div className="opw-entity">
+                      <strong>{visit.retailer}</strong>
+                      <small>{visit.employeeName}</small>
+                    </div>
+                  </td>
+                  <td>{visit.route}</td>
+                  <td>{visit.visitScheduledDate}</td>
+                  <td>{visit.visitStartDate}</td>
+                  <td>{visit.totalTime}</td>
+                  <td>
+                    <span className={`opw-status-badge ${visit.status === "Completed" ? "is-success" : visit.status === "Pending" ? "is-warning" : "is-danger"}`}>
+                      {visit.status}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`opw-status-badge ${visit.inRange === "Yes" ? "is-success" : "is-danger"}`}>
+                      {visit.inRange}
+                    </span>
+                  </td>
+                  <td>{visit.purpose}</td>
+                  <td>{visit.remark}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem", borderTop: "1px solid #e2e8f0" }}>
-            <span style={{ color: "#64748b", fontSize: "0.875rem" }}>
-              Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredVisits.length)} of {filteredVisits.length} entries
-            </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}>Previous</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button key={page} onClick={() => setCurrentPage(page)} style={{ backgroundColor: currentPage === page ? "#6366f1" : "#e2e8f0", color: currentPage === page ? "white" : "#475569", border: "none", borderRadius: "0.375rem", cursor: "pointer", padding: "0.5rem 0.75rem" }}>{page}</button>
-              ))}
-              <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}>Next</button>
+        {filteredVisits.length > 0 && (
+          <div className="opw-pagination">
+            <span>Page {currentPage} of {totalPages}</span>
+            <div className="opw-pagination-controls">
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                type="button"
+                className="opw-pagination-btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Benefits */}
-      <div className="lm-card" style={{ backgroundColor: "#f0fdf4", borderLeft: "4px solid #10b981", marginTop: "2rem" }}>
-        <div className="lm-card-title" style={{ color: "#047857" }}>✓ Benefits</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem" }}>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Track field employee movement</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Real-time GPS tracking on map</p></div>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Monitor visit productivity</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>View time spent at each location</p></div>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Detect fake visits</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>GPS verification prevents false data</p></div>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Analyze travel routes</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Optimize employee route planning</p></div>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Improve sales management</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Better field team oversight</p></div>
-          <div><h4 style={{ color: "#047857", marginBottom: "0.5rem" }}>✔ Route playback & analysis</h4><p style={{ fontSize: "0.85rem", color: "#6b7280" }}>Replay routes at different speeds</p></div>
-        </div>
       </div>
     </div>
   );

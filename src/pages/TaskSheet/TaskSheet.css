@@ -217,6 +217,13 @@
   gap: 14px;
 }
 
+.tasksheet-setting-row-card {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.92) 100%);
+}
+
 .tasksheet-setting-copy h4 {
   margin: 0;
   font-size: 14px;
@@ -248,6 +255,184 @@
   justify-content: flex-end;
   margin-top: 24px;
   gap: 12px;
+}
+
+.tasksheet-settings-intro {
+  margin-bottom: 22px;
+  padding: 22px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(238, 242, 255, 0.92) 100%);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.tasksheet-settings-intro-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.tasksheet-settings-kicker,
+.tasksheet-settings-panel-kicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tasksheet-settings-intro h2 {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+}
+
+.tasksheet-settings-intro p,
+.tasksheet-settings-panel-copy p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tasksheet-settings-intro-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 320px;
+}
+
+.tasksheet-settings-stat {
+  padding: 14px 16px;
+  text-align: center;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--color-border-light);
+}
+
+.tasksheet-settings-stat span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tasksheet-settings-stat strong {
+  font-family: var(--font-family-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.tasksheet-settings-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.tasksheet-settings-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.tasksheet-settings-panel-pro {
+  border-color: rgba(79, 70, 229, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.9) 100%);
+}
+
+.tasksheet-settings-panel-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.tasksheet-settings-panel-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.tasksheet-settings-panel-copy h3 {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.tasksheet-card-heading-icon-pro {
+  background: linear-gradient(135deg, var(--color-primary-50), #ffffff);
+  box-shadow: var(--shadow-xs);
+}
+
+.tasksheet-settings-badge {
+  margin-top: 4px;
+  border-radius: var(--radius-full);
+  padding: 5px 10px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.tasksheet-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tasksheet-toggle-track {
+  width: 42px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-gray-200);
+  padding: 3px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tasksheet-toggle.is-on .tasksheet-toggle-track,
+.tasksheet-toggle.is-enabled .tasksheet-toggle-track {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+}
+
+.tasksheet-toggle-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-xs);
+  margin-left: auto;
+}
+
+.tasksheet-toggle-label,
+.tasksheet-toggle-pill {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-primary-700);
 }
 
 .tasksheet-report-card {
@@ -832,6 +1017,24 @@
   .tasksheet-settings-grid,
   .tasksheet-grid-fit {
     grid-template-columns: 1fr;
+  }
+
+  .tasksheet-settings-intro {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tasksheet-settings-intro-stats {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .tasksheet-settings-panel-head {
+    flex-wrap: wrap;
+  }
+
+  .tasksheet-settings-badge {
+    margin-top: 0;
   }
 
   .tasksheet-search-wrap,
