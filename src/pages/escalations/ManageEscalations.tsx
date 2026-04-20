@@ -19,6 +19,7 @@ import {
     CheckCircle
 } from 'lucide-react';
 import api from '../../lib/axios';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AddEscalation from './AddEscalation';
 import EscalationThread from './EscalationThread';
 import './escalations.css';
@@ -38,6 +39,8 @@ interface Escalation {
 }
 
 const ManageEscalations: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [escalations, setEscalations] = useState<Escalation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +54,14 @@ const ManageEscalations: React.FC = () => {
         inProgress: 0,
         resolved: 0
     });
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('action') === 'add') {
+            setIsAddModalOpen(true);
+            navigate('/escalations/manage', { replace: true });
+        }
+    }, [location.search, navigate]);
 
     useEffect(() => {
         fetchEscalations();

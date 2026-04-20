@@ -191,10 +191,10 @@ export default function BGVManagement() {
                 <button className={`bgv-tab ${activeTab === 'new' ? 'active' : ''}`} onClick={() => setActiveTab('new')}>New Employees</button>
             </div>
 
-            <div className="table-card" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', gap: '16px', flex: 1 }}>
-                        <div className="bgv-search-box" style={{ maxWidth: '400px' }}>
+            <div className="table-card bgv-table-card">
+                <div className="bgv-table-header">
+                    <div className="bgv-table-controls">
+                        <div className="bgv-search-box">
                             <Search size={16} className="search-icon" />
                             <input type="text" placeholder="Search employee..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                         </div>

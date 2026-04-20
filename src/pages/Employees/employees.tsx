@@ -172,30 +172,49 @@ function Employees({ setActivePage, setSelectedEmployee }: any) {
         </div>
       </div>
 
-      <div className="glass-card mb-6">
-        <div className="form-grid items-center">
+      <div className="glass-card mb-6 filter-card">
+        <div className="filter-row">
           <div className="search-box">
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search by ID, Name, Email..."
+              placeholder="Search by ID, name, email or designation"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          <div className="branch-nav-wrapper">
-            <div className="branch-nav">
+          <div className="filter-group">
+            <label>Branch</label>
+            <select
+              className="filter-select"
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+            >
               {branches.map((branch) => (
-                <button
-                  key={branch}
-                  className={`branch-nav-item ${selectedBranch === branch ? "active" : ""}`}
-                  onClick={() => setSelectedBranch(branch)}
-                >
-                  {branch}
-                </button>
+                <option key={branch} value={branch}>{branch}</option>
               ))}
-            </div>
+            </select>
+          </div>
+
+          <div className="filter-actions">
+            <button className="btn btn-secondary" onClick={handleReset}>
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
+        <div className="branch-nav-wrapper">
+          <div className="branch-nav">
+            {branches.map((branch) => (
+              <button
+                key={branch}
+                className={`branch-nav-item ${selectedBranch === branch ? "active" : ""}`}
+                onClick={() => setSelectedBranch(branch)}
+              >
+                {branch}
+              </button>
+            ))}
           </div>
         </div>
       </div>

@@ -205,7 +205,9 @@ export default function AdminRights() {
         "Contact Support Team",
         "Tax Exemption",
         "Payroll",
-        "Meeting"
+        "Meeting",
+        "Discussion",
+        "Escalation"
     ];
 
     const handleAdminPasswordReset = async () => {

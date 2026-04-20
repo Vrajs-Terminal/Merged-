@@ -79,6 +79,43 @@
     flex-wrap: wrap;
 }
 
+.meeting-action-cell {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.meeting-action-cell .action-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+}
+
+.meeting-card-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 32px;
+}
+
+.meeting-card-panel .glass-effect {
+    min-height: 120px;
+    padding: 24px;
+}
+
+.meeting-panel-title {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--meeting-text-main);
+}
+
+.meeting-panel-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: var(--meeting-text-muted);
+}
+
 .meeting-back-btn {
     background: none;
     border: none;

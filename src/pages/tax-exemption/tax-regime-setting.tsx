@@ -223,7 +223,7 @@ const TaxRegimeSetting = () => {
                         <option value="Not Assigned">Not Assigned</option>
                     </select>
 
-                    <div className="search-input-wrapper">
+                    <div className="search-input-wrapper search-full">
                         <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
                         <input 
                             type="text" 
@@ -233,10 +233,12 @@ const TaxRegimeSetting = () => {
                         />
                     </div>
 
-                    <button className="btn-filter" onClick={fetchData}><Filter size={16}/> Apply Filters</button>
-                    <button className="btn-reset" onClick={() => {
-                        setFilters({ ...filters, branch_id: '', department_id: '', search: '', tax_regime: '', salary_type: '' });
-                    }}><RefreshCw size={16}/> Reset</button>
+                    <div className="filter-actions">
+                        <button className="btn-filter" onClick={fetchData}><Filter size={16}/> Apply</button>
+                        <button className="btn-reset" onClick={() => {
+                            setFilters({ ...filters, branch_id: '', department_id: '', search: '', tax_regime: '', salary_type: '' });
+                        }}><RefreshCw size={16}/> Reset</button>
+                    </div>
                 </div>
 
                 {/* Bulk Actions Bar */}

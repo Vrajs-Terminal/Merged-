@@ -153,8 +153,8 @@ const AddVendor: React.FC = () => {
         <div className="vendor-layout">
             <div className="vendor-container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
                 <div className="vendor-header">
-                    <div className="vendor-header-info">
-                        <button className="action-btn" onClick={() => navigate(-1)} style={{ marginRight: '12px' }}>
+                    <div className="vendor-header-info" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button className="action-btn" onClick={() => navigate(-1)}>
                             <ArrowLeft size={16} />
                         </button>
                         <div>
@@ -165,14 +165,12 @@ const AddVendor: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="vendor-form">
-                    <div className="form-sections" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    <div className="form-sections">
                         
                         {/* Basic Details */}
                         <section>
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#1e293b', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                                <User size={18} style={{ color: '#3b82f6' }} /> Basic Details
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                            <h3 className="section-title"><User size={18} style={{ color: '#3b82f6' }} /> Basic Details</h3>
+                            <div className="vendor-form-grid">
                                 <div className="form-group">
                                     <label>Vendor Name <span style={{ color: '#ef4444' }}>*</span></label>
                                     <input type="text" name="name" className="form-control" placeholder="Full name" value={form.name} onChange={handleChange} required />
@@ -208,10 +206,8 @@ const AddVendor: React.FC = () => {
 
                         {/* Business Details */}
                         <section>
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#1e293b', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                                <Building size={18} style={{ color: '#3b82f6' }} /> Business Details
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                            <h3 className="section-title"><Building size={18} style={{ color: '#3b82f6' }} /> Business Details</h3>
+                            <div className="vendor-form-grid">
                                 <div className="form-group">
                                     <label>GST Number</label>
                                     <input type="text" name="gstNumber" className="form-control" placeholder="GSTIN" value={form.gstNumber} onChange={handleChange} />
@@ -229,10 +225,8 @@ const AddVendor: React.FC = () => {
 
                         {/* Address Details */}
                         <section>
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#1e293b', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                                <MapPin size={18} style={{ color: '#3b82f6' }} /> Address Details
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                            <h3 className="section-title"><MapPin size={18} style={{ color: '#3b82f6' }} /> Address Details</h3>
+                            <div className="vendor-form-grid">
                                 <div className="form-group">
                                     <label>City</label>
                                     <input type="text" name="city" className="form-control" placeholder="City" value={form.city} onChange={handleChange} />
@@ -254,10 +248,8 @@ const AddVendor: React.FC = () => {
 
                         {/* Financial Details */}
                         <section>
-                            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', color: '#1e293b', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                                <CreditCard size={18} style={{ color: '#3b82f6' }} /> Financial Details
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+                            <h3 className="section-title"><CreditCard size={18} style={{ color: '#3b82f6' }} /> Financial Details</h3>
+                            <div className="vendor-form-grid">
                                 <div className="form-group">
                                     <label>Bank Name</label>
                                     <input type="text" name="bankName" className="form-control" placeholder="Bank" value={form.bankName} onChange={handleChange} />
@@ -279,19 +271,12 @@ const AddVendor: React.FC = () => {
 
                     </div>
 
-                    <div className="modal-footer" style={{ justifyContent: 'flex-start', padding: '24px' }}>
-                        <button type="submit" className="btn-primary" disabled={saving} style={{ padding: '12px 24px' }}>
+                    <div className="modal-footer">
+                        <button type="submit" className="btn-primary" disabled={saving}>
                             {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                             {saving ? 'Saving...' : 'Save Vendor Details'}
                         </button>
-                        <button type="button" className="btn-secondary" onClick={() => navigate('/vendor/manage')} style={{
-                            background: '#f1f5f9',
-                            border: 'none',
-                            padding: '12px 24px',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '14px'
-                        }}>
+                        <button type="button" className="btn-secondary" onClick={() => navigate('/vendor/manage')}>
                             Cancel
                         </button>
                     </div>

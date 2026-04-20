@@ -32,6 +32,9 @@ const ManageVendors: React.FC = () => {
         status: '',
     });
 
+    const activeVendors = vendors.filter(v => v.status === 'Active').length;
+    const inactiveVendors = vendors.filter(v => v.status === 'Inactive').length;
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -116,7 +119,7 @@ const ManageVendors: React.FC = () => {
                         <p>View, filter, and manage all your registered vendors.</p>
                     </div>
                     <div className="vendor-actions">
-                        <button className="action-btn" onClick={exportToCSV} title="Export CSV">
+                        <button className="btn-secondary" onClick={exportToCSV} title="Export CSV">
                             <Download size={16} /> Export
                         </button>
                         <button className="btn-primary" onClick={() => navigate('/vendor/add')}>
@@ -125,8 +128,23 @@ const ManageVendors: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="report-filters" style={{ flexWrap: 'wrap' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="vendor-summary-grid">
+                    <div className="vendor-summary-card">
+                        <h4>Total Vendors</h4>
+                        <strong>{vendors.length}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Active Vendors</h4>
+                        <strong>{activeVendors}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Inactive Vendors</h4>
+                        <strong>{inactiveVendors}</strong>
+                    </div>
+                </div>
+
+                <div className="report-filters">
+                    <div className="form-group">
                         <label>Search Vendor</label>
                         <div className="search-input-wrapper">
                             <Search size={16} />
@@ -139,11 +157,10 @@ const ManageVendors: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group">
                         <label>Filter by Category</label>
                         <select 
-                            className="form-control" 
-                            style={{ width: '200px' }}
+                            className="form-control"
                             value={filters.categoryId}
                             onChange={(e) => setFilters({...filters, categoryId: e.target.value})}
                         >
@@ -151,11 +168,10 @@ const ManageVendors: React.FC = () => {
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group">
                         <label>Filter by Status</label>
                         <select 
-                            className="form-control" 
-                            style={{ width: '150px' }}
+                            className="form-control"
                             value={filters.status}
                             onChange={(e) => setFilters({...filters, status: e.target.value})}
                         >
@@ -164,7 +180,7 @@ const ManageVendors: React.FC = () => {
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
-                    <button className="btn-secondary" style={{ padding: '8px 16px' }} onClick={() => { setSearch(''); setFilters({ categoryId: '', status: '' }); }}>
+                    <button className="btn-secondary" onClick={() => { setSearch(''); setFilters({ categoryId: '', status: '' }); }}>
                         Reset Filters
                     </button>
                 </div>

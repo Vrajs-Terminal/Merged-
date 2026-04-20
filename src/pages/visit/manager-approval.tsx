@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, RefreshCcw, Eye, MessageSquare, Briefcase, MapPin, Clock, ShieldCheck } from 'lucide-react';
 import api from '../../lib/axios';
 import { toast } from 'react-hot-toast';
+import '../visit_management/visit.css';
 
 interface Visit {
     id: number;
@@ -84,33 +85,32 @@ const ManagerApproval = () => {
     };
 
     return (
-        <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div className="visit-layout">
+            <div className="visit-header-banner">
                 <div>
-                    <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <ShieldCheck color="#6366f1" /> Manager Approvals
+                    <h2 className="visit-title">
+                        <ShieldCheck color="#d8b4fe" /> Manager Approvals
                     </h2>
-                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: 14 }}>
-                        Review, verify, and greenlight employee field visit reports (25 entries per page).
+                    <p className="visit-subtitle">
+                        Review, verify, and greenlight employee field visit reports in one polished workflow.
                     </p>
                 </div>
-                
-                <div style={{ position: 'relative' }}>
-                    <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}/>
-                    <input 
-                        type="text" 
-                        placeholder="Search employee or retailer..."
-                        value={search}
-                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        style={{ padding: '10px 16px 10px 36px', borderRadius: 8, border: '1px solid #cbd5e1', width: 300, fontSize: 14, outline: 'none' }}
-                    />
+                <div className="visit-filters" style={{ justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+                    <div className="search-group" style={{ maxWidth: 340 }}>
+                        <Search size={16} color="#94a3b8" />
+                        <input
+                            type="text"
+                            placeholder="Search employee or retailer..."
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="visit-card" style={{ padding: 0, borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <table className="visit-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                             <tr>
                                 <th style={{ padding: '16px 24px', fontSize: 13, fontWeight: 600, color: '#475569' }}>#</th>
@@ -273,25 +273,23 @@ const ManagerApproval = () => {
 
             <style>
                 {`
-                    .badge { display: inline-flex; alignItems: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+                    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
                     .badge-success { background: #dcfce7; color: #16a34a; }
                     .badge-danger { background: #fef2f2; color: #dc2626; }
                     .badge-warning { background: #fef3c7; color: #d97706; }
                     .badge-neutral { background: #f1f5f9; color: #475569; }
-                    
+
+                    .visit-card { box-shadow: 0 10px 30px -15px rgba(15, 23, 42, 0.08); }
+                    .visit-card:hover { transform: translateY(-2px); }
                     .table-row:hover { background: #f8fafc; }
-                    
                     .review-btn { padding: 8px 16px; border-radius: 6px; background: white; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
                     .review-btn:hover:not(:disabled) { border-color: #94a3b8; background: #f8fafc; }
                     .review-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-                    .action-btn { padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; background: white; font-weight: 600; color: #64748b; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s; }
+                    .action-btn { padding: 14px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; font-weight: 600; color: #475569; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s; }
                     .action-btn:hover { background: #f8fafc; }
-                    
                     .action-btn.approve.active { background: #eff6ff; border-color: #3b82f6; color: #2563eb; }
                     .action-btn.resubmit.active { background: #fefce8; border-color: #eab308; color: #ca8a04; }
                     .action-btn.reject.active { background: #fef2f2; border-color: #ef4444; color: #dc2626; }
-
                     .fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
                     @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                     .fade-in { animation: fadeIn 0.2s ease-out forwards; }

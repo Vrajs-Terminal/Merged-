@@ -31,6 +31,9 @@ const SubCategory: React.FC = () => {
     const [editItem, setEditItem] = useState<Partial<SubCategory> | null>(null);
     const [saving, setSaving] = useState(false);
 
+    const activeCount = subCategories.filter(item => item.status === 'Active').length;
+    const inactiveCount = subCategories.filter(item => item.status === 'Inactive').length;
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -121,6 +124,21 @@ const SubCategory: React.FC = () => {
                         <button className="btn-primary" onClick={openAdd}>
                             <Plus size={16} /> Add Sub Category
                         </button>
+                    </div>
+                </div>
+
+                <div className="vendor-summary-grid">
+                    <div className="vendor-summary-card">
+                        <h4>Total Sub Categories</h4>
+                        <strong>{subCategories.length}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Active Sub Categories</h4>
+                        <strong>{activeCount}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Inactive Sub Categories</h4>
+                        <strong>{inactiveCount}</strong>
                     </div>
                 </div>
 

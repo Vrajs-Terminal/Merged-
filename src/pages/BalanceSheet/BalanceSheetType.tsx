@@ -132,11 +132,11 @@ const BalanceSheetType: React.FC = () => {
               };
             }
             return acc;
-          }, {})
-        );
+          }, {}) as Record<string, BalanceSheetTypeItem>
+        ) as BalanceSheetTypeItem[];
 
         const storedCustomTypes = localStorage.getItem(CUSTOM_TYPE_STORAGE_KEY);
-        const parsedCustomTypes: BalanceSheetTypeItem[] = storedCustomTypes ? JSON.parse(storedCustomTypes) : [];
+        const parsedCustomTypes = storedCustomTypes ? (JSON.parse(storedCustomTypes) as BalanceSheetTypeItem[]) : [];
 
         const dedupedCustom = parsedCustomTypes.filter((type) => {
           const duplicateSystemType = systemTypes.some(
@@ -145,7 +145,7 @@ const BalanceSheetType: React.FC = () => {
           return !duplicateSystemType;
         });
 
-        const nextTypes = [...systemTypes, ...dedupedCustom];
+        const nextTypes = [...systemTypes, ...dedupedCustom] as BalanceSheetTypeItem[];
         setTypes(nextTypes);
 
         if (parsedCustomTypes.length !== dedupedCustom.length) {
@@ -227,11 +227,11 @@ const BalanceSheetType: React.FC = () => {
   };
 
   const handleToggleVisibility = (typeId: string) => {
-    const nextTypes = types.map((type) => {
+    const nextTypes = types.map((type): BalanceSheetTypeItem => {
       if (type.id !== typeId) return type;
       return {
         ...type,
-        status: type.status === "Visible" ? "Stashed" : "Visible",
+        status: (type.status === "Visible" ? "Stashed" : "Visible") as BalanceSheetTypeItem["status"],
       };
     });
 

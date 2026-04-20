@@ -369,6 +369,7 @@ function Sidebar({ isOpen }: SidebarProps) {
             icon: MessageSquare,
             subItems: [
                 { name: "Manage Discussion", path: "/discussions/manage" },
+                { name: "Create Discussion", path: "/discussions/manage?action=add" },
             ]
         },
         {
@@ -376,6 +377,7 @@ function Sidebar({ isOpen }: SidebarProps) {
             icon: AlertCircle,
             subItems: [
                 { name: "Manage Escalation", path: "/escalations/manage" },
+                { name: "Raise Escalation", path: "/escalations/manage?action=add" },
             ]
         },
         {
@@ -466,7 +468,7 @@ function Sidebar({ isOpen }: SidebarProps) {
         const currentPath = location.pathname.replace(/\/+$/, "");
         const targetPath = path.replace(/\/+$/, "");
 
-        return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+        return currentPath === targetPath;
     };
 
     const isSubActive = (subItems?: SubItem[]): boolean => {
@@ -474,11 +476,36 @@ function Sidebar({ isOpen }: SidebarProps) {
         return subItems.some(sub => isActive(sub.path) || isSubActive(sub.subItems));
     };
 
+    // Automatically open menus based on current route
+    useEffect(() => {
+        const menusToOpen: { [key: string]: boolean } = {};
+
+        dynamicMenuItems.forEach(item => {
+            if (item.subItems && item.subItems.length > 0) {
+                const hasActiveSubItem = item.subItems.some(subItem => 
+                    isActive(subItem.path) || (subItem.subItems && isSubActive(subItem.subItems))
+                );
+                if (hasActiveSubItem) {
+                    menusToOpen[item.name] = true;
+                }
+            }
+        });
+
+        setOpenMenus(menusToOpen);
+    }, [location.pathname, dynamicMenuItems]);
+
     const filteredMenuItems = dynamicMenuItems.filter(item => {
         if (!user?.permissions) return true;
-        const perms = typeof user.permissions === 'string'
+        const rawPerms = typeof user.permissions === 'string'
             ? JSON.parse(user.permissions)
             : user.permissions;
+
+        const perms = {
+            ...rawPerms,
+            Discussion: rawPerms.Discussion ?? rawPerms['Discussion Module'] ?? rawPerms['Manage Discussion'],
+            Escalation: rawPerms.Escalation ?? rawPerms['Escalation Module'] ?? rawPerms['Manage Escalation'],
+        };
+
         if (Object.keys(perms).length === 0) return true;
         return perms[item.name] !== false;
     });

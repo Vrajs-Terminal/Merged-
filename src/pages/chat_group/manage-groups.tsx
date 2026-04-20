@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../lib/axios';
 import { 
     Search, Plus, Users, LayoutList, 
-    ChevronLeft, ChevronRight, Edit, Trash2, 
+    ChevronLeft, ChevronRight, Trash2, 
     X, Loader2, MessageSquare
 } from 'lucide-react';
 import './chat-groups.css';
@@ -19,12 +20,17 @@ interface ChatGroup {
 }
 
 export default function ManageGroups() {
+    const navigate = useNavigate();
     const [groups, setGroups] = useState<ChatGroup[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [search, setSearch] = useState('');
     
+    const totalGroups = groups.length;
+    const autoGroups = groups.filter(item => item.isAutoCreated).length;
+    const totalMembers = groups.reduce((sum, item) => sum + (item._count?.members || 0), 0);
+
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +134,21 @@ export default function ManageGroups() {
                     </div>
                 </div>
 
+                <div className="group-summary-grid">
+                    <div className="group-summary-card">
+                        <p>Total Groups</p>
+                        <strong>{totalGroups}</strong>
+                    </div>
+                    <div className="group-summary-card">
+                        <p>Auto Groups</p>
+                        <strong>{autoGroups}</strong>
+                    </div>
+                    <div className="group-summary-card">
+                        <p>Total Members</p>
+                        <strong>{totalMembers}</strong>
+                    </div>
+                </div>
+
                 <div className="table-container">
                     <table className="premium-table">
                         <thead>
@@ -185,7 +206,7 @@ export default function ManageGroups() {
                                     <td>
                                         <div className="action-buttons">
                                             {/* Link to members or setup router */}
-                                            <button className="action-btn" title="View Members" onClick={() => window.location.href=`/chat_group/members?groupId=${g.id}`}>
+                                            <button className="action-btn" title="View Members" onClick={() => navigate(`/chat_group/members?groupId=${g.id}`)}>
                                                 <LayoutList size={18} />
                                             </button>
                                             <button className="action-btn delete" title="Delete Group" onClick={() => handleDelete(g.id)}>

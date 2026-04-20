@@ -32,6 +32,8 @@ export default function ChatMembers() {
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const selectedGroup = groups.find((g) => g.id.toString() === selectedGroupId);
+
     // Add Member Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [allEmployees, setAllEmployees] = useState<any[]>([]);
@@ -144,7 +146,7 @@ export default function ChatMembers() {
         <div className="chat-group-layout">
             <div className="chat-group-container">
                 <div className="chat-group-header">
-                    <div className="chat-group-header-info">
+                        <div className="chat-group-header-info">
                         <h2>
                             <button className="action-btn" style={{ display: 'inline-flex', marginRight: '16px', verticalAlign: 'middle', background: '#f1f5f9' }} onClick={() => navigate('/chat_group')}>
                                 <ArrowLeft size={20} />
@@ -152,6 +154,12 @@ export default function ChatMembers() {
                             Group Members
                         </h2>
                         <p>Manage employees inside groups with control over visibility and participation.</p>
+                        {selectedGroup && (
+                            <div className="chat-group-meta">
+                                <span className="badge-pill">Selected Group: {selectedGroup.name}</span>
+                                <span className="badge-pill">Total Members: {members.length}</span>
+                            </div>
+                        )}
                     </div>
                     <div className="chat-group-actions">
                         <select 

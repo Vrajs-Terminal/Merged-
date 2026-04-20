@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    BarChart3, Download, Filter, FileText, Users, MapPin, 
+    BarChart3, Filter, FileText, Users, MapPin, 
     Calendar, Clock, CheckCircle, RefreshCcw, FileOutput, Briefcase 
 } from 'lucide-react';
 import api from '../../lib/axios';
 import { toast } from 'react-hot-toast';
+import '../visit_management/visit.css';
 
 interface Visit {
     id: number;
@@ -138,24 +139,21 @@ const VisitReports = () => {
     };
 
     return (
-        <div style={{ padding: '24px', background: '#f8fafc', minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }} className="report-container">
-            
-            {/* Header & Export Actions */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }} className="no-print">
+        <div className="visit-layout report-container">
+            <div className="visit-header-banner no-print" style={{ marginBottom: 20, padding: 20 }}>
                 <div>
-                    <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <BarChart3 color="#4f46e5" /> Reports & Analytics
+                    <h2 className="visit-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <BarChart3 color="#a5b4fc" /> Reports & Analytics
                     </h2>
-                    <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: 14 }}>
+                    <p className="visit-subtitle">
                         Monitor field outcomes, extract insights, and measure employee productivity natively.
                     </p>
                 </div>
-                
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <button className="export-btn outline" onClick={exportPDF}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button className="btn-visit-secondary" onClick={exportPDF}>
                         <FileText size={16}/> Export PDF
                     </button>
-                    <button className="export-btn filled" onClick={exportCSV}>
+                    <button className="btn-visit-primary" onClick={exportCSV} style={{ background: '#10b981', boxShadow: '0 10px 20px -10px rgba(16,185,129,0.35)' }}>
                         <FileOutput size={16}/> Export Excel
                     </button>
                     <button className={`filter-toggle-btn ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
@@ -166,7 +164,7 @@ const VisitReports = () => {
 
             {/* Smart Filters Panel */}
             {isFilterOpen && (
-                <div className="filter-panel fade-in no-print" style={{ marginBottom: 24, padding: 20, background: 'white', borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                <div className="filter-panel fade-in no-print" style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1e293b' }}>Advanced Location & Data Filters</h4>
                         <button onClick={resetFilters} style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Reset All</button>
@@ -232,7 +230,7 @@ const VisitReports = () => {
             )}
 
             {/* Report Tabs */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }} className="tabs-container no-print">
+            <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }} className="tabs-container no-print">
                 <button className={`tab-btn ${activeTab === 'Daily' ? 'active' : ''}`} onClick={() => setActiveTab('Daily')}>
                     <Calendar size={18}/> Daily Visit Report
                 </button>
@@ -291,8 +289,8 @@ const VisitReports = () => {
                 )}
 
                 {/* Table Logic Mapping */}
-                <div style={{ overflowX: 'auto', flex: 1 }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <div style={{ overflowX: 'auto', flex: 1, padding: 20 }}>
+                    <table className="visit-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead style={{ background: '#f1f5f9', borderBottom: '1px solid #cbd5e1' }}>
                             <tr>
                                 {activeTab === 'Client' ? (
@@ -352,9 +350,9 @@ const VisitReports = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <td style={tdStyle}>{new Date(v.date).toDateString()}</td>
-                                                <td style={tdStyle}><span style={stBold}>{v.user.name}</span></td>
-                                                <td style={tdStyle}>{v.client_name}</td>
+                                                                        <td style={tdStyle}>{new Date(v.date).toDateString()}</td>
+                                                <td style={tdStyle}><span style={stBold}>{v.user.name}</span><br/><span style={stSub}>{v.user.department?.name || 'Unknown'}</span></td>
+                                                <td style={tdStyle}>{v.client_name}<br/><span style={stSub}>{v.company_name || '--'}</span></td>
                                                 <td style={tdStyle}>{v.check_in_time ? new Date(v.check_in_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '---'}</td>
                                                 <td style={tdStyle}>{v.status}</td>
                                             </>
@@ -380,35 +378,35 @@ const VisitReports = () => {
                     }
                     .print-only { display: none; }
 
-                    .export-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-                    .export-btn.outline { border: 1px solid #cbd5e1; background: white; color: #475569; }
-                    .export-btn.outline:hover { background: #f8fafc; border-color: #94a3b8; color: #1e293b; }
-                    .export-btn.filled { border: none; background: #10b981; color: white; }
-                    .export-btn.filled:hover { background: #059669; }
+                    .filter-panel { padding: 20px; background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px -15px rgba(15,23,42,0.08); }
+                    .filter-group { display: flex; flex-direction: column; gap: 8px; }
+                    .filter-group label { font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+                    .filter-group input, .filter-group select { padding: 12px 14px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; transition: border 0.2s; background: white; color: #334155; }
+                    .filter-group input:focus, .filter-group select:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,0.08); }
 
-                    .filter-toggle-btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1; background: white; color: #0f172a; position: relative; transition: 0.2s; }
-                    .filter-toggle-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
-                    .filter-badge { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; border: 2px solid white; }
-
-                    .filter-group { display: flex; flex-direction: column; gap: 6px; }
-                    .filter-group label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-                    .filter-group input, .filter-group select { padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; outline: none; transition: border 0.2s; background: white; color: #334155; }
-                    .filter-group input:focus, .filter-group select:focus { border-color: #3b82f6; }
-
-                    .tabs-container { display: flex; border-bottom: 2px solid #e2e8f0; }
+                    .tabs-container { display: flex; border-bottom: 2px solid #e2e8f0; flex-wrap: wrap; }
                     .tab-btn { background: none; border: none; padding: 12px 20px; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; }
                     .tab-btn:hover { color: #0f172a; }
-                    .tab-btn.active { color: #4f46e5; border-bottom-color: #4f46e5; }
-                    
-                    .kpi-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; }
-                    .icon-wrap { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+                    .tab-btn.active { color: #4338ca; border-bottom-color: #4338ca; }
+
+                    .visit-table th { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 18px 20px; font-size: 13px; font-weight: 700; color: #475569; }
+                    .visit-table td { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+                    .visit-table tbody tr:hover { background: #f8fafc; }
+                    .visit-table span { display: inline-block; }
+
+                    .filter-toggle-btn { padding: 10px 16px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1; background: white; color: #0f172a; position: relative; transition: 0.2s; }
+                    .filter-toggle-btn.active { border-color: #4338ca; background: #eef2ff; color: #312e81; }
+                    .filter-badge { position: absolute; top: -4px; right: -4px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; border: 2px solid white; }
+
+                    .kpi-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; display: flex; align-items: center; gap: 16px; }
+                    .kpi-card + .kpi-card { margin-top: 14px; }
+                    .icon-wrap { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
                     .icon-wrap.blue { background: #eff6ff; color: #3b82f6; }
                     .icon-wrap.green { background: #ecfdf5; color: #10b981; }
                     .icon-wrap.orange { background: #fff7ed; color: #ea580c; }
                     .icon-wrap.purple { background: #faf5ff; color: #9333ea; }
-                    .kpi-info { display: flex; flex-direction: column; }
                     .kpi-info span { font-size: 13px; color: #64748b; font-weight: 500; }
-                    .kpi-info h3 { margin: 4px 0 0 0; font-size: 20px; font-weight: 700; color: #0f172a; }
+                    .kpi-info h3 { margin: 4px 0 0; font-size: 20px; font-weight: 700; color: #0f172a; }
 
                     .fade-in { animation: fadeIn 0.2s ease-out; }
                     @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }

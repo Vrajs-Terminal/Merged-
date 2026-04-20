@@ -5,9 +5,9 @@ import {
   Filter,
   TrendingUp,
   Users,
-  Package,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  RefreshCcw
 } from "lucide-react";
 
 interface Order {
@@ -101,8 +101,21 @@ export default function SalesDashboard() {
 
       {/* Date Filters */}
       <div className="lm-card" style={{ marginBottom: "2rem" }}>
-        <div className="lm-card-title"><Filter size={18} /> Date Filters</div>
-        <div className="lm-form-grid">
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: "1.25rem" }}>
+          <div className="lm-card-title"><Filter size={18} /> Date Filters</div>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={fetchDashboard}
+            disabled={loading}
+            style={{ minWidth: "180px", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}
+          >
+            <RefreshCcw size={16} />
+            {loading ? "Refreshing..." : "Refresh Data"}
+          </button>
+        </div>
+
+        <div className="lm-form-grid" style={{ alignItems: "end" }}>
           <div className="lm-field">
             <label className="lm-label">Date Filter</label>
             <input type="date" className="lm-input" value={dateFilter} onChange={e => setDateFilter(e.target.value)} />
@@ -114,11 +127,6 @@ export default function SalesDashboard() {
           <div className="lm-field">
             <label className="lm-label">Year Filter</label>
             <input type="number" className="lm-input" min="2020" max="2050" value={yearFilter} onChange={e => setYearFilter(e.target.value)} />
-          </div>
-          <div className="lm-field" style={{ display: "flex", alignItems: "flex-end" }}>
-            <button className="lm-btn-primary" onClick={fetchDashboard} style={{ width: "100%", padding: "0.7rem 1rem" }}>
-              {loading ? "Loading..." : "Refresh Data"}
-            </button>
           </div>
         </div>
       </div>

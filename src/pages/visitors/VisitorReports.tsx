@@ -65,19 +65,19 @@ export default function VisitorReports() {
                     <BarChart2 size={24} color="#3b82f6" />
                     <h1>Common Visitors Report</h1>
                 </div>
-                <div className="bgv-header-actions" style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn-add" style={{ background: '#ffffff', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                <div className="v-header-actions">
+                    <button className="btn-add v-export-button btn-export-excel">
                         <Download size={16} /> Export Excel
                     </button>
-                    <button className="btn-add" style={{ background: '#ffffff', color: '#dc2626', border: '1px solid #fecaca' }}>
+                    <button className="btn-add v-export-button btn-export-pdf">
                         <Download size={16} /> Export PDF
                     </button>
                 </div>
             </div>
 
             <div className="table-card" style={{ background: '#fff', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-                <div className="v-filter-row" style={{ padding: '24px' }}>
-                    <div className="bgv-search-box" style={{ maxWidth: '300px' }}>
+                <div className="v-filter-row">
+                    <div className="bgv-search-box v-search-box">
                         <Search size={16} className="search-icon" />
                         <input 
                             type="text" 
@@ -86,7 +86,7 @@ export default function VisitorReports() {
                             onChange={e => { setSearchQuery(e.target.value); fetchReports(); }}
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    <div className="v-filter-controls">
                         <select className="bgv-filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                             <option value="All">All Status</option>
                             <option value="Inside">Inside Only</option>

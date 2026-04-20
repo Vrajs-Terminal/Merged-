@@ -213,20 +213,21 @@ const ManageMeetings: React.FC = () => {
                                             </span>
                                         </td>
                                         <td>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                                            <div className="meeting-action-cell">
+                                                <button className="action-btn" onClick={() => navigate(`/meetings/participants?id=${m.id}`)} title="Meeting Participants">
+                                                    <Users size={14} /> Participants
+                                                </button>
+                                                <button className="action-btn" onClick={() => navigate(`/meetings/attendance?id=${m.id}`)} title="Meeting Attendance">
+                                                    <CheckCircle2 size={14} /> Attendance
+                                                </button>
+                                                <button className="action-btn" onClick={() => navigate(`/meetings/mom?id=${m.id}`)} title="Meeting Minutes (MOM)">
+                                                    <FileText size={14} /> MOM
+                                                </button>
                                                 {m.status === 'Scheduled' && (
                                                     <button className="action-btn" onClick={() => handleStatusUpdate(m.id, 'Ongoing')} title="Start Meeting">
                                                         <VideoIcon size={14} /> Start
                                                     </button>
                                                 )}
-                                                {m.status === 'Ongoing' && (
-                                                    <button className="action-btn" onClick={() => navigate(`/meetings/mom?id=${m.id}`)} title="Complete & Add MOM">
-                                                        <CheckCircle2 size={14} /> Finish
-                                                    </button>
-                                                )}
-                                                <button className="action-btn" onClick={() => navigate(`/meetings/details/${m.id}`)} title="View Details">
-                                                    <MoreVertical size={14} />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>

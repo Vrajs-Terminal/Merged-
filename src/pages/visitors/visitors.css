@@ -33,6 +33,69 @@
     margin: 0;
 }
 
+.v-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.v-export-button {
+    min-width: 140px;
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+.btn-export-excel {
+    background: #ffffff;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+.btn-export-pdf {
+    background: #ffffff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.v-filter-row {
+    padding: 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: grid;
+    grid-template-columns: minmax(260px, 1.4fr) minmax(360px, 1fr);
+    gap: 16px;
+    align-items: center;
+}
+
+.v-search-box {
+    min-width: 260px;
+}
+
+.v-filter-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.v-filter-controls .bgv-filter-select {
+    min-width: 160px;
+    max-width: 240px;
+}
+
+@media (max-width: 960px) {
+    .v-filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .v-filter-controls {
+        justify-content: flex-start;
+    }
+}
+
 /* Stats Cards */
 .v-stats-grid {
     display: grid;

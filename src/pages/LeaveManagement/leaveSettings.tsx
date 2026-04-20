@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import axios from "axios";
 import "./leaveSettings.css";
 import { SlidersHorizontal, Save, CheckCircle, AlertCircle } from "lucide-react";
@@ -6,16 +7,31 @@ import { SlidersHorizontal, Save, CheckCircle, AlertCircle } from "lucide-react"
 import API_BASE from "../api";
 const API = `${API_BASE}/leaves`;
 
+const DEFAULT_SETTINGS = {
+    sandwichRule: false,
+    minLeaveDays: 0.5,
+    maxLeaveDays: 30,
+    noticePeriodDays: 1,
+    allowCancelBefore: true,
+    allowCancelAfter: false,
+    autoApproveAfterDays: 0,
+};
+
 export default function LeaveSettings() {
-    const [settings, setSettings] = useState<any>(null);
+    const [settings, setSettings] = useState<any>({ ...DEFAULT_SETTINGS });
     const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState<any>(null);
 
     useEffect(() => {
-        axios.get(`${API}/settings`).then(r => setSettings(r.data)).catch(() => { });
+        setLoading(true);
+        axios.get(`${API}/settings`)
+            .then(r => setSettings({ ...DEFAULT_SETTINGS, ...r.data }))
+            .catch(err => setMsg({ type: "error", text: err?.response?.data?.error || "Failed to load settings." }))
+            .finally(() => setLoading(false));
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, type, value, checked } = e.target;
         setSettings((p: any) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
     };
@@ -37,7 +53,7 @@ export default function LeaveSettings() {
         } finally { setSaving(false); }
     };
 
-    if (!settings) return <div className="lm-container lset-page"><div className="lm-loading">Loading settings...</div></div>;
+    if (loading) return <div className="lm-container lset-page"><div className="lm-loading">Loading settings...</div></div>;
 
     const ToggleField = ({ name, label, desc }: { name: string; label: string; desc?: string }) => (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 0", borderBottom: "1px solid #f1f5f9" }}>
@@ -59,8 +75,8 @@ export default function LeaveSettings() {
                     <h2 className="lm-page-title"><SlidersHorizontal size={22} /> Leave Settings</h2>
                     <p className="lm-page-subtitle">Configure global leave management rules for your organization</p>
                 </div>
-                <button className="lm-btn-primary" onClick={handleSave} disabled={saving}>
-                    <Save size={14} /> {saving ? "Saving..." : "Save Settings"}
+                <button className="lm-btn-primary" onClick={handleSave} disabled={saving || loading}>
+                    <Save size={14} /> {saving ? "Saving..." : loading ? "Loading..." : "Save Settings"}
                 </button>
             </div>
 

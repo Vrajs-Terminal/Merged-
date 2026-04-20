@@ -2,6 +2,24 @@ import type { Request, Response } from "express";
 import prisma from '../lib/prismaClient';
 const db = prisma as any;
 
+const ensureLeaveSettingsTable = async () => {
+    await db.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS LeaveSettings (
+            id INT NOT NULL AUTO_INCREMENT,
+            sandwichRule TINYINT(1) NOT NULL DEFAULT 0,
+            minLeaveDays DOUBLE NOT NULL DEFAULT 0.5,
+            maxLeaveDays INT NOT NULL DEFAULT 30,
+            noticePeriodDays INT NOT NULL DEFAULT 1,
+            allowCancelBefore TINYINT(1) NOT NULL DEFAULT 1,
+            allowCancelAfter TINYINT(1) NOT NULL DEFAULT 0,
+            autoApproveAfterDays INT NOT NULL DEFAULT 0,
+            createdAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+            updatedAt DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB;
+    `);
+};
+
 // ─────────────────────────────────────────────
 // LEAVE TYPES
 // ─────────────────────────────────────────────
@@ -264,6 +282,7 @@ export const getLeaveReport = async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────
 export const getLeaveSettings = async (_req: Request, res: Response) => {
     try {
+        await ensureLeaveSettingsTable();
         let settings = await db.leaveSettings.findFirst();
         if (!settings) settings = await db.leaveSettings.create({ data: {} });
         res.json(settings);
@@ -272,6 +291,7 @@ export const getLeaveSettings = async (_req: Request, res: Response) => {
 
 export const updateLeaveSettings = async (req: Request, res: Response) => {
     try {
+        await ensureLeaveSettingsTable();
         let settings = await db.leaveSettings.findFirst();
         const body = { ...req.body };
         const allowed = ["sandwichRule", "minLeaveDays", "maxLeaveDays", "noticePeriodDays", "allowCancelBefore", "allowCancelAfter", "autoApproveAfterDays"];

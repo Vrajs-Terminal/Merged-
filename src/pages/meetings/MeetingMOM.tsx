@@ -48,6 +48,7 @@ const MeetingMOM: React.FC = () => {
             if (meetingRes.data.mom) {
                 setDiscussionPoints(meetingRes.data.mom.discussion_points || '');
                 setDecisions(meetingRes.data.mom.decisions || '');
+                setActionItems(meetingRes.data.mom.action_items || []);
             }
         } catch (error) {
             toast.error('Failed to load meeting details');

@@ -109,9 +109,9 @@ const MeetingParticipants: React.FC = () => {
                                 <th>#</th>
                                 <th>Employee / Profile</th>
                                 <th>Department & Branch</th>
-                                <th>Invite Status</th>
-                                <th style={{ textAlign: 'center' }}>Attendance</th>
-                                <th>Activity Logs</th>
+                                <th>Attendance Status</th>
+                                <th style={{ textAlign: 'center' }}>Time Logs</th>
+                                <th>Activity</th>
                                 <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
@@ -165,8 +165,8 @@ const MeetingParticipants: React.FC = () => {
                                             </div>
                                         </td>
                                         <td>
-                                            <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', color: '#16a34a', fontWeight: 700 }}>
-                                                <CheckCircle size={16} strokeWidth={2.5} /> Invited
+                                            <span className={`status-badge status-${p.attendance_status.toLowerCase()}`} style={{ minWidth: '100px', justifyContent: 'center' }}>
+                                                {p.attendance_status || 'Pending'}
                                             </span>
                                         </td>
                                         <td style={{ textAlign: 'center' }}>

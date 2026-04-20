@@ -30,6 +30,9 @@ const VendorReport: React.FC = () => {
         city: '',
     });
 
+    const activeCount = vendors.filter(v => v.status === 'Active').length;
+    const inactiveCount = vendors.filter(v => v.status === 'Inactive').length;
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -108,8 +111,23 @@ const VendorReport: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="report-filters" style={{ flexWrap: 'wrap' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="vendor-summary-grid">
+                    <div className="vendor-summary-card">
+                        <h4>Total Vendors</h4>
+                        <strong>{vendors.length}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Active Vendors</h4>
+                        <strong>{activeCount}</strong>
+                    </div>
+                    <div className="vendor-summary-card">
+                        <h4>Inactive Vendors</h4>
+                        <strong>{inactiveCount}</strong>
+                    </div>
+                </div>
+
+                <div className="report-filters">
+                    <div className="form-group">
                         <label>Search Report</label>
                         <div className="search-input-wrapper">
                             <Search size={16} />
@@ -122,11 +140,10 @@ const VendorReport: React.FC = () => {
                             />
                         </div>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group">
                         <label>Category</label>
                         <select 
-                            className="form-control" 
-                            style={{ width: '180px' }}
+                            className="form-control"
                             value={filters.categoryId}
                             onChange={(e) => setFilters({...filters, categoryId: e.target.value})}
                         >
@@ -134,22 +151,20 @@ const VendorReport: React.FC = () => {
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group">
                         <label>City</label>
                         <input 
                             type="text" 
-                            className="form-control" 
-                            style={{ width: '150px' }}
+                            className="form-control"
                             placeholder="All Cities"
                             value={filters.city}
                             onChange={(e) => setFilters({...filters, city: e.target.value})}
                         />
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
+                    <div className="form-group">
                         <label>Status</label>
                         <select 
-                            className="form-control" 
-                            style={{ width: '130px' }}
+                            className="form-control"
                             value={filters.status}
                             onChange={(e) => setFilters({...filters, status: e.target.value})}
                         >
@@ -158,7 +173,7 @@ const VendorReport: React.FC = () => {
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
-                    <button className="btn-secondary" style={{ padding: '8px 16px' }} onClick={() => { setSearch(''); setFilters({ categoryId: '', status: '', city: '' }); }}>
+                    <button className="btn-secondary" onClick={() => { setSearch(''); setFilters({ categoryId: '', status: '', city: '' }); }}>
                         Reset
                     </button>
                 </div>
