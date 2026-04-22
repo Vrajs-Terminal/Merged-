@@ -1,0 +1,1 @@
+import{n as e}from"./createLucideIcon-BK0QqZ0D.js";import{n as t}from"./expenseReports-DXD14suu.js";var n=e();function r(){return(0,n.jsx)(t,{})}export{r as default};

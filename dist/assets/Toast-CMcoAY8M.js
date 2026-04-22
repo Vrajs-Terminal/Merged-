@@ -1,0 +1,1 @@
+import"./chunk-DECur_0Z.js";import{n as e,r as t}from"./createLucideIcon-BK0QqZ0D.js";t(),e();var n;const r={success:e=>n?.(`success`,e),error:e=>n?.(`error`,e),info:e=>n?.(`info`,e)};export{r as t};

@@ -1,0 +1,58 @@
+{
+  "version": 3,
+  "routes": [
+    {
+      "src": "^/api(?:/(.*))$",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization"
+      },
+      "continue": true
+    },
+    {
+      "src": "^(?:/(.*))$",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      },
+      "continue": true
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/api(?:/(.*))$",
+      "dest": "/api/index.ts",
+      "check": true
+    },
+    {
+      "src": "^(?:/((?!api).*))$",
+      "dest": "/index.html",
+      "check": true
+    },
+    {
+      "src": "^/api(/.*)?$",
+      "status": 404
+    },
+    {
+      "handle": "error"
+    },
+    {
+      "status": 404,
+      "src": "^(?!/api).*$",
+      "dest": "/404.html"
+    },
+    {
+      "handle": "miss"
+    },
+    {
+      "src": "^/api/(.+)(?:\\.(?:ts))$",
+      "dest": "/api/$1",
+      "check": true
+    }
+  ],
+  "framework": {
+    "version": "8.0.0-beta.15"
+  },
+  "crons": []
+}

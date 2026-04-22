@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_paj7uWJG7fgighltmhuGY252ufdT",
+  "orgId": "team_87QS2Z1xfxm11lb5gMXryYAj",
+  "projectName": "minehr",
+  "settings": {
+    "createdAt": 1772115032935,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}
