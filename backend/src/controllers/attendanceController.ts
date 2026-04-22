@@ -41,7 +41,7 @@ async function checkHoliday(employeeId: number, date: Date) {
     const holiday = await prisma.holiday.findFirst({
         where: {
             date,
-            assignments: {
+            HolidayAssignment: {
                 some: {
                     OR: [
                         { targetType: "Employee", targetId: employeeId },

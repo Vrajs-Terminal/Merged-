@@ -4,7 +4,7 @@ import prisma from '../lib/prismaClient';
 export const getDesignations = async (req: Request, res: Response) => {
     try {
         const items = await prisma.designation.findMany({
-            include: { _count: { select: { employees: true } } }
+            include: { _count: { select: { users: true } } }
         });
         res.json(items);
     } catch (error) {
@@ -14,9 +14,15 @@ export const getDesignations = async (req: Request, res: Response) => {
 
 export const createDesignation = async (req: Request, res: Response) => {
     try {
-        const { designationName, designationCode, description, status } = req.body;
+        const { designationName, subDepartmentId } = req.body;
+        if (!designationName || !subDepartmentId) {
+            return res.status(400).json({ error: 'designationName and subDepartmentId are required.' });
+        }
         const item = await prisma.designation.create({
-            data: { designationName, designationCode, description, status: status || 'Active' }
+            data: {
+                name: designationName,
+                sub_department_id: Number(subDepartmentId)
+            }
         });
         res.status(201).json(item);
     } catch (error) {
@@ -27,10 +33,13 @@ export const createDesignation = async (req: Request, res: Response) => {
 export const updateDesignation = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { designationName, designationCode, description, status } = req.body;
+        const { designationName, subDepartmentId } = req.body;
         const item = await prisma.designation.update({
             where: { id: Number(id as string) },
-            data: { designationName, designationCode, description, status }
+            data: {
+                name: designationName,
+                sub_department_id: subDepartmentId !== undefined ? Number(subDepartmentId) : undefined
+            }
         });
         res.json(item);
     } catch (error) {

@@ -8,13 +8,12 @@ const toInt = (val: any) => (val ? parseInt(String(val)) : undefined);
 
 export const createHoliday = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, date, type, year, description } = req.body;
+        const { name, date, type, description } = req.body;
         const holiday = await db.holiday.create({
             data: {
                 name,
                 date: new Date(date),
                 type: type || "Public",
-                year: toInt(year) || new Date(date).getFullYear(),
                 description
             }
         });
@@ -28,7 +27,7 @@ export const getHolidays = async (req: Request, res: Response): Promise<void> =>
     try {
         const holidays = await db.holiday.findMany({
             orderBy: { date: "asc" },
-            include: { assignments: true }
+            include: { HolidayAssignment: true }
         });
         res.json({ holidays });
     } catch (err: any) {

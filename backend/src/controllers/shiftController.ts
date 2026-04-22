@@ -32,33 +32,14 @@ export const createShift = async (req: Request, res: Response): Promise<void> =>
         
         // ONLY pick fields that exist in the Shift schema - strip unknown fields like weeklyOffPattern
         const shiftData: any = {
-            shiftName: body.shiftName,
-            shiftCode: body.shiftCode,
-            department: body.department,
-            description: body.description,
-            startTime: body.startTime,
-            endTime: body.endTime,
-            totalWorkHours: body.totalWorkHours,
-            breakTime: body.breakTime,
-            gracePeriod: body.gracePeriod,
-            lateAfterMin: body.lateAfterMin,
-            earlyLeaveAllowed: body.earlyLeaveAllowed ?? true,
-            earlyLeaveBeforeMin: body.earlyLeaveBeforeMin,
-            halfDayHours: body.halfDayHours,
-            absentIfNoPunchAfterMin: body.absentIfNoPunchAfterMin,
-            overtimeAllowed: body.overtimeAllowed ?? false,
-            minOvertimeMin: body.minOvertimeMin,
-            maxOvertimeHours: body.maxOvertimeHours,
-            overtimeRateType: body.overtimeRateType,
-            breakType: body.breakType,
-            breakStartTime: body.breakStartTime,
-            breakEndTime: body.breakEndTime,
-            geoFenceEnabled: body.geoFenceEnabled ?? false,
-            officeLatitude: body.officeLatitude,
-            officeLongitude: body.officeLongitude,
-            allowedRadiusM: body.allowedRadiusM,
-            weeklyOffDays: body.weeklyOffDays,
-            halfDayOffDays: body.halfDayOffDays,
+            name: body.shiftName ?? body.name,
+            start_time: body.startTime ?? body.start_time,
+            end_time: body.endTime ?? body.end_time,
+            grace_time_minutes: toInt(body.graceTime) ?? toInt(body.grace_time) ?? 0,
+            half_day_min_hours: toFloat(body.halfDayHours) ?? toFloat(body.halfDayMin) ?? 4.0,
+            full_day_min_hours: toFloat(body.fullDayHours) ?? toFloat(body.fullDayMin) ?? 8.0,
+            break_duration_mins: toInt(body.breakDuration) ?? toInt(body.break_duration_mins) ?? 60,
+            is_active: body.isActive !== undefined ? Boolean(body.isActive) : true,
         };
 
         // Only add optional fields if they exist in the schema
@@ -95,7 +76,7 @@ export const getShifts = async (_req: Request, res: Response): Promise<void> => 
     try {
         const shifts = await db.shift.findMany({
             orderBy: { createdAt: "desc" },
-            include: { _count: { select: { assignments: true } } }
+            include: { _count: { select: { ShiftAssignment: true } } }
         });
         res.json({ shifts });
     } catch (err: any) {
@@ -109,7 +90,7 @@ export const getShiftById = async (req: Request, res: Response): Promise<void> =
         const shift = await db.shift.findUnique({
             where: { id },
             include: {
-                assignments: {
+                ShiftAssignment: {
                     include: {
                         employee: {
                             select: { firstName: true, lastName: true, employeeId: true, department: true }
@@ -145,18 +126,20 @@ export const updateShift = async (req: Request, res: Response): Promise<void> =>
         if (body.allowedRadiusM === "") body.allowedRadiusM = 200;
 
         const shiftData: any = {};
-        const allowedFields = [
-            "shiftName", "shiftCode", "department", "description", "startTime", "endTime",
-            "totalWorkHours", "breakTime", "gracePeriod", "lateAfterMin", "earlyLeaveAllowed",
-            "earlyLeaveBeforeMin", "halfDayHours", "absentIfNoPunchAfterMin", "overtimeAllowed",
-            "minOvertimeMin", "maxOvertimeHours", "overtimeRateType", "breakType",
-            "breakStartTime", "breakEndTime", "geoFenceEnabled", "officeLatitude",
-            "officeLongitude", "allowedRadiusM", "weeklyOffDays", "halfDayOffDays", "nextDayGraceTime"
-        ];
+        const fieldMap: Record<string, any> = {
+            name: body.name ?? body.shiftName,
+            start_time: body.startTime ?? body.start_time,
+            end_time: body.endTime ?? body.end_time,
+            grace_time_minutes: toInt(body.graceTime) ?? toInt(body.grace_time),
+            half_day_min_hours: toFloat(body.halfDayHours) ?? toFloat(body.halfDayMin),
+            full_day_min_hours: toFloat(body.fullDayHours) ?? toFloat(body.fullDayMin),
+            break_duration_mins: toInt(body.breakDuration) ?? toInt(body.break_duration_mins),
+            is_active: body.isActive ?? body.is_active,
+        };
 
-        allowedFields.forEach(field => {
-            if (body[field] !== undefined) {
-                shiftData[field] = body[field];
+        Object.entries(fieldMap).forEach(([field, value]) => {
+            if (value !== undefined) {
+                shiftData[field] = value;
             }
         });
 
@@ -235,7 +218,7 @@ export const getAssignments = async (req: Request, res: Response): Promise<void>
         const assignments: any[] = await db.shiftAssignment.findMany({
             where,
             include: {
-                shift: { select: { shiftName: true, startTime: true, endTime: true } },
+                shift: { select: { name: true, start_time: true, end_time: true } },
                 employee: { select: { firstName: true, lastName: true, employeeId: true, department: true } }
             },
             orderBy: { startDate: "desc" }
@@ -322,7 +305,7 @@ export const getShiftStats = async (_req: Request, res: Response): Promise<void>
             db.shiftAssignment.count({ where: { isActive: true } }),
             db.shiftRotation.count(),
             db.shift.findMany({
-                select: { shiftName: true, _count: { select: { assignments: true } } }
+                select: { name: true, _count: { select: { ShiftAssignment: true } } }
             })
         ]);
         res.json({ totalShifts, activeAssignments, totalRotations, shiftList });
@@ -354,7 +337,7 @@ export const getShiftChangeRequests = async (_req: Request, res: Response): Prom
         const requests = await db.shiftChangeRequest.findMany({
             include: {
                 employee: { select: { firstName: true, lastName: true, employeeId: true } },
-                requestedShift: { select: { shiftName: true, startTime: true, endTime: true } }
+                requestedShift: { select: { name: true, start_time: true, end_time: true } }
             },
             orderBy: { createdAt: "desc" }
         });

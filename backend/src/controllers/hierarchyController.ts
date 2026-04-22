@@ -14,7 +14,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
                 firstName: true,
                 lastName: true,
                 managerId: true,
-                designationRef: { select: { designationName: true } },
+                designationRef: { select: { name: true } },
                 level: { select: { levelName: true } }
             }
         });
@@ -24,7 +24,7 @@ export const getHierarchy = async (req: Request, res: Response) => {
         employees.forEach(emp => {
             empMap.set(emp.id, {
                 ...emp,
-                designationName: emp.designationRef?.designationName || "No Role",
+                designationName: emp.designationRef?.name || "No Role",
                 levelName: emp.level?.levelName || "No Level",
                 children: []
             });

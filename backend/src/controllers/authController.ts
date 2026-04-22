@@ -78,9 +78,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         const storedPassword = user.password || "";
         const isHashedPassword = storedPassword.startsWith("$2");
 
+        const emailValue = 'personalEmail' in user ? user.personalEmail || user.email || "" : user.email || "";
         const payload = {
             id: user.id,
-            email: user.email || user.personalEmail || "",
+            email: emailValue,
             role: user.role, // 'Employee', 'HR', 'Admin', 'Manager'
             type
         };
@@ -93,7 +94,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             user: {
                 id: user.id,
                 name: type === "Employee" ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || identifier : user.name || identifier,
-                email: user.email || user.personalEmail,
+                email: emailValue,
                 role: user.role,
                 type
             }

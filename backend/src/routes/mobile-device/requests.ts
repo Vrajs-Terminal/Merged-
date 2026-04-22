@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
         let filter: any = {};
         if (status) filter.status = String(status);
         if (startDate && endDate) {
-            filter.requestDate = {
+            filter.requestedAt = {
                 gte: new Date(String(startDate)),
                 lte: new Date(String(endDate))
             };
@@ -26,10 +26,9 @@ router.get('/', async (req, res) => {
         const requests = await prisma.deviceChangeRequest.findMany({
             where: filter,
             include: {
-                user: { select: { id: true, name: true } },
-                approvedBy: { select: { id: true, name: true } }
+                user: { select: { id: true, name: true } }
             },
-            orderBy: { requestDate: 'desc' }
+            orderBy: { requestedAt: 'desc' }
         });
 
         res.json(requests);
@@ -61,7 +60,6 @@ router.post('/', async (req, res) => {
                 newDeviceId,
                 newDeviceName,
                 reason,
-                attachmentUrl,
                 status: 'Pending'
             }
         });
@@ -90,7 +88,6 @@ router.patch('/:id/approve', async (req, res) => {
                 data: {
                     status: 'Approved',
                     approvedById: admin_id ? Number(admin_id) : null,
-                    adminRemarks: remarks,
                     resolvedAt: new Date()
                 }
             }),
@@ -134,7 +131,6 @@ router.patch('/:id/reject', async (req, res) => {
             data: {
                 status: 'Rejected',
                 approvedById: admin_id ? Number(admin_id) : null,
-                adminRemarks: remarks,
                 resolvedAt: new Date()
             }
         });

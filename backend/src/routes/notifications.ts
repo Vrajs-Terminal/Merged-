@@ -8,7 +8,8 @@ const router = Router();
 // Privacy Filter: Only return logs for the authenticated user
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user?.id;
+        const authReq = req as typeof req & { user?: { id?: number; role?: string } };
+        const userId = authReq.user?.id;
         const limitStr = req.query.limit as string;
         const limit = limitStr ? parseInt(limitStr) : 50;
 
@@ -16,7 +17,7 @@ router.get('/', authenticateToken, async (req, res) => {
             return res.status(401).json({ error: 'User not authenticated' });
         }
 
-        const isAdmin = req.user?.role === 'Admin' || req.user?.role === 'SuperAdmin';
+        const isAdmin = authReq.user?.role === 'Admin' || authReq.user?.role === 'SuperAdmin';
 
         if (!isAdmin) {
             return res.json([]); // Only admins see activity logs
